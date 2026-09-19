@@ -14,7 +14,7 @@ class EnemyConfig {
     // ================================================================
     static TYPES = {
         normal: {
-            name: '迷失者',
+            name: '赤帽菇',
             color: '#6b7b7b',
             glowColor: 'rgba(107,123,123,0.3)',
             eyeColor: '#882222',
@@ -26,7 +26,7 @@ class EnemyConfig {
             gold: 1,
         },
         fast: {
-            name: '爬行者',
+            name: '灰爪兽',
             color: '#382840',
             glowColor: 'rgba(56,40,64,0.3)',
             boneColor: '#c8c0b8',
@@ -38,7 +38,7 @@ class EnemyConfig {
             gold: 2,
         },
         tank: {
-            name: '蛮兽',
+            name: '岩甲兽',
             color: '#4a1818',
             glowColor: 'rgba(74,24,24,0.3)',
             boneColor: '#c8b898',
@@ -50,7 +50,7 @@ class EnemyConfig {
             gold: 5,
         },
         exploder: {
-            name: '脓肿',
+            name: '爆燃菇',
             color: '#8a7a20',
             glowColor: 'rgba(138,122,32,0.35)',
             veinColor: '#6a1010',
@@ -64,7 +64,7 @@ class EnemyConfig {
             explodeRadius: 60,
         },
         elite: {
-            name: '督军',
+            name: '岩冠督军',
             color: '#3a4038',
             glowColor: 'rgba(58,64,56,0.3)',
             crestColor: '#8a8040',

@@ -115,3 +115,19 @@ body.touch-device { min-height: 100dvh; padding: 0; }
     }
     .touch-device .mobile-tip { display: none; }
 }
+
+/* Woodland edition: muted greens and brass frame the brighter characters. */
+html, body { background:#17271f; color:#e9e3ca; }
+body { background:radial-gradient(ellipse at center,#314635 0%,#17271f 75%); }
+#gameCanvas { outline-color:#8c9a6a; box-shadow:0 18px 70px #07150b80; border-radius:10px; }
+.game-header { color:#c9cda5; letter-spacing:2px; }
+.game-header a { color:#e5c284; margin-left:24px; text-decoration:none; letter-spacing:0; }
+.game-footer { color:#9ead90; }
+#mobile-controls button { border-color:#84916b; background:#283d2d; color:#e4dec2; }
+#mobile-controls button:active { background:#546b44; }
+#joystick { border-color:#9aa777; background:#283d2dcc; }
+#joystick-knob { background:#d5bf82; box-shadow:0 0 20px #d5bf8220; }
+#mobile-upgrades { background:#1d3025; border-color:#84916b; }
+.mobile-tip, .joystick-label { color:#cad2b1; }
+.mobile-gallery { display:flex; align-items:center; min-height:44px; padding:8px; color:#e5c284; text-decoration:none; font-size:13px; }
+@media(max-width:380px) { .mobile-toolbar { gap:5px; left:6px; right:6px; } #mobile-controls .mobile-toolbar button { padding:8px; min-width:48px; } #mobile-action { min-width:92px !important; } }

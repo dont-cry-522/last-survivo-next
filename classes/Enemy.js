@@ -39,6 +39,7 @@ class Enemy {
         this.knockbackDecay = EnemyConfig.KNOCKBACK_DECAY;
 
         this.contactCooldown = 0;
+        this.attackPose = 0;
 
         this.hpMultiplier = 1;
         this.speedMultiplier = 1;
@@ -72,6 +73,7 @@ class Enemy {
         this.knockbackY = 0;
         this._triggeredExplode = false;
         this.contactCooldown = 0;
+        this.attackPose = 0;
 
         this.hpMultiplier = hpMultiplier;
         this.speedMultiplier = speedMultiplier;
@@ -119,7 +121,8 @@ class Enemy {
     update(deltaTime, player) {
         if (!this.active) return;
 
-        this.animTimer += deltaTime;
+        this.animTimer += this.frozen ? 0 : deltaTime;
+        this.attackPose = Math.max(0, this.attackPose - deltaTime);
 
         if (this.hitFlash > 0) {
             this.hitFlash -= deltaTime;
@@ -135,6 +138,7 @@ class Enemy {
         this.knockbackY *= this.knockbackDecay;
 
         const angle = Utils.angle(this.x, this.y, player.x, player.y);
+        this.angle = angle;
         const speedMul = Enemy._statusSystem ? Enemy._statusSystem.getSpeedMultiplier(this) : 1;
         const moveX = Math.cos(angle) * this.speed * speedMul * deltaTime * 60;
         const moveY = Math.sin(angle) * this.speed * speedMul * deltaTime * 60;
@@ -155,350 +159,7 @@ class Enemy {
      * 绘制敌人
      */
     draw(ctx, cameraX, cameraY) {
-        if (!this.active) return;
-
-        const screenX = this.x - cameraX;
-        const screenY = this.y - cameraY;
-        const s = this.size;
-        const t = this.animTimer;
-
-        let bodyColor = this.color;
-        let flashWhite = this.hitFlash > 0;
-        if (this.burnStacks > 0) {
-            bodyColor = '#ff6600';
-        } else if (this.frozen) {
-            bodyColor = '#88ccff';
-        } else if (this.paralyzed) {
-            bodyColor = '#ffff88';
-        }
-
-        ctx.save();
-        ctx.translate(screenX, screenY);
-
-        switch (this.type) {
-            case 'normal':
-                this._drawLost(ctx, s, t, bodyColor, flashWhite);
-                break;
-            case 'fast':
-                this._drawCrawler(ctx, s, t, bodyColor, flashWhite);
-                break;
-            case 'tank':
-                this._drawBrute(ctx, s, t, bodyColor, flashWhite);
-                break;
-            case 'exploder':
-                this._drawBurst(ctx, s, t, bodyColor, flashWhite);
-                break;
-            case 'elite':
-                this._drawCommander(ctx, s, t, bodyColor, flashWhite);
-                break;
-        }
-
-        ctx.restore();
-
-        if (this.hp < this.maxHp) {
-            const barW = s * EnemyConfig.HP_BAR_WIDTH_RATIO;
-            const barH = EnemyConfig.HP_BAR_HEIGHT;
-            const barX = screenX - barW / 2;
-            const barY = screenY - s - EnemyConfig.HP_BAR_OFFSET_Y;
-            ctx.fillStyle = EnemyConfig.HP_BAR_BG;
-            ctx.fillRect(barX, barY, barW, barH);
-            const pct = this.hp / this.maxHp;
-            ctx.fillStyle = pct > 0.5 ? '#4ade80' : pct > 0.25 ? '#fbbf24' : '#ef4444';
-            ctx.fillRect(barX, barY, barW * pct, barH);
-        }
-    }
-
-    // ── 迷失者：驼背歪头、手臂下垂的人形 ──
-    _drawLost(ctx, s, t, color, flash) {
-        const bob = Math.sin(t * 2.5) * 1.5;
-        ctx.save();
-        ctx.translate(0, bob);
-
-        const headTilt = Math.sin(t * 1.8) * 0.3;
-        const bodyLean = 0.15;
-
-        ctx.fillStyle = flash ? '#ffffff' : color;
-
-        // 腿（两条短柱）
-        ctx.fillRect(-s * 0.25, s * 0.35, s * 0.18, s * 0.5);
-        ctx.fillRect(s * 0.08, s * 0.35, s * 0.18, s * 0.5);
-
-        // 躯干（倾斜的椭圆，驼背感）
-        ctx.save();
-        ctx.rotate(-bodyLean);
-        ctx.beginPath();
-        ctx.ellipse(0, s * 0.05, s * 0.4, s * 0.55, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        // 手臂（垂在两侧）
-        ctx.save();
-        ctx.rotate(-0.3);
-        ctx.fillRect(-s * 0.55, s * 0.1, s * 0.1, s * 0.45);
-        ctx.restore();
-        ctx.save();
-        ctx.rotate(0.25);
-        ctx.fillRect(s * 0.3, s * -0.05, s * 0.1, s * 0.4);
-        ctx.restore();
-
-        // 头（歪向一侧的圆）
-        ctx.save();
-        ctx.translate(s * 0.08, -s * 0.45);
-        ctx.rotate(headTilt);
-        ctx.beginPath();
-        ctx.arc(0, 0, s * 0.28, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 眼眶（两个暗红小点）
-        ctx.fillStyle = '#882222';
-        ctx.beginPath();
-        ctx.arc(-s * 0.08, -s * 0.04, s * 0.06, 0, Math.PI * 2);
-        ctx.arc(s * 0.08, -s * 0.04, s * 0.06, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        ctx.restore();
-    }
-
-    // ── 爬行者：四足着地、脊椎骨刺、像野兽 ──
-    _drawCrawler(ctx, s, t, color, flash) {
-        const gallop = Math.sin(t * 6) * 2;
-        const spineWave = Math.sin(t * 5) * s * 0.1;
-        ctx.save();
-
-        ctx.fillStyle = flash ? '#ffffff' : color;
-
-        // 前腿
-        ctx.fillRect(-s * 0.6, -s * 0.15 + gallop * 0.5, s * 0.12, s * 0.6);
-        ctx.fillRect(-s * 0.3, -s * 0.15 - gallop * 0.5, s * 0.12, s * 0.6);
-
-        // 后腿
-        ctx.fillRect(s * 0.1, -s * 0.15 - gallop * 0.5, s * 0.12, s * 0.55);
-        ctx.fillRect(s * 0.35, -s * 0.15 + gallop * 0.5, s * 0.12, s * 0.55);
-
-        // 躯干（细长横椭圆）
-        ctx.beginPath();
-        ctx.ellipse(0, -s * 0.55, s * 0.9, s * 0.25, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 脊柱骨刺（白色锯齿线）
-        ctx.strokeStyle = flash ? '#ffffff' : '#c8c0b8';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(-s * 0.7, -s * 0.6 + spineWave);
-        for (let i = 0; i < 6; i++) {
-            const px = -s * 0.7 + i * s * 0.28;
-            const py = -s * 0.6 + spineWave + (i % 2 === 0 ? -s * 0.1 : s * 0.05);
-            ctx.lineTo(px, py);
-        }
-        ctx.stroke();
-
-        // 头部（尖锐三角）
-        ctx.beginPath();
-        ctx.moveTo(-s * 1.1, -s * 0.55);
-        ctx.lineTo(-s * 0.75, -s * 0.45);
-        ctx.lineTo(-s * 0.75, -s * 0.65);
-        ctx.closePath();
-        ctx.fill();
-
-        // 眼缝
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-s * 1.0, -s * 0.58, s * 0.15, s * 0.04);
-
-        ctx.restore();
-    }
-
-    // ── 蛮兽：上宽下窄的倒三角巨躯、细腿 ──
-    _drawBrute(ctx, s, t, color, flash) {
-        const stomp = Math.abs(Math.sin(t * 1.5)) * 1.5;
-        ctx.save();
-        ctx.translate(0, stomp);
-
-        ctx.fillStyle = flash ? '#ffffff' : color;
-
-        // 粗腿
-        ctx.fillRect(-s * 0.3, s * 0.2, s * 0.25, s * 0.55);
-        ctx.fillRect(s * 0.05, s * 0.2, s * 0.25, s * 0.55);
-
-        // 巨大躯干（向上变宽的梯形）
-        ctx.beginPath();
-        ctx.moveTo(-s * 0.65, s * 0.15);
-        ctx.lineTo(-s * 0.9, -s * 0.4);
-        ctx.lineTo(-s * 0.55, -s * 0.75);
-        ctx.lineTo(s * 0.55, -s * 0.75);
-        ctx.lineTo(s * 0.9, -s * 0.4);
-        ctx.lineTo(s * 0.65, s * 0.15);
-        ctx.closePath();
-        ctx.fill();
-
-        // 肩部骨板
-        ctx.fillStyle = flash ? '#ffffff' : '#c8b898';
-        ctx.beginPath();
-        ctx.moveTo(-s * 0.9, -s * 0.4);
-        ctx.lineTo(-s * 1.05, -s * 0.6);
-        ctx.lineTo(-s * 0.6, -s * 0.65);
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(s * 0.9, -s * 0.4);
-        ctx.lineTo(s * 1.05, -s * 0.6);
-        ctx.lineTo(s * 0.6, -s * 0.65);
-        ctx.closePath();
-        ctx.fill();
-
-        // 头（嵌在肩膀里的小圆）
-        ctx.fillStyle = flash ? '#ffffff' : color;
-        ctx.beginPath();
-        ctx.arc(0, -s * 0.6, s * 0.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 眼点
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(-s * 0.06, -s * 0.63, s * 0.05, 0, Math.PI * 2);
-        ctx.arc(s * 0.06, -s * 0.63, s * 0.05, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
-    }
-
-    // ── 脓肿：巨大球形腹腔、小头、细腿、脉动 ──
-    _drawBurst(ctx, s, t, color, flash) {
-        const pulseFreq = 6 + (this.hp / this.maxHp) * 4;
-        const pulse = 1 + Math.sin(t * pulseFreq) * 0.12;
-        const hpRatio = this.hp / this.maxHp;
-        const bellyColor = flash ? '#ffffff' : `rgb(${Math.floor(200 - hpRatio * 100)},${Math.floor(80 - hpRatio * 60)},0)`;
-        const coreBright = 1 - hpRatio;
-
-        ctx.save();
-
-        // 细腿
-        ctx.fillStyle = flash ? '#ffffff' : color;
-        ctx.fillRect(-s * 0.15, s * 0.15, s * 0.13, s * 0.4);
-        ctx.fillRect(s * 0.02, s * 0.15, s * 0.13, s * 0.4);
-
-        // 腹腔（扁椭圆、脉动）
-        const bellyR = s * 0.75 * pulse;
-        ctx.beginPath();
-        ctx.ellipse(0, -s * 0.05, bellyR, bellyR * 0.85, 0, 0, Math.PI * 2);
-        ctx.fillStyle = bellyColor;
-        ctx.fill();
-
-        // 血管纹路
-        if (!flash && !this.frozen) {
-            ctx.strokeStyle = `rgba(106,16,16,${0.5 + coreBright * 0.3})`;
-            ctx.lineWidth = 0.8;
-            for (let i = 0; i < 5; i++) {
-                const a = (i / 5) * Math.PI * 2 + t * 0.3;
-                ctx.beginPath();
-                ctx.moveTo(Math.cos(a) * bellyR * 0.3, -s * 0.05 + Math.sin(a) * bellyR * 0.25);
-                ctx.lineTo(Math.cos(a) * bellyR * 0.85, -s * 0.05 + Math.sin(a) * bellyR * 0.7);
-                ctx.stroke();
-            }
-        }
-
-        // 核心光（中心橙点）
-        const coreAlpha = 0.4 + coreBright * 0.6;
-        ctx.fillStyle = `rgba(255,102,0,${coreAlpha})`;
-        ctx.beginPath();
-        ctx.arc(0, -s * 0.05, bellyR * 0.3 * pulse, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 小头（在腹腔上方边缘）
-        ctx.fillStyle = flash ? '#ffffff' : color;
-        ctx.beginPath();
-        ctx.arc(0, -s * 0.55 - bellyR * 0.15, s * 0.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 眼
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(-0.04 * s, -s * 0.57 - bellyR * 0.12, s * 0.04, 0, Math.PI * 2);
-        ctx.arc(0.04 * s, -s * 0.57 - bellyR * 0.12, s * 0.04, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
-    }
-
-    // ── 督军：直立士兵、残破头盔、披风、拖行武器 ──
-    _drawCommander(ctx, s, t, color, flash) {
-        const bob = Math.sin(t * 1.8) * 1;
-        ctx.save();
-        ctx.translate(0, bob);
-
-        // 披风（在身后飘动）
-        const capeWave = Math.sin(t * 1.2) * s * 0.15;
-        ctx.fillStyle = flash ? '#ffffff' : '#2a3028';
-        ctx.beginPath();
-        ctx.moveTo(-s * 0.35, -s * 0.1);
-        ctx.lineTo(-s * 0.15, s * 0.7 + capeWave);
-        ctx.lineTo(s * 0.15, s * 0.7 - capeWave);
-        ctx.lineTo(s * 0.35, -s * 0.1);
-        ctx.closePath();
-        ctx.fill();
-
-        // 腿
-        ctx.fillStyle = flash ? '#ffffff' : color;
-        ctx.fillRect(-s * 0.2, s * 0.2, s * 0.16, s * 0.5);
-        ctx.fillRect(s * 0.04, s * 0.2, s * 0.16, s * 0.5);
-
-        // 躯干
-        ctx.beginPath();
-        ctx.ellipse(0, -s * 0.05, s * 0.35, s * 0.5, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 手臂（一条拖武器）
-        ctx.fillRect(s * 0.3, -s * 0.15, s * 0.1, s * 0.4);
-
-        // 武器（在地上的残破刀刃）
-        const wepX = s * 0.35;
-        const wepY = s * 0.3;
-        ctx.fillStyle = flash ? '#ffffff' : '#557788';
-        ctx.beginPath();
-        ctx.moveTo(wepX, wepY);
-        ctx.lineTo(wepX - s * 0.1, wepY + s * 0.6);
-        ctx.lineTo(wepX + s * 0.1, wepY + s * 0.55);
-        ctx.closePath();
-        ctx.fill();
-
-        // 武器刃口冷光
-        ctx.strokeStyle = flash ? '#ffffff' : 'rgba(68,204,221,0.7)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(wepX, wepY);
-        ctx.lineTo(wepX - s * 0.08, wepY + s * 0.55);
-        ctx.stroke();
-
-        // 头盔
-        ctx.fillStyle = flash ? '#ffffff' : color;
-        ctx.beginPath();
-        ctx.arc(0, -s * 0.4, s * 0.25, Math.PI, 0);
-        ctx.fill();
-
-        // 头盔冠顶（褪色金、残破）
-        ctx.fillStyle = flash ? '#ffffff' : '#8a8040';
-        ctx.beginPath();
-        ctx.moveTo(-s * 0.12, -s * 0.65);
-        ctx.lineTo(s * 0.12, -s * 0.65);
-        ctx.lineTo(s * 0.04, -s * 0.8);
-        ctx.lineTo(-s * 0.06, -s * 0.8);
-        ctx.closePath();
-        ctx.fill();
-
-        // 冠顶裂缝
-        ctx.strokeStyle = '#1a2020';
-        ctx.lineWidth = 0.6;
-        ctx.beginPath();
-        ctx.moveTo(0, -s * 0.65);
-        ctx.lineTo(s * 0.02, -s * 0.78);
-        ctx.stroke();
-
-        // 眼睛（青色冷光缝隙）
-        ctx.fillStyle = flash ? '#ffffff' : '#44ccdd';
-        ctx.fillRect(-s * 0.1, -s * 0.44, s * 0.06, s * 0.03);
-        ctx.fillRect(s * 0.04, -s * 0.44, s * 0.06, s * 0.03);
-
-        ctx.restore();
+        if (this.active) ForestArt.enemy(ctx, this, cameraX, cameraY);
     }
 }
 
@@ -549,6 +210,8 @@ class EnemyManager extends ObjectPool {
     constructor(maxEnemies = 500) {
         super(() => new Enemy(), maxEnemies);
         this.events = null;
+        this.deathPoses = [];
+        this.drawOrder = [];
     }
 
     /**
@@ -576,6 +239,7 @@ class EnemyManager extends ObjectPool {
     }
 
     update(deltaTime, player, particleManager, experienceManager, audio) {
+        this.updateDeathPoses(deltaTime);
         for (let i = 0; i < this.pool.length; i++) {
             const e = this.pool[i];
             if (!e.active) continue;
@@ -594,6 +258,7 @@ class EnemyManager extends ObjectPool {
 
             if (!e.isExploder && e.contactCooldown <= 0 && Utils.circleCollision(e.x, e.y, e.size, player.x, player.y, player.size)) {
                 player.takeDamage(e.damage);
+                e.attackPose = 0.24;
                 e.contactCooldown = EnemyConfig.CONTACT_DAMAGE_COOLDOWN;
             }
         }
@@ -603,6 +268,10 @@ class EnemyManager extends ObjectPool {
      * 统一处理敌人死亡效果
      */
     _handleDeath(e, player, particleManager, experienceManager, audio) {
+        // Snapshot values: pooled enemies can respawn before this pose fades.
+        if (this.deathPoses.length >= 48) this.deathPoses.shift();
+        this.deathPoses.push({x:e.x, y:e.y, type:e.type, size:e.size,
+            angle:e.angle, animTimer:e.animTimer, hp:0, maxHp:e.maxHp, life:0.55});
         if (this.events) {
             this.events.emit('enemy:dead', {
                 x: e.x, y: e.y,
@@ -642,10 +311,31 @@ class EnemyManager extends ObjectPool {
         e.die();
     }
 
-    draw(ctx, cameraX, cameraY) {
-        for (let i = 0; i < this.pool.length; i++) {
-            this.pool[i].draw(ctx, cameraX, cameraY);
+    updateDeathPoses(dt) {
+        for (let i = this.deathPoses.length - 1; i >= 0; i--) {
+            this.deathPoses[i].life -= dt;
+            if (this.deathPoses[i].life <= 0) this.deathPoses.splice(i, 1);
         }
+    }
+
+    clear() {
+        super.clear();
+        this.deathPoses.length = 0;
+        this.drawOrder.length = 0;
+    }
+
+    draw(ctx, cameraX, cameraY, player = null, boss = null) {
+        for (const pose of this.deathPoses) ForestArt.enemy(ctx, pose, cameraX, cameraY, 1 - pose.life / 0.55);
+        this.drawOrder.length = 0;
+        const w = ctx.canvas.width, h = ctx.canvas.height;
+        for (const enemy of this.pool) {
+            if (enemy.active && enemy.x > cameraX - 100 && enemy.x < cameraX + w + 100 &&
+                enemy.y > cameraY - 100 && enemy.y < cameraY + h + 100) this.drawOrder.push(enemy);
+        }
+        if (player) this.drawOrder.push(player);
+        if (boss && boss.active) this.drawOrder.push(boss);
+        this.drawOrder.sort((a,b) => a.y - b.y);
+        for (const actor of this.drawOrder) actor.draw(ctx, cameraX, cameraY);
     }
 }
 

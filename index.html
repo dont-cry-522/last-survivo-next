@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>末日幸存者 - Last Survivor</title>
-    <link rel="stylesheet" href="style.css?v=3">
+    <title>林地远征 · Last Survivor Next</title>
+    <link rel="stylesheet" href="style.css?v=forest1">
 </head>
 <body>
     <div id="game-container">
-        <div class="game-header">LAST SURVIVOR · 末日幸存者</div>
+        <div class="game-header">LAST SURVIVOR NEXT · 林地远征 <a href="gallery.html">角色图鉴 ↗</a></div>
         <canvas id="gameCanvas"></canvas>
         <div class="game-footer">WASD 移动 | Shift 冲刺 | ESC 暂停 | R 重开 | M 静音</div>
     </div>
 
     <div id="mobile-controls" aria-label="触屏游戏操作">
         <div class="mobile-toolbar">
+            <a class="mobile-gallery" href="gallery.html">图鉴</a>
             <button id="mobile-action" type="button">开始游戏</button>
             <button id="mobile-restart" type="button">重开</button>
             <button id="mobile-mute" type="button" aria-pressed="false">静音</button>
@@ -25,38 +26,39 @@
     </div>
 
     <!-- 游戏类文件 - 按依赖顺序加载 -->
-    <script src="classes/Config.js"></script>
-    <script src="classes/Utils.js"></script>
-    <script src="classes/ObjectPool.js"></script>
-    <script src="classes/StatusSystem.js"></script>
-    <script src="classes/SoundManager.js"></script>
-    <script src="classes/Particle.js"></script>
-    <script src="classes/Bullet.js?v=2"></script>
-    <script src="classes/Experience.js"></script>
-    <script src="classes/EnemyConfig.js?v=2"></script>
-    <script src="classes/Enemy.js?v=2"></script>
-    <script src="classes/Boss.js?v=2"></script>
-    <script src="classes/Player.js?v=3"></script>
-    <script src="classes/Upgrade.js"></script>
-    <script src="classes/UI.js?v=3"></script>
-    <script src="classes/SkillTypes.js?v=2"></script>
-    <script src="skills/BulletStorm.js"></script>
-    <script src="skills/Inferno.js"></script>
-    <script src="skills/Frost.js"></script>
-    <script src="skills/Storm.js"></script>
-    <script src="skills/Bastion.js"></script>
-    <script src="skills/Shadow.js"></script>
-    <script src="skills/Reaper.js"></script>
-    <script src="skills/Summoner.js"></script>
-    <script src="classes/SkillConfig.js?v=2"></script>
-    <script src="classes/SkillInstance.js?v=2"></script>
-    <script src="classes/EffectDispatcher.js?v=2"></script>
-    <script src="classes/SkillManager.js?v=2"></script>
-    <script src="classes/SkillUI.js?v=2"></script>
-    <script src="classes/Game.js?v=3"></script>
+    <script src="classes/Config.js?v=forest1"></script>
+    <script src="classes/Utils.js?v=forest1"></script>
+    <script src="classes/ObjectPool.js?v=forest1"></script>
+    <script src="classes/StatusSystem.js?v=forest1"></script>
+    <script src="classes/SoundManager.js?v=forest1"></script>
+    <script src="classes/Particle.js?v=forest1"></script>
+    <script src="classes/Bullet.js?v=forest1"></script>
+    <script src="classes/Experience.js?v=forest1"></script>
+    <script src="classes/EnemyConfig.js?v=forest1"></script>
+    <script src="classes/Enemy.js?v=forest1"></script>
+    <script src="classes/Boss.js?v=forest1"></script>
+    <script src="classes/ForestArt.js?v=forest1"></script>
+    <script src="classes/Player.js?v=forest1"></script>
+    <script src="classes/Upgrade.js?v=forest1"></script>
+    <script src="classes/UI.js?v=forest1"></script>
+    <script src="classes/SkillTypes.js?v=forest1"></script>
+    <script src="skills/BulletStorm.js?v=forest1"></script>
+    <script src="skills/Inferno.js?v=forest1"></script>
+    <script src="skills/Frost.js?v=forest1"></script>
+    <script src="skills/Storm.js?v=forest1"></script>
+    <script src="skills/Bastion.js?v=forest1"></script>
+    <script src="skills/Shadow.js?v=forest1"></script>
+    <script src="skills/Reaper.js?v=forest1"></script>
+    <script src="skills/Summoner.js?v=forest1"></script>
+    <script src="classes/SkillConfig.js?v=forest1"></script>
+    <script src="classes/SkillInstance.js?v=forest1"></script>
+    <script src="classes/EffectDispatcher.js?v=forest1"></script>
+    <script src="classes/SkillManager.js?v=forest1"></script>
+    <script src="classes/SkillUI.js?v=forest1"></script>
+    <script src="classes/Game.js?v=forest1"></script>
 
     <!-- 游戏入口 -->
-    <script src="classes/MobileControls.js?v=3"></script>
-    <script src="game.js?v=3"></script>
+    <script src="classes/MobileControls.js?v=forest1"></script>
+    <script src="game.js?v=forest1"></script>
 </body>
 </html>

@@ -537,13 +537,13 @@ class Game {
     _checkWaveAnnounce() {
         if (!this._announced) this._announced = {};
         if (this.survivalTime > 30 && !this._announced.fast) {
-            this._announced.fast = true; this._announce('爬行者 出现了！', '#c8c0b8');
+            this._announced.fast = true; this._announce('灰爪兽 出现了！', '#c8c0b8');
         }
         if (this.survivalTime > 60 && !this._announced.tank) {
-            this._announced.tank = true; this._announce('蛮兽 出现了！', '#c8b898');
+            this._announced.tank = true; this._announce('岩甲兽 出现了！', '#c8b898');
         }
         if (this.survivalTime > 90 && !this._announced.exploder) {
-            this._announced.exploder = true; this._announce('脓肿 出现了！', '#ff6600');
+            this._announced.exploder = true; this._announce('爆燃菇 出现了！', '#ff6600');
         }
     }
 
@@ -556,7 +556,7 @@ class Game {
      * 生成精英怪
      */
     spawnElite() {
-        this._announce('督军 出现了！', '#44ccdd');
+        this._announce('岩冠督军 出现了！', '#44ccdd');
         const pos = Utils.spawnPositionAround(
             this.player.x, this.player.y,
             this.canvas.width, this.canvas.height
@@ -727,19 +727,9 @@ class Game {
         // 绘制粒子
         this.particleManager.draw(ctx, this.cameraX, this.cameraY);
 
-        // 绘制敌人
-        this.enemyManager.draw(ctx, this.cameraX, this.cameraY);
-
-        // 绘制Boss
-        if (this.boss.active) {
-            this.boss.draw(ctx, this.cameraX, this.cameraY);
-        }
-
-        // 技能视觉效果
+        // Ground effects sit below feet; actors overlap according to world Y.
         this.skillManager.drawSkillVisuals(ctx, this.cameraX, this.cameraY, this.player);
-
-        // 绘制玩家
-        this.player.draw(ctx, this.cameraX, this.cameraY);
+        this.enemyManager.draw(ctx, this.cameraX, this.cameraY, this.player, this.boss);
 
         // 绘制子弹（顶层）
         this.bulletManager.draw(ctx, this.cameraX, this.cameraY);
@@ -790,52 +780,9 @@ class Game {
      * 绘制背景网格
      */
     drawGrid(ctx) {
-        const gridSize = Config.GRID_SIZE;
-        const w = this.canvas.width;
-        const h = this.canvas.height;
-
-        // 计算网格偏移（随相机移动）
-        const offsetX = -this.cameraX % gridSize;
-        const offsetY = -this.cameraY % gridSize;
-
-        ctx.strokeStyle = Config.COLORS.grid;
-        ctx.lineWidth = 1;
-
-        // 垂直线
-        ctx.beginPath();
-        for (let x = offsetX; x < w; x += gridSize) {
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, h);
-        }
-        ctx.stroke();
-
-        // 水平线
-        ctx.beginPath();
-        for (let y = offsetY; y < h; y += gridSize) {
-            ctx.moveTo(0, y);
-            ctx.lineTo(w, y);
-        }
-        ctx.stroke();
-
-        // 高亮网格线（每5格）
-        ctx.strokeStyle = Config.COLORS.gridBright;
-        ctx.lineWidth = 1;
-
-        const brightGridSize = gridSize * 5;
-        const brightOffsetX = -this.cameraX % brightGridSize;
-        const brightOffsetY = -this.cameraY % brightGridSize;
-
-        ctx.beginPath();
-        for (let x = brightOffsetX; x < w; x += brightGridSize) {
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, h);
-        }
-        for (let y = brightOffsetY; y < h; y += brightGridSize) {
-            ctx.moveTo(0, y);
-            ctx.lineTo(w, y);
-        }
-        ctx.stroke();
+        ForestArt.terrain(ctx, this.cameraX, this.cameraY, this.canvas.width, this.canvas.height);
     }
+
 }
 
 if (typeof window !== 'undefined') {

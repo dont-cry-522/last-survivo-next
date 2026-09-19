@@ -1,0 +1,25 @@
+:root { color-scheme: dark; font-family: 'Microsoft YaHei', system-ui, sans-serif; background:#17271f; color:#ede6cf; }
+* { box-sizing:border-box; }
+body { margin:0; background:radial-gradient(ellipse at 70% 0%,#2b4130,transparent 60%); }
+a { color:#e4c083; text-decoration:none; }
+a:hover { color:#fff0c9; }
+header { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:24px 5vw; border-bottom:1px solid #ffffff16; color:#a0af94; font-size:12px; letter-spacing:1px; }
+main { max-width:1240px; margin:auto; padding:52px 28px; }
+.eyebrow { font-size:11px; letter-spacing:3px; color:#b0bd95; }
+h1 { font-size:clamp(30px,5vw,52px); letter-spacing:-2px; margin:14px 0 18px; font-weight:600; }
+.intro { color:#b3bea8; line-height:1.8; font-size:15px; max-width:650px; }
+nav { display:flex; flex-wrap:wrap; gap:8px; margin:28px 0 30px; }
+button { font:inherit; font-size:13px; min-height:44px; padding:10px 20px; background:#ffffff05; border:1px solid #73866b; border-radius:6px; color:#c8d2b7; cursor:pointer; }
+button[aria-pressed=true] { background:#d6b67c; border-color:#d6b67c; color:#243729; }
+button:focus-visible,a:focus-visible { outline:2px solid #f9d291; outline-offset:4px; }
+#pause { margin-left:auto; }
+.cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+article { position:relative; overflow:hidden; border:1px solid #83917240; border-radius:14px; background:#24382b; }
+.number { position:absolute; top:18px; left:20px; z-index:1; font-size:10px; letter-spacing:2px; color:#d2d7b3; }
+canvas { display:block; width:100%; height:auto; background:#435d44; }
+h2 { font-size:20px; margin:22px 22px 12px; font-weight:500; }
+small { float:right; font-size:11px; color:#b9c6a3; margin-top:6px; }
+article p { font-size:13px; color:#aebfa5; line-height:1.9; margin:0 22px 26px; }
+footer { display:flex; justify-content:space-between; gap:24px; margin-top:36px; font-size:12px; line-height:1.9; color:#99ad91; }
+@media(max-width:850px) { .cards { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:520px) { header {padding:18px;} header span:nth-child(2){display:none} main{padding:30px 18px}.cards{grid-template-columns:1fr} nav{gap:6px} button{padding:9px 14px}#pause{margin-left:0}footer{flex-direction:column} }

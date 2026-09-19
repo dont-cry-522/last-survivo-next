@@ -71,6 +71,10 @@ class Player {
         this.animTimer = 0;
         this.muzzleFlash = 0;
         this.walkCycle = 0;
+        this.aimAngle = 0;
+        this.recoilTimer = 0;
+        this.hurtTimer = 0;
+        this.moving = false;
 
         // 技能属性
         this._spreadAngle = null;
@@ -142,6 +146,7 @@ class Player {
         }
         this.hp -= amount;
         this.combo = 0;
+        this.hurtTimer = 0.18;
         if (this.audio) this.audio.playerHit();
         if (this._onDamaged && amount > 0) this._onDamaged(amount);
         if (this.hp <= 0) { this.hp = 0; return true; }
@@ -209,6 +214,8 @@ class Player {
 
         const target = this.findNearestEnemy(enemies);
         if (!target) return;
+        this.aimAngle = Utils.angle(this.x, this.y, target.x, target.y);
+        this.recoilTimer = 0.14;
 
         this.attackInterval = 1 / currentAS;
         this.attackTimer = this.attackInterval;
@@ -259,6 +266,8 @@ class Player {
 
     update(deltaTime, enemies, bulletManager, particleManager) {
         this.animTimer += deltaTime;
+        this.recoilTimer = Math.max(0, this.recoilTimer - deltaTime);
+        this.hurtTimer = Math.max(0, this.hurtTimer - deltaTime);
         if (this.muzzleFlash > 0) this.muzzleFlash -= deltaTime;
         if (this.dashCooldown > 0) { this.dashCooldown -= deltaTime; if (this.dashCooldown < 0) this.dashCooldown = 0; }
         if (this.invincibleTimer > 0) this.invincibleTimer -= deltaTime;
@@ -266,6 +275,7 @@ class Player {
 
         let moved = false;
         if (this.isDashing) {
+            this.walkCycle += deltaTime * 22;
             this.dashTimer -= deltaTime;
             if (this.dashTimer <= 0) this.isDashing = false;
             const dashSpeed = this.speed * this.dashSpeedMultiplier;
@@ -288,136 +298,27 @@ class Player {
             this.y += dy * this.speed * deltaTime * 60;
             if (dx !== 0 || dy !== 0) {
                 moved = true;
-                this.walkCycle += deltaTime * 8;
-                this.afterimageTimer -= deltaTime;
-                if (this.afterimageTimer <= 0) {
-                    this.afterimageTimer = 0.08;
-                    particleManager.spawnAfterimage(this.x, this.y, this.size * 0.8, this.glowColor);
-                }
+                this.walkCycle += deltaTime * 13;
             } else {
                 this.walkCycle = 0;
             }
         }
 
+        this.moving = moved || this.isDashing;
+        const aimTarget = this.findNearestEnemy(enemies);
+        if (aimTarget) this.aimAngle = Utils.angle(this.x, this.y, aimTarget.x, aimTarget.y);
+        else if (this.moving) this.aimAngle = this.angle;
         this.trailTimer -= deltaTime;
-        if (this.trailTimer <= 0) {
-            this.trailTimer = 0.03;
-            particleManager.spawnTrail(
-                this.x - Math.cos(this.angle) * this.size * 0.8,
-                this.y - Math.sin(this.angle) * this.size * 0.8,
-                this.angle, this.color
-            );
+        if (this.moving && this.trailTimer <= 0) {
+            this.trailTimer = 0.16;
+            particleManager.spawnTrail(this.x, this.y + this.size * 0.65, this.angle, '#c9bd90');
         }
 
         this.autoAttack(deltaTime, enemies, bulletManager, particleManager);
     }
 
     draw(ctx, cameraX, cameraY) {
-        const screenX = this.x - cameraX;
-        const screenY = this.y - cameraY;
-        const s = this.size;
-        const t = this.animTimer;
-        const walk = Math.sin(this.walkCycle) * 2;
-
-        ctx.save();
-        ctx.translate(screenX, screenY);
-        ctx.rotate(this.angle);
-
-        if (this.invincibleTimer > 0 && Math.floor(this.invincibleTimer * 20) % 2 === 0) ctx.globalAlpha = 0.5;
-
-        const bodyColor = '#b8976e';
-        const darkColor = '#8a6d50';
-
-        // 腿（走路动画）
-        if (this.isDashing) {
-            ctx.globalAlpha *= 0.6;
-        }
-        ctx.fillStyle = darkColor;
-        ctx.fillRect(-s * 0.15, s * 0.15, s * 0.16, s * 0.45);
-        ctx.fillRect(s * 0.02, s * 0.15, s * 0.16, s * 0.45);
-        // 靴子
-        ctx.fillStyle = '#5a4030';
-        ctx.fillRect(-s * 0.2, s * 0.55, s * 0.24, s * 0.1);
-        ctx.fillRect(-s * 0.02, s * 0.55, s * 0.24, s * 0.1);
-
-        // 披风 / 背包
-        ctx.fillStyle = '#6b5030';
-        ctx.beginPath();
-        ctx.ellipse(0, s * 0.05, s * 0.3, s * 0.25, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 躯干（收腰）
-        ctx.fillStyle = bodyColor;
-        ctx.beginPath();
-        ctx.moveTo(-s * 0.35, -s * 0.05);
-        ctx.lineTo(-s * 0.22, s * 0.3);
-        ctx.lineTo(s * 0.22, s * 0.3);
-        ctx.lineTo(s * 0.35, -s * 0.05);
-        ctx.closePath();
-        ctx.fill();
-
-        // 肩甲（最宽部分）
-        ctx.fillStyle = darkColor;
-        ctx.beginPath();
-        ctx.moveTo(-s * 0.55, -s * 0.15);
-        ctx.lineTo(-s * 0.35, -s * 0.05);
-        ctx.lineTo(-s * 0.25, -s * 0.25);
-        ctx.lineTo(-s * 0.45, -s * 0.35);
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(s * 0.55, -s * 0.15);
-        ctx.lineTo(s * 0.35, -s * 0.05);
-        ctx.lineTo(s * 0.25, -s * 0.25);
-        ctx.lineTo(s * 0.45, -s * 0.35);
-        ctx.closePath();
-        ctx.fill();
-
-        // 头盔
-        ctx.fillStyle = darkColor;
-        ctx.beginPath();
-        ctx.arc(0, -s * 0.2, s * 0.32, Math.PI, 0);
-        ctx.fill();
-        // 头盔顶
-        ctx.fillRect(-s * 0.32, -s * 0.38, s * 0.64, s * 0.2);
-
-        // 护目镜（琥珀色横条）
-        ctx.fillStyle = '#ff8800';
-        ctx.fillRect(-s * 0.22, -s * 0.26, s * 0.44, s * 0.07);
-        // 护目镜微光
-        ctx.fillStyle = 'rgba(255,136,0,0.3)';
-        ctx.fillRect(-s * 0.22, -s * 0.28, s * 0.44, s * 0.12);
-
-        // 枪管（从身体前方伸出）
-        ctx.fillStyle = '#4a4a4a';
-        ctx.fillRect(s * 0.38, -s * 0.1, s * 0.8, s * 0.08);
-        // 枪口
-        ctx.fillStyle = '#666';
-        ctx.fillRect(s * 1.15, -s * 0.13, s * 0.12, s * 0.14);
-
-        // 枪口火焰
-        if (this.muzzleFlash > 0) {
-            const flashAlpha = this.muzzleFlash / 0.05;
-            ctx.fillStyle = `rgba(255,200,100,${flashAlpha})`;
-            ctx.beginPath();
-            ctx.arc(s * 1.3, -s * 0.05, s * 0.18, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = `rgba(255,255,200,${flashAlpha * 0.8})`;
-            ctx.beginPath();
-            ctx.arc(s * 1.3, -s * 0.05, s * 0.08, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // 护盾
-        if (this.shield > 0) {
-            ctx.strokeStyle = 'rgba(255,180,100,0.4)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(0, s * 0.05, s * 1.0, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-
-        ctx.restore();
+        ForestArt.player(ctx, this, cameraX, cameraY);
     }
 
     reset(x, y) {
@@ -452,6 +353,13 @@ class Player {
         this.angle = -Math.PI / 2;
         this.isDashing = false;
         this.invincibleTimer = 0;
+        this.aimAngle = 0;
+        this.recoilTimer = 0;
+        this.hurtTimer = 0;
+        this.moving = false;
+        this.walkCycle = 0;
+        this.muzzleFlash = 0;
+        this.animTimer = 0;
         // 技能属性重置
         this._spreadAngle = null;
         this._dualWieldDirections = 0;

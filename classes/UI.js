@@ -203,7 +203,7 @@ class UIManager {
         ctx.fillStyle = '#ff6b6b';
         ctx.fillText(`💀 ${Utils.formatNumber(player.kills)}`, x + 90, y + 16);
 
-        ctx.fillStyle = '#00d4ff';
+        ctx.fillStyle = '#d9bb79';
         ctx.fillText(`⏱ ${Utils.formatTime(game.survivalTime)}`, x + 180, y + 16);
 
         y += 25;
@@ -226,45 +226,15 @@ class UIManager {
      * 右上角：FPS、敌人数、Boss状态、升级次数
      */
     drawTopRight(ctx, player, game) {
-        const x = game.canvas.width - 20;
-        let y = 20;
-
-        ctx.save();
-        ctx.textAlign = 'right';
-        ctx.font = '13px Arial';
-
-        // FPS
-        const fpsColor = game.fps >= 50 ? '#7bed9f' : game.fps >= 30 ? '#feca57' : '#ff6b6b';
-        ctx.fillStyle = fpsColor;
-        ctx.fillText(`FPS: ${Math.round(game.fps)}`, x, y + 12);
-
-        y += 22;
-
-        // 敌人数
-        ctx.fillStyle = '#ff6b6b';
-        ctx.fillText(`敌人: ${game.enemyCount}`, x, y + 12);
-
-        y += 22;
-
-        // 子弹数
-        ctx.fillStyle = '#00ffff';
-        ctx.fillText(`子弹: ${game.bulletCount}`, x, y + 12);
-
-        y += 22;
-
-        // 升级次数
-        ctx.fillStyle = '#a855f7';
-        ctx.fillText(`升级: ${player.upgradeCount}`, x, y + 12);
-
-        y += 22;
-
-        // Boss状态
+        const x = game.canvas.width - 24;
+        ctx.save(); ctx.textAlign = 'right';
+        ctx.fillStyle = '#e1d7b2'; ctx.font = 'bold 16px "Microsoft YaHei", sans-serif';
+        ctx.fillText('林地远征', x, 32);
+        ctx.fillStyle = '#c4cfad'; ctx.font = '12px "Microsoft YaHei", sans-serif';
+        ctx.fillText('存活 · 收集 · 成长', x, 54);
         if (game.boss && game.boss.active) {
-            ctx.fillStyle = '#ee5253';
-            ctx.font = 'bold 14px Arial';
-            ctx.fillText('⚠ BOSS 出现!', x, y + 14);
+            ctx.fillStyle = '#ffc58e'; ctx.fillText('首领正在接近', x, 80);
         }
-
         ctx.restore();
     }
 
@@ -302,7 +272,7 @@ class UIManager {
         }
 
         // 图标
-        ctx.fillStyle = player.dashCooldown > 0 ? '#666' : '#00d4ff';
+        ctx.fillStyle = player.dashCooldown > 0 ? '#666' : '#d9bb79';
         ctx.font = '20px Arial';
         ctx.textAlign = 'center';
         ctx.fillText('💨', centerX, dashY + iconSize / 2 + 7);
@@ -374,11 +344,11 @@ class UIManager {
         const cx = canvasWidth / 2;
 
         // 标题
-        ctx.fillStyle = '#00d4ff';
+        ctx.fillStyle = '#d9bb79';
         ctx.font = 'bold 36px Arial';
         ctx.textAlign = 'center';
         ctx.shadowBlur = 20;
-        ctx.shadowColor = 'rgba(0, 212, 255, 0.6)';
+        ctx.shadowColor = 'rgba(217, 187, 121, 0.6)';
         ctx.fillText('游戏暂停', cx, 80);
         ctx.shadowBlur = 0;
 
@@ -389,14 +359,14 @@ class UIManager {
         const panelY = 110;
 
         ctx.fillStyle = 'rgba(20, 20, 40, 0.9)';
-        ctx.strokeStyle = '#00d4ff';
+        ctx.strokeStyle = '#d9bb79';
         ctx.lineWidth = 1.5;
         this.roundRect(ctx, panelX, panelY, panelW, panelH, 10);
         ctx.fill();
         ctx.stroke();
 
         // 操作说明标题
-        ctx.fillStyle = '#00d4ff';
+        ctx.fillStyle = '#d9bb79';
         ctx.font = 'bold 16px Arial';
         ctx.fillText('操作说明', cx, panelY + 28);
 
@@ -425,7 +395,7 @@ class UIManager {
         controls.forEach((ctrl, i) => {
             const y = startY + i * lineHeight;
             // 按键
-            ctx.fillStyle = '#00d4ff';
+            ctx.fillStyle = '#d9bb79';
             ctx.font = 'bold 13px "Consolas", "Courier New", monospace';
             ctx.fillText(ctrl.key, colX, y);
 
@@ -504,7 +474,7 @@ class UIManager {
         ctx.textAlign = 'left';
 
         const stats = [
-            { label: '存活时间', value: Utils.formatTime(game.survivalTime), color: '#00d4ff' },
+            { label: '存活时间', value: Utils.formatTime(game.survivalTime), color: '#d9bb79' },
             { label: '达到等级', value: `Lv.${player.level}`, color: '#7bed9f' },
             { label: '击杀敌人', value: Utils.formatNumber(player.kills), color: '#ff6b6b' },
             { label: '击败Boss', value: player.bossKills.toString(), color: '#ee5253' },
@@ -529,9 +499,9 @@ class UIManager {
         const btnX = centerX - btnW / 2;
         const btnY = panelY + panelH + 25;
 
-        ctx.fillStyle = '#00d4ff';
+        ctx.fillStyle = '#d9bb79';
         ctx.shadowBlur = 15;
-        ctx.shadowColor = 'rgba(0, 212, 255, 0.6)';
+        ctx.shadowColor = 'rgba(217, 187, 121, 0.6)';
         this.roundRect(ctx, btnX, btnY, btnW, btnH, 8);
         ctx.fill();
         ctx.shadowBlur = 0;
@@ -548,77 +518,7 @@ class UIManager {
      * 绘制开始界面
      */
     drawStartScreen(ctx, canvasWidth, canvasHeight) {
-        ctx.save();
-
-        // 背景
-        ctx.fillStyle = Config.COLORS.background;
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-        // 网格背景
-        ctx.strokeStyle = Config.COLORS.grid;
-        ctx.lineWidth = 1;
-        const gridSize = Config.GRID_SIZE;
-        for (let x = 0; x < canvasWidth; x += gridSize) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvasHeight);
-            ctx.stroke();
-        }
-        for (let y = 0; y < canvasHeight; y += gridSize) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvasWidth, y);
-            ctx.stroke();
-        }
-
-        // 标题
-        ctx.fillStyle = '#00d4ff';
-        ctx.font = 'bold 64px Arial';
-        ctx.textAlign = 'center';
-        ctx.shadowBlur = 30;
-        ctx.shadowColor = 'rgba(0, 212, 255, 0.8)';
-        ctx.fillText('末日幸存者', canvasWidth / 2, canvasHeight / 2 - 80);
-        ctx.shadowBlur = 0;
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.font = '24px Arial';
-        ctx.fillText('Last Survivor', canvasWidth / 2, canvasHeight / 2 - 40);
-
-        // 开始按钮
-        const btnW = 200;
-        const btnH = 60;
-        const btnX = canvasWidth / 2 - btnW / 2;
-        const btnY = canvasHeight / 2 + 20;
-
-        ctx.fillStyle = '#00d4ff';
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = 'rgba(0, 212, 255, 0.6)';
-        this.roundRect(ctx, btnX, btnY, btnW, btnH, 10);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 22px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('开始游戏', canvasWidth / 2, btnY + 38);
-
-        // 操作说明
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = '14px Arial';
-        const instructions = document.body.classList.contains('touch-device') ? [
-            '左侧摇杆移动 · 右侧按钮冲刺',
-            '自动攻击最近敌人 · 收集经验升级',
-            '顶部按钮暂停、重开或静音 · 横屏体验更佳',
-        ] : [
-            'WASD - 移动    Shift - 冲刺',
-            '自动攻击最近敌人    收集经验升级',
-            'ESC - 暂停    R - 重新开始    M - 静音',
-        ];
-        instructions.forEach((text, i) => {
-            ctx.fillText(text, canvasWidth / 2, canvasHeight / 2 + 120 + i * 24);
-        });
-
-        ctx.restore();
+        ForestArt.start(ctx, canvasWidth, canvasHeight, performance.now() / 1000);
     }
 
     /**
