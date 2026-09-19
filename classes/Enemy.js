@@ -2,8 +2,7 @@
  * ============================================================
  *  Enemy.js - 敌人系统
  * ============================================================
- *  四种敌人类型：普通、快速、坦克、自爆
- *  普通/快速/重型怪使用预警、出招、收招状态；其他怪物沿用追踪
+ *  五种敌人均使用预警和独立出招；自爆怪引爆后退出
  *  Enemy 实体是纯数据+行为，不直接调用任何外部系统。
  *  所有跨系统效果（粒子/音效/经验/伤害）由 EnemyManager 统一处理。
  * ============================================================
@@ -33,6 +32,7 @@ class Enemy {
         this._triggeredExplode = false;
 
         this.hitFlash = 0;
+        this.hurtAngle = 0;
 
         this.knockbackX = 0;
         this.knockbackY = 0;
@@ -78,6 +78,7 @@ class Enemy {
         this.color = cfg.color;
         this.glowColor = cfg.glowColor;
         this.hitFlash = 0;
+        this.hurtAngle = 0;
         this.knockbackX = 0;
         this.knockbackY = 0;
         this._triggeredExplode = false;
@@ -104,6 +105,7 @@ class Enemy {
     takeDamage(amount, bulletAngle = 0) {
         this.hp -= amount;
         this.hitFlash = EnemyConfig.HIT_FLASH_DURATION;
+        this.hurtAngle = bulletAngle;
 
         const knockbackForce = amount * EnemyConfig.KNOCKBACK_FORCE_COEFFICIENT;
         this.knockbackX += Math.cos(bulletAngle) * knockbackForce;
@@ -125,7 +127,7 @@ class Enemy {
 
     /**
      * 更新移动AI（不调用任何外部系统）
-     * 仅处理：移动追踪 + 自爆接近标记
+     * 处理追踪、锁定预警和出招时序
      */
     update(deltaTime, player) {
         this.strikeThisFrame = false;
@@ -161,10 +163,6 @@ class Enemy {
         }
         this.x += (Math.cos(this.angle) * this.speed * speedMul + this.knockbackX) * deltaTime * 60;
         this.y += (Math.sin(this.angle) * this.speed * speedMul + this.knockbackY) * deltaTime * 60;
-        if (this.isExploder && Utils.distance(this.x,this.y,player.x,player.y) < this.explodeTriggerDistance) {
-            this._triggeredExplode = true;
-            this.active = false;
-        }
     }
 
     advanceAttack(dt, attack) {
@@ -189,6 +187,11 @@ class Enemy {
             if (this.combatState === 'windup') {
                 this.combatState = 'strike'; this.combatTimer = attack.strike;
                 this.attackCue = 'strike';
+                if (this.isExploder) {
+                    this._triggeredExplode = true;
+                    this.active = false;
+                    return;
+                }
             } else if (this.combatState === 'strike') {
                 this.combatState = 'recover'; this.combatTimer = attack.recover;
             } else {
@@ -202,6 +205,16 @@ class Enemy {
         const attack = EnemyConfig.ATTACKS[this.type];
         if (!attack) return false;
         if (this.type === 'tank') return Utils.circleCollision(this.attackX,this.attackY,attack.radius,player.x,player.y,player.size);
+        if (this.type === 'elite') {
+            // Circle against a closed sector, including its two radial edges.
+            const dx=player.x-this.attackStartX, dy=player.y-this.attackStartY;
+            const distance=Math.hypot(dx,dy);
+            const relative=Math.atan2(Math.sin(Math.atan2(dy,dx)-this.attackAngle),Math.cos(Math.atan2(dy,dx)-this.attackAngle));
+            if (Math.abs(relative)<=attack.halfArc) return distance<=attack.radius+player.size;
+            const edge=this.attackAngle+Math.sign(relative)*attack.halfArc;
+            const projection=Math.max(0,Math.min(attack.radius,dx*Math.cos(edge)+dy*Math.sin(edge)));
+            return Math.hypot(dx-Math.cos(edge)*projection,dy-Math.sin(edge)*projection)<=player.size;
+        }
         // Swept circle: a fast lunge must not jump over the player at low frame rates.
         const dx = this.x - this.attackFromX, dy = this.y - this.attackFromY;
         const lengthSq = dx*dx + dy*dy;
@@ -321,6 +334,9 @@ class EnemyManager extends ObjectPool {
                     this.addImpact(e.attackX,e.attackY,'slam',0,EnemyConfig.ATTACKS.tank.radius);
                     particleManager.spawnExplosion(e.attackX,e.attackY,'#c5ad7a',8);
                 }
+                if (e.attackCue === 'strike' && e.type === 'elite') {
+                    this.addImpact(e.attackStartX,e.attackStartY,'sweep',e.attackAngle,EnemyConfig.ATTACKS.elite.radius);
+                }
                 if (e.attackTouches(player)) {
                     e.attackHasHit = true;
                     player.takeDamage(e.damage);
@@ -342,7 +358,8 @@ class EnemyManager extends ObjectPool {
         // Snapshot values: pooled enemies can respawn before this pose fades.
         if (this.deathPoses.length >= 48) this.deathPoses.shift();
         this.deathPoses.push({x:e.x, y:e.y, type:e.type, size:e.size,
-            angle:e.angle, animTimer:e.animTimer, hp:0, maxHp:e.maxHp, life:0.55});
+            angle:e.angle, hurtAngle:e.hurtAngle, detonated:e._triggeredExplode,
+            animTimer:e.animTimer, hp:0, maxHp:e.maxHp, life:0.55});
         if (this.events) {
             this.events.emit('enemy:dead', {
                 x: e.x, y: e.y,
@@ -358,10 +375,9 @@ class EnemyManager extends ObjectPool {
         experienceManager.spawnOrb(e.x, e.y, e.exp, e.gold);
         player.addKill(e.type === 'elite');
 
-        if (e.isExploder) {
-            if (e._triggeredExplode) {
-                particleManager.spawnExplosion(e.x, e.y, EnemyConfig.EXPLODE_PARTICLE_COLOR, EnemyConfig.EXPLODE_PROXIMITY_PARTICLE_COUNT);
-            }
+        if (e.isExploder && e._triggeredExplode) {
+            this.addImpact(e.x,e.y,'burst',0,e.explodeRadius);
+            particleManager.spawnExplosion(e.x, e.y, EnemyConfig.EXPLODE_PARTICLE_COLOR, EnemyConfig.EXPLODE_PROXIMITY_PARTICLE_COUNT);
             particleManager.spawnExplosion(e.x, e.y, EnemyConfig.EXPLODE_PARTICLE_COLOR, EnemyConfig.EXPLODE_PARTICLE_COUNT);
             const dist = Utils.distance(e.x, e.y, player.x, player.y);
             if (dist < e.explodeRadius + player.size) {
@@ -370,7 +386,7 @@ class EnemyManager extends ObjectPool {
         }
 
         if (audio) {
-            if (e.isExploder) {
+            if (e.isExploder && e._triggeredExplode) {
                 audio.exploderExplode();
             } else if (e.type === 'tank' || e.type === 'elite') {
                 audio.enemyDeadBig();
@@ -384,7 +400,7 @@ class EnemyManager extends ObjectPool {
 
     addImpact(x,y,kind,angle=0,radius=0) {
         if (this.impactMarks.length >= 64) this.impactMarks.shift();
-        const duration = kind === 'slam' ? 0.42 : kind === 'crit' ? 0.23 : 0.12;
+        const duration = kind === 'burst' ? 0.5 : kind === 'sweep' ? 0.28 : kind === 'slam' ? 0.42 : kind === 'crit' ? 0.23 : 0.12;
         this.impactMarks.push({x,y,kind,angle,radius,life:duration,duration});
     }
 
@@ -411,8 +427,10 @@ class EnemyManager extends ObjectPool {
         this.drawOrder.length = 0;
         const w = ctx.canvas.width, h = ctx.canvas.height;
         for (const enemy of this.pool) {
-            if (enemy.active && enemy.x > cameraX - 100 && enemy.x < cameraX + w + 100 &&
-                enemy.y > cameraY - 100 && enemy.y < cameraY + h + 100) this.drawOrder.push(enemy);
+            const cfg=EnemyConfig.ATTACKS[enemy.type];
+            const margin=enemy.combatState==='windup' && cfg ? Math.max(100,cfg.distance+cfg.radius) : 100;
+            if (enemy.active && enemy.x > cameraX - margin && enemy.x < cameraX + w + margin &&
+                enemy.y > cameraY - margin && enemy.y < cameraY + h + margin) this.drawOrder.push(enemy);
         }
         if (player) this.drawOrder.push(player);
         if (boss && boss.active) this.drawOrder.push(boss);

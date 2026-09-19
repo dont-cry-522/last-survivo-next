@@ -30,8 +30,8 @@ class ForestArt {
         this.shadow(c,20);
         const intensity = p.runBlend === undefined ? (p.moving || p.isDashing ? 1 : 0) : p.runBlend;
         const cycle = p.walkCycle || 0;
-        const stride = Math.sin(cycle) * (p.isDashing ? 8 : 6) * intensity;
-        const bob = -Math.abs(Math.cos(cycle))*2.2*intensity + Math.sin(p.animTimer*2.6)*0.7*(1-intensity);
+        const stride = Math.sin(cycle) * (p.isDashing ? 10 : 7) * intensity;
+        const bob = -Math.abs(Math.sin(cycle))*1.7*intensity + Math.sin(p.animTimer*2.6)*0.7*(1-intensity);
         const hurt = p.hurtTimer > 0;
         if (p.invincibleTimer > 0 && Math.floor(p.animTimer*16)%2) c.globalAlpha = 0.65;
         if (p.hp <= 0) { c.translate(0,8); c.rotate(1.2); }
@@ -39,23 +39,33 @@ class ForestArt {
         const face = Math.cos(angle) < 0 ? -1 : 1;
         c.scale(face,1);
         const skin = hurt ? '#fff3d3' : '#efc38e';
-        // The feet stay under the body; knees bend instead of spinning the whole sprite.
-        this.line(c,[[-6,3],[-8-stride*.35,10],[-7+stride,16]],'#463d32',7);
-        this.line(c,[[6,3],[8+stride*.35,10],[7-stride,16]],'#604735',7);
-        this.oval(c,-6+stride,16,6,3.6,'#3b342c');
-        this.oval(c,8-stride,16,6,3.6,'#50402f');
+        const travel=Math.cos(p.angle === undefined ? angle : p.angle)*face;
+        // Each foot lifts on its return stroke; the planted foot supports the hips.
+        for (const side of [-1,1]) {
+            const swing=stride*side*(travel<-.2?-1:1);
+            const lift=Math.max(0,Math.cos(cycle+(side<0?Math.PI:0)))*5*intensity;
+            const hip=side*5, foot=side*6+swing;
+            this.line(c,[[hip,3],[hip+swing*.4+2,10-lift*.5],[foot,17-lift]],side<0?'#454c3d':'#66684a',6.5);
+            this.oval(c,foot+1,17-lift,5.7,3.4,side<0?'#3b342c':'#57432e');
+            this.line(c,[[foot-3,19-lift],[foot+5,19-lift]],'#bc9b64',1.4);
+            this.line(c,[[foot,15-lift],[foot+3,15-lift]],'#c6ad77',1);
+        }
         c.translate(hurt?-2:0,bob);
-        if (p.isDashing) { c.rotate(0.27); c.translate(3,2); }
+        c.rotate((p.isDashing?.25:.055)*travel*intensity);
+        if (p.isDashing) c.translate(travel*3,2);
         // Backpack, rolled blanket and scarf have their own follow-through.
         this.oval(c,-10,-7,8,12,'#756f44');
         this.line(c,[[-15,-14],[-16,-3]],'#b4b078',3);
+        this.shape(c,[[-17,-6],[-10,-5],[-10,2],[-16,1]],'#8f8956');
+        this.oval(c,-13,-3,1.2,1.2,'#dfc488',null);
         this.oval(c,-12,-19,8,4,'#aab287');
         this.shape(c,[[-5,-16],[-23-(p.isDashing?9:0),-12+Math.sin(cycle-1)*3*intensity],[-18,-7],[-5,-10]],'#c5633d');
         this.shape(c,[[-10,-13],[7,-13],[11,2],[7,8],[-8,8],[-12,-1]],hurt?'#fff0c1':'#4e8074');
         this.shape(c,[[-9,-12],[-4,-12],[-2,5],[-8,4]],'#8eb29a',null);
         this.line(c,[[-9,4],[9,4]],'#704d32',4);
         this.oval(c,2,4,2.3,2.3,'#e7bb60',null);
-        this.line(c,[[-8,-10],[-12,-2],[-10,2]],skin,5);
+        this.line(c,[[-7,-12],[-4,0]],'#b8af76',2.3);
+        this.shape(c,[[5,1],[11,1],[11,7],[5,7]],'#8d6b43');
         // Face, hair, leather cap and two individually highlighted lenses.
         this.oval(c,1,-23,11,10,skin);
         this.oval(c,11,-21,3.4,3.1,skin);
@@ -73,12 +83,17 @@ class ForestArt {
         c.save(); c.translate(6,-6);
         c.rotate(Math.atan2(Math.sin(angle),Math.abs(Math.cos(angle))));
         c.translate(-Math.max(0,p.recoilTimer||0)*22,0);
+        // Supporting forearm follows the barrel, so both hands stay on the weapon.
+        this.line(c,[[-12,-2],[-7,8],[14,4]],'#3d625b',6);
+        this.line(c,[[-6,8],[14,4]],skin,4);
         this.shape(c,[[-5,-4],[4,-3],[5,5],[-3,6],[-7,1]],'#8f6041');
         this.shape(c,[[0,-5],[17,-5],[18,1],[1,2]],'#526562');
         this.line(c,[[5,-5],[19,-5]],'#bec9aa',2);
         this.shape(c,[[16,-4],[28,-4],[28,0],[16,0]],'#394c47');
         this.line(c,[[25,-5],[25,1]],'#d9be73',3);
         this.oval(c,2,3,4,3.2,skin);
+        this.oval(c,15,2,3.5,2.7,skin);
+        this.line(c,[[14,1],[16,1]],'#fff0bc',1);
         if (p.muzzleFlash>0) {
             this.shape(c,[[28,-2],[37,-7],[34,-2],[42,0],[34,2],[36,6],[28,1]],'#ffca63','#e4933d',1);
             this.oval(c,31,-1,5,2,'#fff6ca',null);
@@ -89,12 +104,24 @@ class ForestArt {
     }
     static enemy(c,e,cameraX=0,cameraY=0,death=0) {
         c.save(); c.translate(e.x-cameraX,e.y-cameraY);
-        this.shadow(c,e.size);
+        this.shadow(c,e.size,.24*(1-death));
         if (death) {
             c.globalAlpha*=Math.max(0,1-death);
-            c.translate(death*12,death*8);
-            c.rotate(death*(Math.cos(e.angle)<0?-1:1)*1.45);
-            c.scale(1-death*.35,1-death*.45);
+            const direction=Number.isFinite(e.hurtAngle)?Math.cos(e.hurtAngle):Math.cos(e.angle);
+            c.translate(death*direction*18,death*8);
+            if(e.type==='tank'||e.type==='elite') {
+                c.translate(0,death*10);c.rotate(direction*death*.45);c.scale(1+death*.12,1-death*.55);
+            } else if(e.type==='fast') {
+                c.rotate(direction*death*.8);c.scale(1+death*.2,1-death*.6);
+            } else if(e.type==='exploder' && e.detonated) {
+                c.scale(1+death*.7,1+death*.4);
+            } else {
+                c.rotate(direction*death*1.5);c.scale(1-death*.25,1-death*.3);
+            }
+        }
+        if(e.hitFlash>0 && !death) {
+            const kick=Math.sin(Math.min(1,e.hitFlash/.1)*Math.PI)*4;
+            c.translate(Math.cos(e.hurtAngle||0)*kick,Math.sin(e.hurtAngle||0)*kick);
         }
         const scale=e.size/18;
         c.scale((Math.cos(e.angle)<0?-1:1)*scale,scale);
@@ -102,26 +129,34 @@ class ForestArt {
         const cfg=typeof EnemyConfig!=='undefined' ? EnemyConfig.ATTACKS[e.type] : null;
         const windup=cfg && state==='windup' ? Math.max(0,Math.min(1,1-e.combatTimer/cfg.windup)) : 0;
         const strike=cfg && state==='strike' ? Math.max(0,Math.min(1,1-e.combatTimer/cfg.strike)) : 0;
-        const resting=state==='windup'||state==='recover';
-        const t=resting ? 0 : e.animTimer || 0;
+        const recovery=cfg && state==='recover' ? Math.max(0,Math.min(1,1-e.combatTimer/cfg.recover)) : 0;
+        const resting=state==='windup'||state==='recover'||death>0;
+        const motion=resting?0:e.locomotion===undefined?1:e.locomotion;
+        const t=e.animTimer || 0;
         const hurt=e.hitFlash>0;
         const attack=Math.max(0,e.attackPose||0)/0.24;
-        c.translate(attack*4-(hurt?3:0),0);
-        if (hurt) c.rotate(-0.1);
-        if(state==='windup' && e.type!=='tank') {
+        c.translate(attack*2,0);
+        if (hurt) c.rotate(-0.06);
+        if(state==='windup' && (e.type==='normal'||e.type==='fast')) {
             const squeeze=windup*(e.type==='fast'?.24:.22);
             c.translate(-windup*3,12*squeeze);c.scale(1+squeeze*.45,1-squeeze);
+        }
+        if(e.type==='exploder' && state==='windup') {
+            const pulse=Math.sin(windup*windup*65)*.035*windup;
+            c.translate(Math.sin(windup*75)*windup, -windup*3);
+            c.scale(1+windup*.35+pulse,1+windup*.22+pulse);
         }
         if(state==='strike') {
             if(e.type==='normal') {c.translate(0,-Math.sin(strike*Math.PI)*12);c.rotate(.15);}
             else if(e.type==='fast') {c.translate(0,4);c.scale(1.18,.74);}
             else if(e.type==='tank') {c.translate(0,3);c.scale(1.08,.88);}
         }
-        if(state==='recover') {c.translate(0,2);c.rotate(.06);}
-        if(e.type==='fast') this.crawler(c,t,hurt,attack);
-        else if(e.type==='tank') this.brute(c,t,hurt,attack,false,windup);
-        else if(e.type==='elite') this.brute(c,t,hurt,attack,true);
-        else this.mushroom(c,t,hurt,e.type==='exploder',attack);
+        if(state==='recover') {c.translate(0,2*(1-recovery));c.rotate(.06*(1-recovery));}
+        if(!death && state==='approach') c.translate(0,Math.sin(t*2.5)*.4);
+        if(e.type==='fast') this.crawler(c,t,hurt,attack,motion);
+        else if(e.type==='tank') this.brute(c,t,hurt,attack,false,windup,motion);
+        else if(e.type==='elite') this.brute(c,t,hurt,attack,true,windup,motion,state,strike,recovery);
+        else this.mushroom(c,t,hurt,e.type==='exploder',attack,motion,windup,death);
         if(e.frozen) {
             this.shape(c,[[-21,12],[-22,-12],[-10,-34],[10,-35],[22,-13],[20,13]],'rgba(165,232,245,.38)','#b0ebed',1);
         } else if(e.burnStacks>0) {
@@ -137,42 +172,66 @@ class ForestArt {
             c.fillStyle='#eab766'; c.fillRect(x-15,y+1,30*Math.max(0,e.hp/e.maxHp),2);
         }
     }
-    static mushroom(c,t,hurt,exploder,attack) {
-        const step=Math.sin(t*8),hop=Math.abs(Math.cos(t*8))*2.3;
+    static mushroom(c,t,hurt,exploder,attack,motion=1,windup=0,death=0) {
+        const step=Math.sin(t*(exploder?11:8))*motion,hop=Math.abs(step)*2.3;
         const body=hurt?'#fff4d2':exploder?'#d8b463':'#d2d398';
-        this.oval(c,-7+step*3,12,5.5,3.5,'#777647');
-        this.oval(c,8-step*3,12,5.5,3.5,'#777647');
+        this.line(c,[[-5,6],[-7+step*4,12]],'#888250',4);
+        this.line(c,[[5,6],[8-step*4,12]],'#888250',4);
+        this.oval(c,-7+step*4,12-Math.max(0,step)*2,5.5,3.5,'#777647');
+        this.oval(c,8-step*4,12-Math.max(0,-step)*2,5.5,3.5,'#777647');
         c.save(); c.translate(0,-hop);
         this.line(c,[[-10,-3],[-16,-1+step*2],[-17,3]],body,4);
         this.line(c,[[10,-3],[16+attack*5,-4-step*2],[18+attack*5,0]],body,4);
         this.oval(c,0,0,11,13,body);
         this.oval(c,-3,1,5,9,'#e7e6b7',null);
+        c.save();c.translate(Math.sin(t*8-.5)*motion*1.2-death*10,-death*13);
+        c.rotate(Math.sin(t*8)*motion*.025-death*.5);
         this.oval(c,0,-11,20,6,exploder?'#835130':'#805c42');
+        for(let i=-12;i<=12;i+=6) this.line(c,[[i,-12],[i*.65,-6]],'#c7aa70',.8);
         c.beginPath(); c.moveTo(-21,-12); c.bezierCurveTo(-20,-36,17,-37,22,-12); c.quadraticCurveTo(0,-2,-21,-12);
         c.fillStyle=hurt?'#fff5dc':exploder?'#db8c3b':'#bf694e'; c.fill(); c.strokeStyle='#503f31';c.lineWidth=1.7;c.stroke();
         this.oval(c,-8,-22,5,3,'#f5dba0',null);
         this.oval(c,8,-18,4,3,'#f3d398',null);
         this.oval(c,3,-28,3.4,2,'#f6dfa9',null);
         this.line(c,[[-12,-12],[0,-9],[14,-12]],'#d5a477',1.2);
+        this.line(c,[[-15,-23],[-10,-28],[-3,-30]],exploder?'#f1bb63':'#e39872',2.2);
+        if(exploder) {
+            this.line(c,[[-11,-15],[-7,-20],[-10,-25]],'#804f2e',1.5);
+            this.line(c,[[10,-13],[8,-20],[13,-24]],'#804f2e',1.5);
+            this.shape(c,[[0,-32],[-3,-39],[3,-37],[7,-42],[8,-35]],'#92a75b');
+        }
+        c.restore();
         this.oval(c,-3,-3,2.2,3.4,'#333e2b',null); this.oval(c,6,-3,2.2,3.4,'#333e2b',null);
         this.oval(c,-3.5,-4,0.8,1,'#ffffde',null); this.oval(c,5.5,-4,0.8,1,'#ffffde',null);
         this.line(c,[[0,4],[3,5],[5,3]],'#8b774d',1.2);
         if(exploder) {
-            this.oval(c,1,5,5+Math.sin(t*10)*0.7,4,'#f5a548','#92552a');
-            this.shape(c,[[0,-32],[-3,-39],[3,-37],[7,-42],[8,-35]],'#92a75b');
+            const hot=windup>0 && Math.sin(windup*windup*65)>0;
+            this.oval(c,1,5,6+Math.sin(t*10)*0.5,5,hot?'#fff4ba':'#f5a548','#92552a');
+            this.line(c,[[-2,2],[1,6],[4,2]],'#fff1ad',1.3);
+            for(const side of [-1,1]) this.oval(c,side*10,2,3,4,hot?'#ffe397':'#c07a36');
+            if(windup>0) for(let i=0;i<3;i++) {
+                const a=t*4+i*2.1;
+                this.oval(c,Math.sin(a)*15,-34-(t*18+i*9)%17,1.5,2.3,'#ffd080',null);
+            }
         }
         c.restore();
     }
-    static crawler(c,t,hurt,attack) {
-        const step=Math.sin(t*15)*6;
+    static crawler(c,t,hurt,attack,motion=1) {
+        const step=Math.sin(t*15)*6*motion;
         const hide=hurt?'#fff5d9':'#81969a';
         // Four alternating paws and a springing back distinguish the fast enemy.
         this.line(c,[[-10,0],[-14-step*.5,5],[-13+step,11]],'#485e66',5);
         this.line(c,[[10,0],[13+step*.5,6],[14-step,11]],'#485e66',5);
-        this.shape(c,[[-13,-4],[-25,-15],[-22,-4],[-16,4]],hide);
+        const tail=Math.sin(t*9-.7)*3*motion;
+        this.shape(c,[[-13,-4],[-25,-15+tail],[-28,-8+tail],[-22,-4],[-16,4]],hide);
         this.oval(c,-2,-3-Math.abs(step)*.2,16,9,hide);
         this.line(c,[[-10,3],[-7+step*.5,8],[-5-step,12]],hide,6);
         this.line(c,[[10,3],[9-step*.5,8],[11+step,12]],hide,6);
+        for(const [x,y] of [[-5-step,12-Math.max(0,step)*.4],[11+step,12-Math.max(0,-step)*.4]]) {
+            this.oval(c,x,y,4.3,2.5,'#b1b7a8');
+            this.line(c,[[x+2,y],[x+4,y+1]],'#ecdfbc',1.4);
+        }
+        this.shape(c,[[-6,-12],[-2,-18],[2,-13],[5,-17],[10,-9],[6,-3]],'#526c72');
         this.oval(c,12,-10,11,10,hide);
         this.shape(c,[[3,-15],[2,-28],[12,-19]],'#71828b');
         this.shape(c,[[12,-18],[20,-28],[22,-12]],'#71828b');
@@ -183,21 +242,41 @@ class ForestArt {
         this.line(c,[[18,-1],[25,0]],'#30474b',1.3);
         this.shape(c,[[19,-1],[21,4+attack*3],[23,-1]],'#f4e6bb',null);
         this.line(c,[[-8,-9],[-3,-12],[3,-10]],'#b3c1b8',2.4);
+        this.line(c,[[6,-14],[12,-16]],'#425b60',2);
+        this.oval(c,14,-13,1,1,'#fff6d2',null);
     }
-    static brute(c,t,hurt,attack,elite=false,windup=0) {
-        const step=Math.sin(t*4.4)*3;
+    static brute(c,t,hurt,attack,elite=false,windup=0,motion=1,state='approach',strike=0,recovery=0) {
+        const step=Math.sin(t*(elite?5.8:4.4))*3*motion;
         const hide=hurt?'#fff0d0':elite?'#857888':'#849070';
-        this.oval(c,-9+step,13,8,5,'#465447');
-        this.oval(c,11-step,13,8,5,'#465447');
+        this.line(c,[[-9,4],[-10+step,12]],'#596651',10);
+        this.line(c,[[10,4],[11-step,12]],'#596651',10);
+        this.oval(c,-9+step,13-Math.max(0,step),8,5,'#465447');
+        this.oval(c,11-step,13-Math.max(0,-step),8,5,'#465447');
         c.save(); c.translate(0,-Math.abs(step)*.5);
         this.oval(c,0,-3,20,19,hide);
         this.oval(c,2,1,12,12,elite?'#b8a69a':'#b5b58a');
-        const lift=windup*46;
+        if(elite) {
+            this.shape(c,[[-15,-13],[15,-13],[12,4],[0,9],[-12,4]],'#666276');
+            this.line(c,[[-12,-10],[0,3],[12,-10]],'#c8ad72',2);
+            this.oval(c,0,-4,3,4,'#72bfb0');
+            this.shape(c,[[-11,7],[12,7],[16,17],[0,13],[-13,17]],'#766277');
+        } else {
+            this.line(c,[[-5,-4],[0,0],[-2,7]],'#8c946f',1.4);
+            this.line(c,[[8,0],[5,5],[8,8]],'#8c946f',1.2);
+        }
+        const lift=(elite?0:windup)*46;
         this.line(c,[[-15,-9],[-25,-1-step-lift*.55],[-22,9-step-lift]],hide,9);
-        this.line(c,[[15,-9],[25+attack*6,-2+step-lift*.55],[23+attack*6,8+step-lift]],hide,9);
         this.oval(c,-23,8-step-lift,6,6,'#677761');
-        this.oval(c,24+attack*6,8+step-lift,6,6,'#677761');
+        if(!elite) {
+            this.line(c,[[15,-9],[25+attack*6,-2+step-lift*.55],[23+attack*6,8+step-lift]],hide,9);
+            this.oval(c,24+attack*6,8+step-lift,6,6,'#677761');
+        }
         for(const side of [-1,1]) this.shape(c,[[side*10,-16],[side*18,-23],[side*26,-14],[side*22,-7],[side*12,-8]],elite?'#777888':'#6b7e79');
+        for(const side of [-1,1]) {
+            this.line(c,[[side*13,-15],[side*18,-19],[side*23,-14]],elite?'#b1a3b2':'#a5b399',1.5);
+            this.line(c,[[side*18,-17],[side*17,-12],[side*21,-10]],'#425953',1.2);
+            this.line(c,[[side*8,14-Math.max(0,-side*step)],[side*14,14-Math.max(0,-side*step)]],'#bdba92',1.4);
+        }
         this.oval(c,3,-20,14,12,hide);
         this.oval(c,7,-14,12,7,'#b3b18a');
         this.oval(c,9,-15,6,4,'#667459');
@@ -211,8 +290,20 @@ class ForestArt {
         if(elite) {
             this.shape(c,[[-8,-31],[-11,-44],[-2,-38],[4,-48],[9,-38],[17,-43],[14,-31]],'#d3a558');
             this.oval(c,4,-35,3,4,'#6bbdad');
-            this.line(c,[[28,11],[31,-19]],'#705c43',4);
-            this.shape(c,[[28,-20],[43,-25],[40,-11],[30,-6]],'#bdc7b1');
+            // A shoulder-mounted axe follows a full windup, sweep and return.
+            let swing=-.12+Math.sin(t*5.8)*motion*.09;
+            if(state==='windup') swing=-windup*1.6;
+            else if(state==='strike') swing=-1.6+strike*3.5;
+            else if(state==='recover') swing=1.9*(1-recovery)-.12*recovery;
+            c.save();c.translate(18,-10);c.rotate(swing);
+            this.line(c,[[0,0],[10,9],[16,2]],hide,8);
+            this.line(c,[[15,16],[17,-23]],'#594c39',5);
+            this.line(c,[[16,10],[17,-19]],'#af9460',1.5);
+            this.shape(c,[[16,-24],[33,-29],[37,-20],[31,-9],[18,-7],[21,-17]],'#adbdb1','#354b47',1.7);
+            this.line(c,[[34,-24],[33,-17],[29,-12]],'#f0e2b6',2.2);
+            this.oval(c,17,-16,2.5,3,'#72bfb0');
+            this.oval(c,16,4,5,4.5,hide);
+            c.restore();
         }
         c.restore();
     }
@@ -222,13 +313,23 @@ class ForestArt {
         if(!cfg) return;
         const p=Math.max(0,Math.min(1,1-e.combatTimer/cfg.windup));
         c.save();
-        if(e.type==='tank') {
+        if(e.type==='elite') {
+            c.translate(e.attackStartX-cameraX,e.attackStartY-cameraY);c.rotate(e.attackAngle);
+            c.beginPath();c.moveTo(0,0);c.arc(0,0,cfg.radius,-cfg.halfArc,cfg.halfArc);c.closePath();
+            c.fillStyle='rgba(193,171,226,.16)';c.fill();c.strokeStyle='#d2c0e6';c.lineWidth=2;c.stroke();
+            c.beginPath();c.arc(0,0,cfg.radius*p,-cfg.halfArc,cfg.halfArc);c.strokeStyle='#f1d9a0';c.lineWidth=3;c.stroke();
+            this.line(c,[[cfg.radius-12,-6],[cfg.radius,0],[cfg.radius-12,6]],'#ead6ad',2);
+        } else if(e.type==='tank'||e.type==='exploder') {
             c.translate(e.attackX-cameraX,e.attackY-cameraY);
             c.beginPath();c.arc(0,0,cfg.radius,0,Math.PI*2);
             c.fillStyle='rgba(239,137,74,.13)';c.fill();c.strokeStyle='#f9ba7b';c.lineWidth=2;c.stroke();
             c.beginPath();c.arc(0,0,cfg.radius*p,0,Math.PI*2);c.fillStyle='rgba(246,150,73,.21)';c.fill();
             c.beginPath();c.arc(0,0,cfg.radius+4,-Math.PI/2,-Math.PI/2+p*Math.PI*2);c.strokeStyle='#ffdea0';c.lineWidth=3;c.stroke();
             this.line(c,[[-8,0],[8,0]],'#f5d59b',2);this.line(c,[[0,-8],[0,8]],'#f5d59b',2);
+            if(e.type==='exploder') {
+                c.strokeStyle=`rgba(255,225,164,${.35+p*.5})`;c.lineWidth=1.5;c.setLineDash([5,5]);
+                c.beginPath();c.arc(0,0,cfg.radius+8,0,Math.PI*2);c.stroke();
+            }
         } else {
             c.translate(e.attackStartX-cameraX,e.attackStartY-cameraY);c.rotate(e.attackAngle);
             c.beginPath();c.roundRect(-cfg.radius,-cfg.radius,cfg.distance+cfg.radius*2,cfg.radius*2,cfg.radius);
@@ -241,7 +342,21 @@ class ForestArt {
     static impact(c,m,cameraX=0,cameraY=0) {
         const p=1-m.life/m.duration;
         c.save();c.translate(m.x-cameraX,m.y-cameraY);c.globalAlpha=Math.max(0,1-p);
-        if(m.kind==='slam') {
+        if(m.kind==='sweep') {
+            c.rotate(m.angle||0);
+            const halfArc=EnemyConfig.ATTACKS.elite.halfArc;
+            c.beginPath();c.arc(0,0,m.radius,-halfArc,-halfArc+2*halfArc*Math.min(1,p*2+.2));
+            c.strokeStyle='#e4d7b1';c.lineWidth=9*(1-p)+2;c.stroke();
+            c.beginPath();c.arc(0,0,m.radius*.87,-halfArc,halfArc);
+            c.strokeStyle='#a3bdaa';c.lineWidth=3;c.stroke();
+        } else if(m.kind==='burst') {
+            this.oval(c,0,0,m.radius*(.4+p),m.radius*(.4+p),'rgba(230,163,77,.2)',null);
+            c.strokeStyle='#ffd994';c.lineWidth=5*(1-p)+1;c.beginPath();c.arc(0,0,m.radius*(.3+p*.8),0,Math.PI*2);c.stroke();
+            for(let i=0;i<9;i++) {
+                const a=i*Math.PI*2/9, r=m.radius*(.2+p);
+                this.oval(c,Math.cos(a)*r,Math.sin(a)*r,3*(1-p)+1,3*(1-p)+1,'#f6d599',null);
+            }
+        } else if(m.kind==='slam') {
             c.strokeStyle='#e1bd7e';c.lineWidth=4*(1-p)+1;c.beginPath();c.arc(0,0,m.radius*(.35+p*.8),0,Math.PI*2);c.stroke();
             for(let i=0;i<8;i++) {const a=i*Math.PI/4;c.save();c.rotate(a);this.line(c,[[12,0],[28,3],[m.radius*.75,0]],'#c9a574',2);c.restore();}
         } else {
@@ -312,7 +427,7 @@ class ForestArt {
         this.player(c,{x:0,y:0,size:20,animTimer:t,walkCycle:t*10,moving:true,aimAngle:.1,recoilTimer:0,hp:100});c.restore();
         c.save();c.translate(w*.8,h*.55);c.scale(2.3,2.3);
         this.enemy(c,{x:0,y:0,size:18,type:'normal',angle:Math.PI,animTimer:t,hp:30,maxHp:30});c.restore();
-        c.fillStyle='#a8b994';c.font='12px "Microsoft YaHei",sans-serif';c.fillText('战斗样稿 02 · 观察预警，闪避后反击',w/2,h-55);
+        c.fillStyle='#a8b994';c.font='12px "Microsoft YaHei",sans-serif';c.fillText('生灵样稿 03 · 五种怪物，各有招式',w/2,h-55);
         c.restore();
     }
 }

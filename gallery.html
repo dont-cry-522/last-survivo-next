@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>林地生灵 · 角色图鉴</title>
-  <link rel="stylesheet" href="gallery.css?v=forest2">
+  <link rel="stylesheet" href="gallery.css?v=forest3">
 </head>
 <body>
-  <header><a href="index.html">← 返回探险</a><span>LAST SURVIVOR NEXT</span><span>战斗样稿 02</span></header>
+  <header><a href="index.html">← 返回探险</a><span>LAST SURVIVOR NEXT</span><span>生灵样稿 03</span></header>
   <main>
     <p class="eyebrow">FIELD NOTES / 林地手记</p>
     <h1>遇见林地里的生灵。</h1>
@@ -16,22 +16,24 @@
       <button data-state="walk" aria-pressed="true">行走</button>
       <button data-state="idle" aria-pressed="false">待机</button>
       <button data-state="attack" aria-pressed="false">攻击</button>
+      <button data-state="runshoot" aria-pressed="false">移动射击</button>
+      <button data-state="dash" aria-pressed="false">冲刺</button>
       <button data-state="hurt" aria-pressed="false">受击</button>
       <button data-state="death" aria-pressed="false">退场</button>
       <button id="pause" aria-pressed="false">暂停动画</button>
     </nav>
     <section class="cards" aria-label="角色与怪物">
-      <article><div class="number">01 / ADVENTURER</div><canvas data-kind="player" width="600" height="370" aria-label="林地枪手动作展示"></canvas><h2>林地枪手 <small>你的冒险者</small></h2><p>护目镜、旧行囊和一条橘色围巾。迈步时身体起伏，射击时枪托后坐，武器始终朝向目标。</p></article>
+      <article><div class="number">01 / ADVENTURER</div><canvas data-kind="player" width="600" height="370" aria-label="林地枪手动作展示"></canvas><h2>林地枪手 <small>你的冒险者</small></h2><p>双手握枪，抬脚迈步，围巾随身体摆动。试试“移动射击”和“冲刺”，观察脚步与枪口各自的动作。</p></article>
       <article><div class="number">02 / MUSHROOM</div><canvas data-kind="normal" width="600" height="370" aria-label="赤帽菇动作展示"></canvas><h2>赤帽菇 <small>普通怪物</small></h2><p>藏在红色菌盖下的小家伙。左右交替迈步，手臂跟着摆动，靠近后先缩身蓄力，再向锁定的方向扑击。</p></article>
       <article><div class="number">03 / GREYPAW</div><canvas data-kind="fast" width="600" height="370" aria-label="灰爪兽动作展示"></canvas><h2>灰爪兽 <small>快速怪物</small></h2><p>压低身体，四足交替奔跑。先伏身蓄力，地面亮出直线预警；扑击不会追着你拐弯，扑空后会停顿。</p></article>
       <article><div class="number">04 / STONEHIDE</div><canvas data-kind="tank" width="600" height="370" aria-label="岩甲兽动作展示"></canvas><h2>岩甲兽 <small>重型怪物</small></h2><p>岩石肩甲包裹着结实的身躯。举起双臂，锁定前方的圆形落点，再重重砸下。躲开后可以趁收招反击。</p></article>
-      <article><div class="number">05 / EMBERCAP</div><canvas data-kind="exploder" width="600" height="370" aria-label="爆燃菇动作展示"></canvas><h2>爆燃菇 <small>自爆怪物</small></h2><p>胸前的橙色孢囊不断鼓动。它看起来像赤帽菇的近亲，但靠得太近可不是好主意。</p></article>
-      <article><div class="number">06 / CROWN WARDEN</div><canvas data-kind="elite" width="600" height="370" aria-label="岩冠督军动作展示"></canvas><h2>岩冠督军 <small>精英怪物</small></h2><p>头戴石冠，手持重斧。沿用岩甲兽的沉重步态，轮廓和装备更加醒目。</p></article>
+      <article><div class="number">05 / EMBERCAP</div><canvas data-kind="exploder" width="600" height="370" aria-label="爆燃菇动作展示"></canvas><h2>爆燃菇 <small>自爆怪物</small></h2><p>裂纹菌盖下藏着发亮的孢囊。靠近后停下膨胀，闪烁越来越急；离开圆圈，或在爆炸前击倒它。</p></article>
+      <article><div class="number">06 / CROWN WARDEN</div><canvas data-kind="elite" width="600" height="370" aria-label="岩冠督军动作展示"></canvas><h2>岩冠督军 <small>精英怪物</small></h2><p>石冠、胸甲与嵌玉重斧。先举斧锁定扇形范围，再横扫前方；绕到背后，趁它收斧时反击。</p></article>
     </section>
     <footer>点击“攻击”观察蓄力、出招和收招；进入林地体验实际躲避与反击。<a href="index.html">进入林地 →</a></footer>
   </main>
-  <script src="classes/EnemyConfig.js?v=forest2"></script>
-  <script src="classes/ForestArt.js?v=forest2"></script>
-  <script src="gallery.js?v=forest2"></script>
+  <script src="classes/EnemyConfig.js?v=forest3"></script>
+  <script src="classes/ForestArt.js?v=forest3"></script>
+  <script src="gallery.js?v=forest3"></script>
 </body>
 </html>

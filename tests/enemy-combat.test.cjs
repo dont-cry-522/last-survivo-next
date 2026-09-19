@@ -72,3 +72,41 @@ test('impact feedback is bounded and cleared for a new run',()=>{
     const r=setup(`for(let i=0;i<100;i++)m.addImpact(i,0,'crit');const count=m.impactMarks.length;m.updateDeathPoses(1);const expired=m.impactMarks.length;m.addImpact(0,0,'slam');m.clear();result={count,expired,cleared:m.impactMarks.length};`);
     assert.equal(r.count,64);assert.equal(r.expired,0);assert.equal(r.cleared,0);
 });
+
+test('exploder gives a stationary warning before detonating once',()=>{
+    const r=setup(`const e=m.spawn('exploder',0,0);p.x=30;tick();const active=e.active;const state=e.combatState;advance(.7);const before=hits;const x=e.x;advance(.3);const after=hits;advance(1);result={active,state,before,x,after,hits,alive:e.active};`);
+    assert.equal(r.active,true);assert.equal(r.state,'windup');assert.equal(r.before,0);
+    assert.equal(r.x,0);assert.equal(r.after,1);assert.equal(r.hits,1);assert.equal(r.alive,false);
+});
+
+test('escaping or killing a charging exploder prevents explosion damage',()=>{
+    for (const action of ['p.x=200','e.takeDamage(100)']) {
+        const r=setup(`const e=m.spawn('exploder',0,0);p.x=30;tick();${action};advance(1.3);result=hits;`);
+        assert.equal(r,0);
+    }
+});
+
+test('freezing an exploder suspends its fuse',()=>{
+    const r=setup(`const e=m.spawn('exploder',0,0);p.x=30;tick();Enemy._statusSystem.applyFrost(e,0,2);advance(1);result={active:e.active,hits,state:e.combatState};`);
+    assert.equal(r.active,true);assert.equal(r.hits,0);assert.equal(r.state,'windup');
+});
+
+test('elite sweep hits the locked front sector once, not the rear or outside range',()=>{
+    for (const [x,y,expected] of [[80,0,1],[-80,0,0],[0,110,0],[160,0,0],[80,65,1]]) {
+        const r=setup(`const e=m.spawn('elite',0,0);p.x=80;tick();const before=hits;p.x=${x};p.y=${y};advance(1.6);result={before,hits,x:e.x,y:e.y,state:e.combatState};`);
+        assert.equal(r.before,0);assert.equal(r.hits,expected,`target ${x},${y}`);
+        assert.equal(r.x,0);assert.equal(r.y,0);assert.equal(r.state,'recover');
+    }
+});
+
+test('elite sector includes player collision radius along the warning boundary',()=>{
+    const r=setup(`const e=m.spawn('elite',0,0);p.x=80;tick();p.x=118;advance(1.2);result=hits;`);
+    assert.equal(r,1);
+});
+
+test('offscreen attacker remains drawable when its warning reaches the viewport',()=>{
+    const r=setup(`const e=m.spawn('fast',-180,50);p.x=0;p.y=50;tick();
+        const ForestArt={telegraph(){},enemy(){},impact(){}};
+        m.draw({canvas:{width:1280,height:720}},0,0);result=m.drawOrder.includes(e);`);
+    assert.equal(r,true);
+});

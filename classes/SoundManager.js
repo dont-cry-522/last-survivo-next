@@ -167,7 +167,13 @@ class SoundManager {
         if (now - this.lastAttackCue < 0.10) return;
         this.lastAttackCue = now;
         if (phase === 'windup') {
-            this._playTone(type === 'tank' ? 130 : type === 'fast' ? 420 : 260, 0.16, 'triangle', 0.065);
+            if(type === 'exploder') {
+                this._playNoise(.35,.055,1800);
+                this._playTone(540,.2,'sine',.045);
+            } else this._playTone(type === 'elite' ? 180 : type === 'tank' ? 130 : type === 'fast' ? 420 : 260, 0.16, 'triangle', 0.065);
+        } else if (type === 'elite') {
+            this._playNoise(.24,.12,1600);
+            this._playTone(210,.12,'triangle',.075);
         } else if (type === 'tank') {
             this._playTone(65, 0.30, 'sine', 0.22);
             this._playTone(115, 0.14, 'triangle', 0.12);

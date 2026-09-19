@@ -13,6 +13,8 @@ class EnemyConfig {
         normal: { trigger:75, windup:0.42, strike:0.20, recover:0.72, distance:86, radius:15 },
         fast: { trigger:260, windup:0.65, strike:0.32, recover:0.90, distance:280, radius:12 },
         tank: { trigger:110, windup:0.90, strike:0.12, recover:1.15, distance:48, radius:70 },
+        exploder: { trigger:90, windup:0.90, strike:0.01, recover:0.70, distance:0, radius:60 },
+        elite: { trigger:125, windup:0.80, strike:0.28, recover:1.10, distance:0, radius:110, halfArc:Math.PI*.42 },
     };
     // ================================================================
     //  敌人类型属性表（迁移自 Config.ENEMY_TYPES）
@@ -170,7 +172,7 @@ class EnemyConfig {
     static EXPLODE_PROXIMITY_PARTICLE_COUNT = 25;
 
     /** 自爆粒子颜色 */
-    static EXPLODE_PARTICLE_COLOR = '#ff9ff3';
+    static EXPLODE_PARTICLE_COLOR = '#efac58';
 }
 
 if (typeof window !== 'undefined') {
