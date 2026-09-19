@@ -162,3 +162,23 @@ body.touch-device .loadout-menu { left:8px; right:auto; bottom:auto; top:8px; pa
 @media(max-height:340px) { .loadout-help { display:none; } }
 .loadout-guide { margin-top:10px; font-size:12px; }.loadout-guide a { color:#e0c894; text-decoration:none; border-bottom:1px solid #b6a477; }
 @media(max-height:500px) { .loadout-guide{margin-top:5px;font-size:11px} }
+/* Battle UI: readable status outside the scaled canvas on phones. */
+#mobile-hud{position:fixed;top:calc(58px + env(safe-area-inset-top));left:max(16px,env(safe-area-inset-left));right:max(16px,env(safe-area-inset-right));max-width:560px;margin:auto;padding:7px 12px;background:#22372ded;border:1px solid #647553;border-radius:10px;pointer-events:none;font-size:12px}
+.mobile-hud-line{display:flex;justify-content:space-between;gap:8px;margin-bottom:5px;color:#e5d5ad;font-variant-numeric:tabular-nums}
+.mobile-hp{height:16px;background:#453d32;position:relative;border-radius:4px;overflow:hidden;text-align:center;line-height:16px}
+.mobile-hp i{position:absolute;left:0;top:0;height:100%;background:#ba765e}.mobile-hp span{position:relative;color:#fff4dc;font-size:11px}
+.mobile-xp{height:3px;margin-top:4px;background:#415038}.mobile-xp i{display:block;height:100%;background:#b8cd8f}
+.touch-device #game-container{top:calc(126px + env(safe-area-inset-top))}
+#mobile-controls #mobile-dash{width:86px;height:86px;background:#304b36d9;border:2px solid #c4b67c;box-shadow:0 4px 16px #10201866}
+#joystick{background:#22372dbb;border-color:#8e9d70;box-shadow:inset 0 0 0 12px #b4bf8510}
+#mobile-controls #mobile-upgrades{top:calc(58px + env(safe-area-inset-top));padding:16px;background:#1d3025fa;border-color:#a79a70;touch-action:pan-y}
+#mobile-upgrades h2{color:#ead6a1;font-size:20px}
+#mobile-controls .mobile-skill{border:1px solid #677458;border-top:4px solid var(--skill-color);border-radius:10px;background:#2a4030;min-height:178px;padding:14px;line-height:1.5}
+.mobile-skill strong{color:#f0e5c7}.mobile-skill small{color:#c1c8ad}.mobile-skill .skill-before{color:#adb8a2;font-size:12px;margin:8px 0}.mobile-skill .skill-after{color:#f2ddaa;font-size:14px}
+body[data-game-state="upgrading"] #joystick,body[data-game-state="upgrading"] #mobile-dash,body[data-game-state="upgrading"] .mobile-tip{visibility:hidden}
+#mobile-restart{display:none}body[data-game-state="paused"] #mobile-restart,body[data-game-state="gameover"] #mobile-restart{display:block}
+@media(orientation:landscape){.touch-device #game-container{width:min(calc(100vw - 258px - env(safe-area-inset-left) - env(safe-area-inset-right)),calc((100dvh - 140px - env(safe-area-inset-top) - env(safe-area-inset-bottom))*16/9))}#mobile-hud{max-width:460px;padding:5px 12px}#joystick{bottom:calc(20px + env(safe-area-inset-bottom))}}
+@media(orientation:portrait){.touch-device #game-container{top:max(160px,25%)}.mobile-skill-list{grid-template-columns:1fr}#mobile-controls .mobile-skill{min-height:0}.mobile-tip{font-size:11px}}
+button:focus-visible,a:focus-visible{outline:3px solid #ebd49a;outline-offset:3px}
+body[data-game-state="upgrading"] .loadout-menu{visibility:hidden}
+@media(orientation:portrait){.touch-device .loadout-menu{top:auto;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;right:auto;transform:translateX(-50%);min-height:44px;padding:8px 12px}.touch-device .mobile-tip{bottom:calc(84px + env(safe-area-inset-bottom))}}

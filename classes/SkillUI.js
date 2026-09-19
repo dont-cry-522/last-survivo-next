@@ -26,7 +26,7 @@ class SkillUI {
 
         // 布局
         this.cardWidth = 210;
-        this.cardHeight = 280;
+        this.cardHeight = 330;
         this.cardGap = 25;
         this.cardRadius = 12;
     }
@@ -131,6 +131,13 @@ class SkillUI {
         return null;
     }
 
+    static describeChoice(choice) {
+        const current=choice.instance?.getCurrentEffect();
+        const next=choice.evolution || choice.config.tiers[0];
+        return {before:current?.desc||'尚未获得',after:next?.desc||choice.config.description,
+            label:current?`第 ${choice.instance.currentTier} 阶 → 第 ${choice.evolution?.tier||choice.instance.currentTier+1} 阶`:'新技能 · 第 1 阶'};
+    }
+
     _selectIndex(index) {
         if (index < 0 || index >= this.choices.length) return null;
         this.selectedIndex = index;
@@ -162,10 +169,10 @@ class SkillUI {
         const startY = (canvasHeight - this.cardHeight) / 2;
 
         // 标题
-        ctx.fillStyle = '#00d4ff';
+        ctx.fillStyle = '#e7cd94';
         ctx.font = 'bold 32px Arial';
         ctx.textAlign = 'center';
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 0;
         ctx.shadowColor = 'rgba(0, 212, 255, 0.7)';
         ctx.fillText('等级提升!', canvasWidth / 2, startY - 45);
         ctx.shadowBlur = 0;
@@ -173,7 +180,7 @@ class SkillUI {
         ctx.fillStyle = '#ffffff';
         ctx.font = '16px Arial';
         const lvText = this.skillManager
-            ? `Lv.${this.skillManager.getSkillCount()}  选择技能`
+            ? `已掌握 ${this.skillManager.getSkillCount()} 种技能 · 选择一项成长`
             : '选择技能';
         ctx.fillText(lvText, canvasWidth / 2, startY - 18);
 
@@ -211,19 +218,19 @@ class SkillUI {
         ctx.save();
 
         // 选中缩放
-        const scale = this.scale * (isSelected ? 1.06 : 1);
+        const scale = this.scale * (isSelected ? 1.015 : 1);
         ctx.translate(centerX, centerY);
         ctx.scale(scale, scale);
         ctx.translate(-centerX, -centerY);
 
         // 选中发光
         if (isSelected) {
-            ctx.shadowBlur = 30;
+            ctx.shadowBlur = 8;
             ctx.shadowColor = rarityColor;
         }
 
         // 卡片背景
-        ctx.fillStyle = 'rgba(18, 18, 36, 0.96)';
+        ctx.fillStyle = '#24382b';
         ctx.strokeStyle = rarityColor;
         ctx.lineWidth = isSelected ? 3 : 1.5;
 
@@ -258,44 +265,14 @@ class SkillUI {
         ctx.font = 'bold 18px Arial';
         ctx.fillText(config.name, centerX, cy + 130);
 
-        // 进化信息或描述
-        if (choice.isEvolution && choice.evolution) {
-            ctx.fillStyle = '#ffd700';
-            ctx.font = 'bold 13px Arial';
-            ctx.fillText(`进化 → T${choice.evolution.tier}`, centerX, cy + 155);
-
-            ctx.fillStyle = '#a0aec0';
-            ctx.font = '12px Arial';
-            this._wrapText(ctx, choice.evolution.desc, centerX, cy + 178, this.cardWidth - 30, 18);
-        } else {
-            ctx.fillStyle = '#a0aec0';
-            ctx.font = '13px Arial';
-            this._wrapText(ctx, config.description, centerX, cy + 160, this.cardWidth - 30, 20);
-        }
-
-        // 进化条件进度（仅复选时显示）
-        if (choice.isEvolution && choice.instance && !choice.instance.isMaxed && choice.instance.currentTier >= 2) {
-            if (this.skillManager) {
-                const gameState = {};
-                const check = choice.instance.checkEvolution(gameState);
-                if (!check.canEvolve && check.target > 0) {
-                    const barY = cy + this.cardHeight - 35;
-                    const barW = this.cardWidth - 30;
-                    const barH = 4;
-                    const barX = cx + 15;
-                    const progress = Math.min(check.progress / check.target, 1);
-
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-                    ctx.fillRect(barX, barY, barW, barH);
-                    ctx.fillStyle = rarityColor;
-                    ctx.fillRect(barX, barY, barW * progress, barH);
-
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                    ctx.font = '10px Arial';
-                    ctx.fillText(check.reason, centerX, barY - 5);
-                }
-            }
-        }
+        const detail=SkillUI.describeChoice(choice);
+        ctx.font='bold 13px Arial';ctx.fillStyle=catColor;
+        ctx.fillText(detail.label,centerX,cy+153);
+        ctx.textAlign='left';ctx.font='12px Arial';ctx.fillStyle='#aeb8a2';
+        ctx.fillText('当前',cx+16,cy+177);
+        ctx.textAlign='center';this._wrapText(ctx,detail.before,centerX,cy+195,this.cardWidth-32,16);
+        ctx.textAlign='left';ctx.fillStyle='#e8d6a5';ctx.font='bold 12px Arial';ctx.fillText('获得后',cx+16,cy+242);
+        ctx.textAlign='center';ctx.font='12px Arial';this._wrapText(ctx,detail.after,centerX,cy+260,this.cardWidth-32,16);
 
         // 快捷键
         ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';

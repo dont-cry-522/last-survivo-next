@@ -98,127 +98,17 @@ class UIManager {
      * 左上角：生命、经验、等级、金币、击杀、时间、波数
      */
     drawTopLeft(ctx, player, game) {
-        const x = 20;
-        let y = 20;
-        const barWidth = 250;
-        const barHeight = 18;
-
-        ctx.save();
-        ctx.textAlign = 'left';
-
-        // ========== 生命值 ==========
-        // 背景
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        this.roundRect(ctx, x - 2, y - 2, barWidth + 4, barHeight + 4, 4);
-        ctx.fill();
-
-        // 血条背景
-        ctx.fillStyle = 'rgba(50, 50, 50, 0.8)';
-        this.roundRect(ctx, x, y, barWidth, barHeight, 3);
-        ctx.fill();
-
-        // 平滑血量（暗色）
-        const hpSmoothWidth = barWidth * this.hpSmooth;
-        ctx.fillStyle = 'rgba(200, 50, 50, 0.6)';
-        this.roundRect(ctx, x, y, hpSmoothWidth, barHeight, 3);
-        ctx.fill();
-
-        // 当前血量（亮色）
-        const hpPercent = player.hp / player.maxHp;
-        const hpWidth = barWidth * hpPercent;
-        const hpGradient = ctx.createLinearGradient(x, y, x, y + barHeight);
-        hpGradient.addColorStop(0, '#ff6b6b');
-        hpGradient.addColorStop(1, '#ee5253');
-        ctx.fillStyle = hpGradient;
-        this.roundRect(ctx, x, y, hpWidth, barHeight, 3);
-        ctx.fill();
-
-        // 护盾条
-        if (player.shield > 0) {
-            const shieldPercent = Math.min(player.shield / player.maxHp, 1);
-            ctx.fillStyle = 'rgba(100, 200, 255, 0.7)';
-            this.roundRect(ctx, x, y, barWidth * shieldPercent, barHeight, 3);
-            ctx.fill();
-        }
-
-        // 血量文字
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 12px Arial';
-        ctx.shadowBlur = 2;
-        ctx.shadowColor = '#000000';
-        const hpText = `${Math.ceil(player.hp)} / ${player.maxHp}`;
-        if (player.shield > 0) {
-            ctx.fillText(`${hpText} (+${Math.ceil(player.shield)})`, x + barWidth / 2, y + 13);
-        } else {
-            ctx.fillText(hpText, x + barWidth / 2, y + 13);
-        }
-        ctx.shadowBlur = 0;
-
-        // 标签
-        ctx.fillStyle = '#ff6b6b';
-        ctx.font = '11px Arial';
-        ctx.fillText('HP', x, y - 4);
-
-        y += barHeight + 12;
-
-        // ========== 经验条 ==========
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        this.roundRect(ctx, x - 2, y - 2, barWidth + 4, barHeight + 4, 4);
-        ctx.fill();
-
-        ctx.fillStyle = 'rgba(50, 50, 50, 0.8)';
-        this.roundRect(ctx, x, y, barWidth, barHeight, 3);
-        ctx.fill();
-
-        // 经验条
-        const expWidth = barWidth * this.expSmooth;
-        const expGradient = ctx.createLinearGradient(x, y, x, y + barHeight);
-        expGradient.addColorStop(0, '#7bed9f');
-        expGradient.addColorStop(1, '#2ed573');
-        ctx.fillStyle = expGradient;
-        this.roundRect(ctx, x, y, expWidth, barHeight, 3);
-        ctx.fill();
-
-        // 等级文字
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 12px Arial';
-        ctx.shadowBlur = 2;
-        ctx.shadowColor = '#000000';
-        ctx.textAlign = 'center';
-        ctx.fillText(`Lv.${player.level}`, x + barWidth / 2, y + 13);
-        ctx.shadowBlur = 0;
-        ctx.textAlign = 'left';
-
-        ctx.fillStyle = '#7bed9f';
-        ctx.font = '11px Arial';
-        ctx.fillText('EXP', x, y - 4);
-
-        y += barHeight + 15;
-
-        // ========== 统计信息 ==========
-        ctx.font = '14px Arial';
-        ctx.fillStyle = Config.COLORS.uiGold;
-        ctx.fillText(`💰 ${Utils.formatNumber(player.gold)}`, x, y + 16);
-
-        ctx.fillStyle = '#ff6b6b';
-        ctx.fillText(`💀 ${Utils.formatNumber(player.kills)}`, x + 90, y + 16);
-
-        ctx.fillStyle = '#d9bb79';
-        ctx.fillText(`⏱ ${Utils.formatTime(game.survivalTime)}`, x + 180, y + 16);
-
-        y += 25;
-
-        // 波数
-        ctx.fillStyle = '#feca57';
-        ctx.font = '13px Arial';
-        ctx.fillText(`波次: ${game.wave}`, x, y + 14);
-
-        // 连击
-        if (player.combo > 1) {
-            ctx.fillStyle = '#ff9ff3';
-            ctx.fillText(`连击 x${player.combo}`, x + 80, y + 14);
-        }
-
+        if(game.mobileControls?.enabled)return;
+        const x=20,y=18,w=282;
+        ctx.save();ctx.fillStyle='rgba(24,42,31,.86)';this.roundRect(ctx,x-10,y-8,w+20,108,10);ctx.fill();
+        ctx.textAlign='left';ctx.font='bold 14px Arial';ctx.fillStyle='#e7dab6';
+        ctx.fillText(`等级 ${player.level}`,x,y+12);ctx.textAlign='right';ctx.fillText(Utils.formatTime(game.survivalTime),x+w,y+12);
+        const hp=Math.max(0,Math.min(1,player.hp/player.maxHp));
+        ctx.fillStyle='#433d32';ctx.fillRect(x,y+23,w,16);ctx.fillStyle=hp<.3?'#f07760':'#d49a75';ctx.fillRect(x,y+23,w*hp,16);
+        ctx.fillStyle='#fff3d8';ctx.textAlign='center';ctx.font='bold 12px Arial';ctx.fillText(`生命 ${Math.ceil(player.hp)} / ${player.maxHp}${player.shield>0?'  护盾 '+Math.ceil(player.shield):''}`,x+w/2,y+35);
+        ctx.fillStyle='#354b36';ctx.fillRect(x,y+45,w,5);ctx.fillStyle='#b7cd8b';ctx.fillRect(x,y+45,w*Math.max(0,Math.min(1,this.expSmooth)),5);
+        ctx.textAlign='left';ctx.font='12px Arial';ctx.fillStyle='#c8cfb2';ctx.fillText(`第 ${game.wave} 波 · 击败 ${Utils.formatNumber(player.kills)} · 金币 ${Utils.formatNumber(player.gold)}`,x,y+72);
+        if(player.combo>1){ctx.fillStyle='#e7c987';ctx.fillText(`连击 ×${player.combo}`,x,y+90);}
         ctx.restore();
     }
 
@@ -226,6 +116,7 @@ class UIManager {
      * 右上角：FPS、敌人数、Boss状态、升级次数
      */
     drawTopRight(ctx, player, game) {
+        if(game.mobileControls?.enabled)return;
         const x = game.canvas.width - 24;
         ctx.save(); ctx.textAlign = 'right';
         ctx.fillStyle = '#e1d7b2'; ctx.font = 'bold 16px "Microsoft YaHei", sans-serif';
@@ -242,8 +133,9 @@ class UIManager {
      * 底部：Dash冷却、Buff图标
      */
     drawBottom(ctx, player, canvasWidth, canvasHeight) {
+        if(document.body.classList.contains('touch-device'))return;
         const centerX = canvasWidth / 2;
-        const y = canvasHeight - 40;
+        const y = canvasHeight - 65;
 
         ctx.save();
 

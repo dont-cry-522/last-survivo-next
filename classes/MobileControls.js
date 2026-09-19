@@ -64,6 +64,9 @@ class MobileControls {
         this.upgrades.hidden = true;
         this.upgrades.setAttribute('aria-label', '选择升级技能');
         document.getElementById('mobile-controls').append(this.upgrades);
+        this.hud=document.createElement('section');this.hud.id='mobile-hud';this.hud.setAttribute('aria-label','战斗状态');
+        this.hud.innerHTML='<div class=mobile-hud-line><b></b><span></span></div><div class=mobile-hp><i></i><span></span></div><div class=mobile-xp><i></i></div>';
+        document.getElementById('mobile-controls').append(this.hud);
         this.update();
     }
 
@@ -79,14 +82,17 @@ class MobileControls {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'mobile-skill';
-            button.style.borderColor = SkillRarity.getColor(choice.config.rarity);
+            button.style.setProperty('--skill-color',SkillCategory.getColor(choice.config.category));
             const name = document.createElement('strong');
             name.textContent = choice.config.name;
             const rarity = document.createElement('small');
-            rarity.textContent = SkillRarity.getName(choice.config.rarity) + (choice.isEvolution && choice.evolution ? ` · 进化 T${choice.evolution.tier}` : '');
+            rarity.textContent = SkillRarity.getName(choice.config.rarity);
             const description = document.createElement('span');
-            description.textContent = choice.isEvolution && choice.evolution ? choice.evolution.desc : choice.config.description;
-            button.append(name, rarity, description);
+            const detail=SkillUI.describeChoice(choice);
+            rarity.textContent += ' · '+detail.label;
+            description.textContent='获得后：'+detail.after;description.className='skill-after';
+            const before=document.createElement('span');before.className='skill-before';before.textContent='当前：'+detail.before;
+            button.append(name, rarity, before, description);
             button.addEventListener('click', () => {
                 if (game.state !== 'upgrading') return;
                 game.onKeyDown(String(index + 1));
@@ -137,6 +143,16 @@ class MobileControls {
             this.upgrades.hidden = state !== 'upgrading';
             if (state === 'upgrading') this.showUpgrades();
         }
+        document.body.dataset.gameState=state;
+        if(this.hud){
+            this.hud.hidden=!['playing','paused','upgrading'].includes(state);
+            const p=this.game.player;
+            this.hud.querySelector('b').textContent=`等级 ${p.level} · 第 ${this.game.wave} 波`;
+            this.hud.querySelector('.mobile-hud-line span').textContent=`${Utils.formatTime(this.game.survivalTime)} · 击败 ${p.kills}`;
+            this.hud.querySelector('.mobile-hp i').style.width=`${Math.max(0,Math.min(100,p.hp/p.maxHp*100))}%`;
+            this.hud.querySelector('.mobile-hp span').textContent=`生命 ${Math.ceil(p.hp)} / ${p.maxHp}${p.shield>0?' · 护盾 '+Math.ceil(p.shield):''}`;
+            this.hud.querySelector('.mobile-xp i').style.width=`${Math.max(0,Math.min(100,this.game.uiManager.expSmooth*100))}%`;
+        }
         this.dash.disabled = state !== 'playing';
         const remaining = this.game.player.dashCooldown;
         this.dash.textContent = remaining > 0 && state === 'playing' ? `${remaining.toFixed(1)}秒` : '冲刺';
@@ -145,5 +161,3 @@ class MobileControls {
         this.mute.setAttribute('aria-pressed', String(Boolean(muted)));
     }
 }
-
-
