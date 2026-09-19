@@ -7,7 +7,7 @@ class SkillVisuals {
         if(!Number.isFinite(x)||!Number.isFinite(y))return false;
         const durations={lightning:.22,ice:.5,fire:.55,meteor:.65,nova:.8,phoenix:.85,beam:.5,shadow:.5,heal:.6,soul:.6,mark:.6,gun:.18,pickup:.8};
         const duration=options.duration||durations[kind]||.4;
-        this.audio?.skillCue(kind);
+        this.audio?.skillCue(options.sound||kind);
         // Coalesce same-position multi-pellet procs, while retaining separate chain hops.
         if(this.events.some(e=>e.kind===kind && this.time-e.born<.06 && Math.abs(e.x-x)<12 && Math.abs(e.y-y)<12 && e.x2===options.x2 && e.y2===options.y2))return false;
         if(this.events.length>=96)this.events.shift();

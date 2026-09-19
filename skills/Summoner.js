@@ -46,7 +46,8 @@ class SummonerSkills {
                         }
                         if (nearest) {
                             d.aimAngle=Math.atan2(nearest.y-dy,nearest.x-dx);
-                            ctx.bulletManager.fire(dx, dy, Math.atan2(nearest.y - dy, nearest.x - dx), ctx.player.bulletDamage * p.dmgMul, ctx.player.bulletSpeed, p.pierce ? ctx.player.pierce : 0, nearest);
+                            const soundShot=ctx.bulletManager.fire(dx, dy, Math.atan2(nearest.y - dy, nearest.x - dx), ctx.player.bulletDamage * p.dmgMul, ctx.player.bulletSpeed, p.pierce ? ctx.player.pierce : 0, nearest);
+                            if(soundShot)soundShot.soundKind='mechanical';
                         }
                     }
                 });
@@ -84,7 +85,8 @@ class SummonerSkills {
                         const dy = ctx.player.y + Math.sin(d.angle) * 60;
                         const a = Math.random() * Math.PI * 2;
                         for (let i = 0; i < 3; i++) {
-                            ctx.bulletManager.fire(dx, dy, a + (i - 1) * 0.3, ctx.player.bulletDamage * p.strafeMul * 0.3, ctx.player.bulletSpeed, 0, null);
+                            const soundShot=ctx.bulletManager.fire(dx, dy, a + (i - 1) * 0.3, ctx.player.bulletDamage * p.strafeMul * 0.3, ctx.player.bulletSpeed, 0, null);
+                            if(soundShot)soundShot.soundKind='mechanical';
                         }
                     }
                 });
@@ -153,7 +155,7 @@ class SummonerSkills {
                                 e.takeDamage(ctx.player.bulletDamage * p.bombDmg);
                             }
                         }
-                        sm.visuals.emit('fire',dx,dy,{radius:p.bombRadius,color:'#ddbd80'});
+                        sm.visuals.emit('fire',dx,dy,{sound:'explosion',radius:p.bombRadius,color:'#ddbd80'});
                     }
                 });
             },
@@ -202,7 +204,8 @@ class SummonerSkills {
                             }
                             if (nearest) {
                                 ic.aimAngle=Math.atan2(nearest.y-ic.y,nearest.x-ic.x);
-                                ctx.bulletManager.fire(ic.x, ic.y, Math.atan2(nearest.y - ic.y, nearest.x - ic.x), ctx.player.bulletDamage * ic.dmgMul, ctx.player.bulletSpeed, 0, nearest);
+                                const soundShot=ctx.bulletManager.fire(ic.x, ic.y, Math.atan2(nearest.y - ic.y, nearest.x - ic.x), ctx.player.bulletDamage * ic.dmgMul, ctx.player.bulletSpeed, 0, nearest);
+                                if(soundShot)soundShot.soundKind='mechanical';
                             }
                         }
                     }

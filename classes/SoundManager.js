@@ -112,11 +112,8 @@ class SoundManager {
 
     /** 射击音效 */
     weaponShoot(kind) {
-        if(kind==='shotgun') {
-            this._playNoise(.17,.17,1000);this._playTone(85,.14,'triangle',.16);
-        } else if(kind==='fireball') {
-            this._playTone(280,.18,'sine',.10);this._playTone(560,.12,'triangle',.06);this._playNoise(.18,.07,1800);
-        } else {this._playNoise(.045,.08,2500);this._playTone(480,.045,'triangle',.065);}
+        if(!this.enabled||!this.ctx)return;
+        this._playElement(kind==='fireball'?'fire_cast':kind==='shotgun'?'shotgun':'rifle');
     }
 
     // Resolve a collision's sound after its real on-hit skill procs.
@@ -129,7 +126,7 @@ class SoundManager {
         this.elementBuffers ||= {};
         let buffer=this.elementBuffers[kind];
         if(!buffer){
-            const rate=this.ctx.sampleRate,duration=kind==='fire'?.48:kind==='ice'?.30:.19;
+            const rate=this.ctx.sampleRate,duration=({fire:.48,ice:.30,lightning:.19,shadow:.22,mark:.24,soul:.38,bastion:.25,mechanical:.15,beam:.4,explosion:.36,rifle:.09,shotgun:.22,fire_cast:.25,gun:.08})[kind]||.2;
             buffer=this.ctx.createBuffer(1,Math.ceil(rate*duration),rate);
             const data=buffer.getChannelData(0);let seed=317,low=0,previous=0;
             for(let i=0;i<data.length;i++){
@@ -145,6 +142,24 @@ class SoundManager {
                     // Gated broadband arc with a descending electrical rasp.
                     const gate=Math.sin(t*690+Math.sin(t*93)*3)>-.15?1:.12;
                     value=(noise*.65+Math.sin(2*Math.PI*(160*t-250*t*t))*.18)*gate*Math.exp(-t*23);
+                }else if(kind==='shadow'){
+                    value=(noise-low)*.5*Math.sin(Math.PI*t/duration)**2*Math.exp(-t*7);
+                }else if(kind==='mark'){
+                    value=(noise*.45*(.4+.6*Math.abs(Math.sin(t*430)))+low)*Math.exp(-t*18);
+                }else if(kind==='soul'){
+                    value=(low*1.4+Math.sin(t*2*Math.PI*(95-t*100))*.22)*Math.sin(Math.PI*t/duration)*Math.exp(-t*6);
+                }else if(kind==='bastion'){
+                    value=(Math.sin(t*2*Math.PI*115)*.5+Math.sin(t*2*Math.PI*287)*.16+noise*.18)*Math.exp(-t*24);
+                }else if(kind==='mechanical'){
+                    value=(noise*.7*Math.exp(-(t%.045)*170)+Math.sin(t*2*Math.PI*190)*.15)*Math.exp(-t*26);
+                }else if(kind==='beam'){
+                    value=(noise*.25+Math.sin(2*Math.PI*(210*t+650*t*t))*.22)*Math.sin(Math.PI*t/duration)*Math.exp(-t*4);
+                }else if(kind==='rifle'||kind==='gun'){
+                    value=(noise*.6+low*.7)*Math.exp(-t*65);
+                }else if(kind==='shotgun'||kind==='explosion'){
+                    value=(low*2+noise*.25+Math.sin(2*Math.PI*72*t)*.45)*Math.exp(-t*19);
+                }else if(kind==='fire_cast'){
+                    value=(low*2+noise*.15)*Math.sin(Math.PI*t/duration)*Math.exp(-t*6);
                 }else{
                     // A pressure thump, turbulent body and a fading flame tail.
                     value=(Math.sin(2*Math.PI*(78*t-58*t*t))*.58*Math.exp(-t*17)+low*2.4*Math.exp(-t*7)+noise*.15*Math.exp(-t*65));
@@ -159,10 +174,10 @@ class SoundManager {
     }
 
     skillCue(kind) {
-        const elemental=['fire','meteor','nova','phoenix','ice','lightning','beam'].includes(kind);
+        const elemental=['fire','meteor','nova','phoenix','ice','lightning','beam','shadow','mark','soul','bastion','mechanical','explosion','gun'].includes(kind);
         if(elemental&&this.pendingImpact)this.pendingImpact.element=true;
         if(!this.enabled||!this.ctx)return;
-        const family=['fire','meteor','nova','phoenix'].includes(kind)?'fire':kind==='beam'?'lightning':kind;
+        const family=['fire','meteor','nova','phoenix'].includes(kind)?'fire':kind;
         this.skillCueTimes ||= {};
         if(this.ctx.currentTime-(this.skillCueTimes[family]??-Infinity)<.18)return;
         this.skillCueTimes[family]=this.ctx.currentTime;
@@ -180,21 +195,8 @@ class SoundManager {
         const spacing=kind==='shotgun'?.09:kind==='fireball'?.12:.045;
         if(now-(this.lastWeaponImpact[kind]??-Infinity)<spacing)return;
         this.lastWeaponImpact[kind]=now;
-        if(kind==='shotgun') {
-            // One substantial thud per cluster of pellets, with a short gravel edge.
-            this._playTone(105,.14,'triangle',.14);
-            this._playNoise(.10,.11,1300);
-            if(crit)this._playTone(310,.075,'triangle',.055);
-        } else if(kind==='fireball') {
-            this._playNoise(.28,.12,900);
-            this._playTone(75,.24,'sine',.12);
-            this._playNoise(.065,.055,3400);
-            if(crit)this._playTone(180,.16,'triangle',.055);
-        } else {
-            // Dry, bright tick; softer and shorter than the muzzle report.
-            this._playNoise(.035,.065,4200);
-            this._playTone(crit?1650:1150,crit?.065:.04,'triangle',crit?.07:.045);
-        }
+        this._playElement(kind==='shotgun'?'shotgun':'gun');
+        if(crit)this._playNoise(.035,.035,1700);
     }
 
     shoot() {

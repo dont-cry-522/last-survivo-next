@@ -661,7 +661,8 @@ class Game {
      */
     applyWeaponImpact(bullet,primary) {
         if(bullet.weaponType==='fireball' ? !bullet.exploded : bullet.generation===0) {
-            this.audio.weaponImpact(bullet.weaponType||'rifle',bullet.isCrit);
+            if(bullet.soundKind)this.audio.skillCue(bullet.soundKind);
+            else this.audio.weaponImpact(bullet.weaponType||'rifle',bullet.isCrit);
         }
         if(bullet.weaponType==='shotgun') {
             const angle=Math.atan2(bullet.vy,bullet.vx);

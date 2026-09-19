@@ -207,7 +207,8 @@ class BulletStormSkills {
                                 const a2 = Math.atan2(nearest.y - ty, nearest.x - tx);
                                 t.aimAngle=a2;
                                 const dmg = ctx.player.bulletDamage * p.damageMul;
-                                ctx.bulletManager.fire(tx, ty, a2, dmg, ctx.player.bulletSpeed, ctx.player.pierce, nearest);
+                                const soundShot=ctx.bulletManager.fire(tx, ty, a2, dmg, ctx.player.bulletSpeed, ctx.player.pierce, nearest);
+                                if(soundShot)soundShot.soundKind='mechanical';
                             }
                         }
                     }
@@ -264,7 +265,7 @@ class BulletStormSkills {
                             }
                         }
                         if (exploded) {
-                            sm.visuals.emit('fire',m.x,m.y,{radius:m.radius,color:'#d5bd82'});
+                            sm.visuals.emit('fire',m.x,m.y,{sound:'explosion',radius:m.radius,color:'#d5bd82'});
                             state.mines.splice(i, 1);
                         }
                     }

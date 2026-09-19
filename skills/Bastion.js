@@ -49,7 +49,7 @@ class BastionSkills {
                         const d2 = (ctx.player.x - e.x) ** 2 + (ctx.player.y - e.y) ** 2;
                         if (d2 < (p.radius || 60) * (p.radius || 60)) {
                             e.takeDamage(ctx.amount * p.reflectMul);
-                            sm.visuals.emit('shadow',e.x,e.y,{radius:30,color:'#b6ce9c'});
+                            sm.visuals.emit('shadow',e.x,e.y,{sound:'bastion',radius:30,color:'#b6ce9c'});
                         }
                     }
                 });
@@ -141,7 +141,7 @@ class BastionSkills {
                         const capped = ctx.player.maxHp * p.cap;
                         ctx.player.hp = Math.max(1, ctx.player.hp + ctx.amount - capped);
                         ub.onCd = true; ub.timer = p.cooldown;
-                        sm.visuals.emit('pickup',ctx.player.x,ctx.player.y,{radius:48,color:'#e0d49a'});
+                        sm.visuals.emit('pickup',ctx.player.x,ctx.player.y,{sound:'bastion',radius:48,color:'#e0d49a'});
                     }
                 });
             },
@@ -193,7 +193,7 @@ class BastionSkills {
                     sm.runtimeState._phantoms.push({
                         x: ctx.player.x, y: ctx.player.y, life: p.duration,
                     });
-                    sm.visuals.emit('pickup',ctx.player.x,ctx.player.y,{radius:35,color:'#b4cfa5'});
+                    sm.visuals.emit('pickup',ctx.player.x,ctx.player.y,{sound:'bastion',radius:35,color:'#b4cfa5'});
                 });
                 sm.registerHandler(SkillEffectType.PERIODIC, 'counter_stance', function(dt, ctx) {
                     const inst = sm.getSkill('counter_stance');
@@ -210,7 +210,7 @@ class BastionSkills {
                                     e.takeDamage(ctx.player.bulletDamage * p.dmgMul);
                                 }
                             }
-                            sm.visuals.emit('shadow',ph.x,ph.y,{radius:p.radius,color:'#b4cfa5'});
+                            sm.visuals.emit('shadow',ph.x,ph.y,{sound:'bastion',radius:p.radius,color:'#b4cfa5'});
                             phantoms.splice(i, 1);
                         }
                     }
@@ -251,7 +251,7 @@ class BastionSkills {
                                 e.takeDamage(ctx.player.bulletDamage * p.waveDmg);
                             }
                         }
-                        sm.visuals.emit('pickup',ctx.player.x,ctx.player.y,{radius:p.waveRadius,color:'#b4cfa5'});
+                        sm.visuals.emit('pickup',ctx.player.x,ctx.player.y,{sound:'bastion',radius:p.waveRadius,color:'#b4cfa5'});
                     }
                 });
             },

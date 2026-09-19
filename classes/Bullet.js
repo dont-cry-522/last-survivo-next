@@ -37,7 +37,7 @@ class Bullet {
      */
     init(x, y, angle, damage, speed, pierce, target = null, generation = 0) {
         this.active = true;
-        this.weaponType='rifle';
+        this.weaponType='rifle';this.soundKind=null;
         this.exploded=false;
         this.size=5;
         this.color=Config.COLORS.bullet;

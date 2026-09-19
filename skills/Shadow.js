@@ -172,7 +172,8 @@ class ShadowSkills {
                             }
                             if (nearest) {
                                 ec.aimAngle=Math.atan2(nearest.y-ec.y,nearest.x-ec.x);
-                                ctx.bulletManager.fire(ec.x, ec.y, Math.atan2(nearest.y - ec.y, nearest.x - ec.x), ctx.player.bulletDamage * ec.dmgMul, ctx.player.bulletSpeed, ctx.player.pierce, nearest);
+                                const soundShot=ctx.bulletManager.fire(ec.x, ec.y, Math.atan2(nearest.y - ec.y, nearest.x - ec.x), ctx.player.bulletDamage * ec.dmgMul, ctx.player.bulletSpeed, ctx.player.pierce, nearest);
+                                if(soundShot)soundShot.soundKind='shadow';
                             }
                         }
                     }
@@ -296,7 +297,8 @@ class ShadowSkills {
                             }
                             if (nearest) {
                                 ph.aimAngle=Math.atan2(nearest.y-ph.y,nearest.x-ph.x);
-                                ctx.bulletManager.fire(ph.x, ph.y, Math.atan2(nearest.y - ph.y, nearest.x - ph.x), ctx.player.bulletDamage * ph.dmgMul, ctx.player.bulletSpeed, 0, nearest);
+                                const soundShot=ctx.bulletManager.fire(ph.x, ph.y, Math.atan2(nearest.y - ph.y, nearest.x - ph.x), ctx.player.bulletDamage * ph.dmgMul, ctx.player.bulletSpeed, 0, nearest);
+                                if(soundShot)soundShot.soundKind='shadow';
                             }
                         }
                     }
