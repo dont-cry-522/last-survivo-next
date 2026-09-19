@@ -86,15 +86,31 @@ class ForestArt {
         // Supporting forearm follows the barrel, so both hands stay on the weapon.
         this.line(c,[[-12,-2],[-7,8],[14,4]],'#3d625b',6);
         this.line(c,[[-6,8],[14,4]],skin,4);
+        if(p.weaponType==='fireball') {
+            this.line(c,[[-7,5],[28,-3]],'#6f5038',6);
+            this.line(c,[[-5,3],[27,-5]],'#ba9761',2);
+            this.shape(c,[[21,-3],[24,-15],[33,-18],[39,-7],[32,3]],'#a97843');
+            this.oval(c,30,-7,7,8,'#f6ad51','#efd18a',1.5);
+            this.shape(c,[[27,-6],[30,-14],[33,-7],[31,-2]],'#fff1bd',null);
+            if(p.muzzleFlash>0) this.oval(c,31,-7,13,12,'rgba(255,195,95,.35)',null);
+        } else {
         this.shape(c,[[-5,-4],[4,-3],[5,5],[-3,6],[-7,1]],'#8f6041');
         this.shape(c,[[0,-5],[17,-5],[18,1],[1,2]],'#526562');
         this.line(c,[[5,-5],[19,-5]],'#bec9aa',2);
         this.shape(c,[[16,-4],[28,-4],[28,0],[16,0]],'#394c47');
         this.line(c,[[25,-5],[25,1]],'#d9be73',3);
+        if(p.weaponType==='shotgun') {
+            this.shape(c,[[7,-6],[31,-6],[31,3],[7,3]],'#665c48');
+            this.line(c,[[9,-5],[30,-5]],'#c6bd95',2);
+            this.line(c,[[9,1],[30,1]],'#aea788',2);
+            this.shape(c,[[10,3],[22,3],[22,7],[10,7]],'#9b673c');
+            if(p.muzzleFlash>0) this.shape(c,[[31,-4],[44,-12],[41,-2],[50,2],[41,4],[44,11],[31,3]],'#f7ba63',null);
+        }
+        }
         this.oval(c,2,3,4,3.2,skin);
         this.oval(c,15,2,3.5,2.7,skin);
         this.line(c,[[14,1],[16,1]],'#fff0bc',1);
-        if (p.muzzleFlash>0) {
+        if (p.muzzleFlash>0 && p.weaponType!=='fireball') {
             this.shape(c,[[28,-2],[37,-7],[34,-2],[42,0],[34,2],[36,6],[28,1]],'#ffca63','#e4933d',1);
             this.oval(c,31,-1,5,2,'#fff6ca',null);
         }

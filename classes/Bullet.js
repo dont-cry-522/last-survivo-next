@@ -37,8 +37,14 @@ class Bullet {
      */
     init(x, y, angle, damage, speed, pierce, target = null, generation = 0) {
         this.active = true;
+        this.weaponType='rifle';
+        this.exploded=false;
+        this.size=5;
+        this.color=Config.COLORS.bullet;
+        this.glowColor=Config.COLORS.bulletGlow;
         this.x = x;
         this.y = y;
+        this.previousX=x;this.previousY=y;
         this.speed = speed;
         this.damage = damage;
         this.pierce = pierce;
@@ -86,6 +92,7 @@ class Bullet {
         }
 
         // 移动
+        this.previousX=this.x;this.previousY=this.y;
         this.x += this.vx * deltaTime * 60;
         this.y += this.vy * deltaTime * 60;
 
@@ -102,6 +109,12 @@ class Bullet {
      * 命中敌人处理
      * @returns {boolean} 是否造成了有效命中
      */
+    touches(enemy) {
+        const dx=this.x-this.previousX,dy=this.y-this.previousY,length=dx*dx+dy*dy;
+        const t=length?Math.max(0,Math.min(1,((enemy.x-this.previousX)*dx+(enemy.y-this.previousY)*dy)/length)):0;
+        return Utils.circleCollision(this.previousX+dx*t,this.previousY+dy*t,this.size,enemy.x,enemy.y,enemy.size);
+    }
+
     onHit(enemy, particleManager) {
         // 已经命中过的不再伤害（穿透用）
         if (this.hitEnemies.includes(enemy)) return false;
@@ -125,6 +138,17 @@ class Bullet {
      */
     draw(ctx, cameraX, cameraY) {
         if (!this.active) return;
+        if(this.weaponType) {
+            ctx.save();ctx.translate(this.x-cameraX,this.y-cameraY);ctx.rotate(Math.atan2(this.vy,this.vx));
+            if(this.weaponType==='fireball') {
+                ForestArt.shape(ctx,[[-24,-4],[-9,-9],[5,-6],[10,0],[4,7],[-10,8],[-29,3],[-17,0]],'#de7840',null);
+                ForestArt.oval(ctx,0,0,9,7,'#ffc666',null);ForestArt.oval(ctx,2,0,5,4,'#fff1b5',null);
+            } else {
+                ForestArt.line(ctx,[[-(this.weaponType==='shotgun'?6:13),0],[3,0]],'#edc87f',this.weaponType==='shotgun'?3:2);
+                ForestArt.oval(ctx,2,0,2,1.5,'#fff4cb',null);
+            }
+            ctx.restore();return;
+        }
 
         const screenX = this.x - cameraX;
         const screenY = this.y - cameraY;

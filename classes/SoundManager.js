@@ -109,6 +109,18 @@ class SoundManager {
     // ==================== 玩家音效 ====================
 
     /** 射击音效 */
+    weaponShoot(kind) {
+        if(kind==='shotgun') {
+            this._playNoise(.17,.17,1000);this._playTone(85,.14,'triangle',.16);
+        } else if(kind==='fireball') {
+            this._playTone(280,.18,'sine',.10);this._playTone(560,.12,'triangle',.06);this._playNoise(.18,.07,1800);
+        } else {this._playNoise(.045,.08,2500);this._playTone(480,.045,'triangle',.065);}
+    }
+
+    weaponImpact(kind) {
+        if(kind==='fireball') {this._playNoise(.25,.12,800);this._playTone(90,.22,'sine',.10);}
+    }
+
     shoot() {
         this._playTone(800, 0.08, 'square', 0.08);
         // 叠加一个低音增加层次感

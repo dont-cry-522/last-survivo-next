@@ -9,6 +9,19 @@
  */
 
 class Player {
+    static WEAPONS = {
+        rifle: {name:'连发枪',rate:3,damage:1,count:1,speed:10,range:520,spread:0},
+        shotgun: {name:'散弹枪',rate:.85,damage:.7,count:5,speed:9,range:240,spread:.12},
+        fireball: {name:'火球法杖',rate:.85,damage:2.3,count:1,speed:5.5,range:420,spread:0},
+    };
+
+    setWeapon(kind) {
+        this.weaponType=Player.WEAPONS[kind]?kind:'rifle';
+        const weapon=Player.WEAPONS[this.weaponType];
+        this.attackSpeed=weapon.rate;this.bulletDamage=Config.PLAYER.bulletDamage*weapon.damage;
+        this.bulletCount=weapon.count;this.bulletSpeed=weapon.speed;this.attackRange=weapon.range;
+        this.attackTimer=0;this.attackInterval=1/this.attackSpeed;
+    }
     constructor(x, y) {
         this.x = x;
         this.y = y;
@@ -218,13 +231,14 @@ class Player {
         const target = this.findNearestEnemy(enemies);
         if (!target) return;
         this.aimAngle = Utils.angle(this.x, this.y, target.x, target.y);
-        this.recoilTimer = 0.14;
+        this.recoilTimer = this.weaponType==='shotgun'?.22:this.weaponType==='fireball'?.18:.09;
 
         this.attackInterval = 1 / currentAS;
         this.attackTimer = this.attackInterval;
 
         const bulletCount = this.bulletCount;
-        const spreadAngle = this._spreadAngle !== null ? this._spreadAngle : (bulletCount > 1 ? 0.3 : 0);
+        const weapon=Player.WEAPONS[this.weaponType||'rifle'];
+        const spreadAngle = this._spreadAngle !== null ? this._spreadAngle : (weapon.spread || (bulletCount > 1 ? 0.3 : 0));
 
         // 双持多方向
         const directions = this._dualWieldDirections || 1;
@@ -258,13 +272,20 @@ class Player {
                 const voidBonus = (window.game?.skillManager?.runtimeState?._voidStacks || 0) * (window.game?.skillManager?.getSkill('void_walker')?.getCurrentEffect()?.params?.perStack || 0);
                 const critDmg = this.critDamage * (1 + frenzyBonus + soulBonus);
                 const damage = (isCrit ? baseDmg * critDmg : baseDmg) * (1 + voidBonus);
-                const bullet = bulletManager.fire(this.x, this.y, angle, damage, this.bulletSpeed, this.pierce, target);
-                if (bullet) bullet.isCrit = isCrit;
-                this.muzzleFlash = 0.05;
+                const bullet = bulletManager.fire(this.x, this.y, angle, damage, this.bulletSpeed, this.pierce, this.weaponType==='shotgun'?null:target);
+                if (bullet) {
+                    bullet.isCrit = isCrit;
+                    bullet.weaponType=this.weaponType||'rifle';
+                    bullet.size=this.weaponType==='fireball'?9:this.weaponType==='shotgun'?3:4;
+                    bullet.color=this.weaponType==='fireball'?'#f3a354':'#e5c783';
+                    bullet.life=weapon.range/(this.bulletSpeed*60);
+                }
+                this.muzzleFlash = this.weaponType==='fireball'?.12:this.weaponType==='shotgun'?.09:.035;
             }
         }
 
-        if (this.audio) this.audio.shoot();
+        if (this.audio) this.audio.weaponShoot(this.weaponType||'rifle');
+        if(this.weaponType!=='fireball' && particleManager.spawnCasing) particleManager.spawnCasing(this.x,this.y,this.aimAngle);
     }
 
     update(deltaTime, enemies, bulletManager, particleManager) {

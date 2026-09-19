@@ -185,6 +185,7 @@ class Game {
 
         // 开始界面
         if (this.state === 'start') {
+            if(['1','2','3'].includes(key)) this.loadout?.select(['rifle','shotgun','fireball'][Number(key)-1]);
             if (key === 'enter' || key === ' ') {
                 this.startGame();
             }
@@ -271,6 +272,8 @@ class Game {
     resetGame() {
         // 重置玩家
         this.player.reset(0, 0);
+        this.player.setWeapon(this.selectedWeapon||'rifle');
+        if(this.loadout) this.loadout.hide();
 
         // 重置管理器
         this.enemyManager.clear();
@@ -599,15 +602,13 @@ class Game {
                 const enemy = enemies[j];
                 if (!enemy.active) continue;
 
-                if (Utils.circleCollision(
-                    bullet.x, bullet.y, bullet.size,
-                    enemy.x, enemy.y, enemy.size
-                )) {
+                if (bullet.touches(enemy)) {
                     if (bullet.onHit(enemy, this.particleManager)) {
                         const dead = enemy.takeDamage(bullet.damage,
                             Utils.angle(bullet.x, bullet.y, enemy.x, enemy.y));
+                        this.applyWeaponImpact(bullet,enemy);
 
-                        this.enemyManager.addImpact(enemy.x,enemy.y,bullet.isCrit ? "crit" : "hit",bullet.angle);
+                        this.enemyManager.addImpact(enemy.x,enemy.y,bullet.isCrit ? "crit" : "hit",Math.atan2(bullet.vy,bullet.vx));
                         this.uiManager.addDamageNumber(
                             enemy.x, enemy.y - enemy.size,
                             bullet.damage, bullet.isCrit
@@ -641,12 +642,10 @@ class Game {
 
             // 检测Boss
             if (bullet.active && this.boss.active) {
-                if (Utils.circleCollision(
-                    bullet.x, bullet.y, bullet.size,
-                    this.boss.x, this.boss.y, this.boss.size
-                )) {
+                if (bullet.touches(this.boss)) {
                     if (bullet.onHit(this.boss, this.particleManager)) {
                         this.boss.takeDamage(bullet.damage);
+                        this.applyWeaponImpact(bullet,this.boss);
                         this.uiManager.addDamageNumber(
                             this.boss.x, this.boss.y - this.boss.size,
                             bullet.damage, bullet.isCrit
@@ -660,6 +659,27 @@ class Game {
     /**
      * 触发升级
      */
+    applyWeaponImpact(bullet,primary) {
+        if(bullet.weaponType==='shotgun') {
+            const angle=Math.atan2(bullet.vy,bullet.vx);
+            if(primary!==this.boss) {primary.knockbackX+=Math.cos(angle)*3;primary.knockbackY+=Math.sin(angle)*3;}
+        }
+        if(bullet.weaponType!=='fireball'||bullet.exploded) return;
+        bullet.exploded=true;
+        this.enemyManager.addImpact(bullet.x,bullet.y,'burst',0,65);
+        this.particleManager.spawnExplosion(bullet.x,bullet.y,'#edaa55',12);
+        this.audio.weaponImpact('fireball');
+        for(const enemy of this.enemyManager.pool) {
+            if(!enemy.active||enemy.hp<=0||!Utils.circleCollision(bullet.x,bullet.y,65,enemy.x,enemy.y,enemy.size))continue;
+            if(enemy!==primary) {
+                enemy.takeDamage(bullet.damage*.6,Utils.angle(bullet.x,bullet.y,enemy.x,enemy.y));
+                this.uiManager.addDamageNumber(enemy.x,enemy.y-enemy.size,bullet.damage*.6,false);
+            }
+            this.statusSystem.applyBurn(enemy,Math.max(1,enemy.burnStacks),Math.max(enemy.burnDmgPerStack,bullet.damage*.12),2);
+        }
+        if(this.boss.active && this.boss!==primary && Utils.circleCollision(bullet.x,bullet.y,65,this.boss.x,this.boss.y,this.boss.size))this.boss.takeDamage(bullet.damage*.6);
+    }
+
     triggerUpgrade() {
         this.state = 'upgrading';
         this.player.keys.w = this.player.keys.a = this.player.keys.s = this.player.keys.d = this.player.keys.shift = false;

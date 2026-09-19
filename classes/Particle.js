@@ -98,6 +98,8 @@ class Particle {
             ctx.strokeStyle = this.color;
             ctx.lineWidth = 2;
             ctx.stroke();
+        } else if(this.type==='casing') {
+            ctx.translate(screenX,screenY);ctx.rotate(this.life*12);ctx.fillRect(-3,-1,6,2);
         } else {
             ctx.beginPath();
             ctx.arc(screenX, screenY, this.size * this.alpha, 0, Math.PI * 2);
@@ -119,6 +121,12 @@ class ParticleManager extends ObjectPool {
     /**
      * 生成尾焰粒子
      */
+    spawnCasing(x,y,angle) {
+        const p=this.acquire();if(!p)return;
+        p.init(x,y,Math.cos(angle+Math.PI/2)*2,Math.sin(angle+Math.PI/2)*2,
+            {life:.32,size:2,color:'#cba76b',friction:.94,glow:false,type:'casing',gravity:8});
+    }
+
     spawnTrail(x, y, angle, color) {
         const p = this.acquire();
         const spread = 0.3;

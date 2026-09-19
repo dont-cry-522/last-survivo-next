@@ -131,3 +131,32 @@ body { background:radial-gradient(ellipse at center,#314635 0%,#17271f 75%); }
 .mobile-tip, .joystick-label { color:#cad2b1; }
 .mobile-gallery { display:flex; align-items:center; min-height:44px; padding:8px; color:#e5c284; text-decoration:none; font-size:13px; }
 @media(max-width:380px) { .mobile-toolbar { gap:5px; left:6px; right:6px; } #mobile-controls .mobile-toolbar button { padding:8px; min-width:48px; } #mobile-action { min-width:92px !important; } }
+
+/* The loadout is a full-size menu, independent of the scaled game canvas. */
+.loadout { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; overflow:auto; padding:28px 16px; background:radial-gradient(ellipse at 50% 15%,#40573f,#162b22 70%); }
+.loadout[hidden] { display:none; }
+.loadout-inner { width:min(820px,100%); text-align:center; margin:auto; color:#eee2be; }
+.loadout-eyebrow { color:#c3b176; letter-spacing:3px; font-size:12px; margin-bottom:14px; }
+.loadout h1 { font-size:34px; margin-bottom:12px; }
+.loadout-intro { color:#bcc9ab; font-size:14px; }
+.weapon-choices { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:26px 0; }
+.weapon-choices button { font:inherit; color:inherit; background:#2a4032; border:2px solid #53684c; border-radius:16px; padding:18px 10px; cursor:pointer; text-align:center; }
+.weapon-choices button:hover { background:#354c39; }
+.weapon-choices button[aria-pressed="true"] { border-color:#e7bf71; background:#40523a; box-shadow:0 0 0 3px #e7bf7126; }
+.weapon-choices button:focus-visible,.loadout-start:focus-visible { outline:3px solid #fff4c6; outline-offset:4px; }
+.weapon-role { color:#c6b37f; font-size:12px; letter-spacing:2px; }
+.weapon-choices canvas { display:block; width:100%; max-width:200px; margin:0 auto; }
+.weapon-choices h2 { font-size:22px; margin:0 0 12px; }
+.weapon-choices strong { display:block; font-size:13px; color:#e0c68f; font-weight:normal; }
+.weapon-choices small { display:block; margin-top:8px; color:#b9c6aa; font-size:12px; }
+.loadout-start { background:#e4bd74; color:#233d2c; border:0; border-radius:9px; font:700 17px 'Microsoft YaHei',sans-serif; padding:14px 36px; cursor:pointer; }
+.loadout-help { font-size:12px; color:#a5b799; line-height:1.8; margin-top:18px; }
+.loadout-menu { position:fixed; right:12px; bottom:8px; z-index:21; background:#243c2d; color:#e3ce96; border:1px solid #809168; border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer; }
+@media(max-width:560px) {
+ .loadout h1 { font-size:25px; }.weapon-choices{gap:7px;margin:20px 0;}.weapon-choices button{padding:14px 5px;}.weapon-choices h2{font-size:18px;}.weapon-choices strong{font-size:12px;}.weapon-role{letter-spacing:0;}.loadout-help{font-size:11px;}
+}
+@media(max-height:500px) {
+ .loadout{padding:12px;}.loadout-inner{max-width:700px;}.loadout-eyebrow{margin-bottom:4px;font-size:10px;}.loadout h1{font-size:21px;margin-bottom:4px;}.loadout-intro{font-size:12px;}.weapon-choices{margin:10px 0;gap:10px;}.weapon-choices button{padding:8px;}.weapon-choices canvas{width:100px;}.weapon-choices h2{font-size:16px;margin-bottom:5px;}.weapon-choices small{display:none;}.loadout-start{padding:9px 25px;font-size:14px;}.loadout-help{margin-top:7px;font-size:10px;line-height:1.5;}
+}
+body.touch-device .loadout-menu { left:8px; right:auto; bottom:auto; top:8px; padding:6px; font-size:10px; }
+@media(max-height:340px) { .loadout-help { display:none; } }
