@@ -27,3 +27,15 @@ test('fast pellets cannot pass through a small enemy between frames',()=>{
  const r=run(`const b=new Bullet();b.init(0,0,0,10,20,0);b.size=3;b.update(1/30,[],particles);result=b.touches({x:20,y:0,size:5});`);
  assert.equal(r,true);
 });
+
+test('normal and critical hits use their weapon sound for enemies and bosses without generic overlays',()=>{
+ for(const kind of ['rifle','shotgun','fireball'])for(const bossHit of [false,true])for(const crit of [false,true]) {
+  const r=run(`const SkillEffectType={ON_CRIT:'crit',ON_HIT:'hit'};
+   const g=Object.create(Game.prototype);g.enemyManager=new EnemyManager(1);g.bulletManager=m;
+   const enemy=g.enemyManager.spawn('tank',0,0);g.boss=${bossHit}?enemy:{active:false};if(${bossHit})g.enemyManager.pool=[];
+   g.particleManager=particles;g.statusSystem=Enemy._statusSystem;g.uiManager={addDamageNumber(){}};g.skillManager={trigger(){},trackEliteHit(){}};
+   const sounds=[];g.audio={hit(){sounds.push('generic')},critHit(){sounds.push('generic-crit')},weaponImpact(kind,crit){sounds.push({kind,crit})}};
+   const b=m.fire(0,0,0,10,8,0);b.weaponType='${kind}';b.isCrit=${crit};g.checkBulletCollisions();result=sounds;`);
+  assert.equal(r.length,1);assert.equal(r[0].kind,kind);assert.equal(r[0].crit,crit);
+ }
+});

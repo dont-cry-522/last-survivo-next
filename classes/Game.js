@@ -616,10 +616,7 @@ class Game {
 
                         if (bullet.generation === 0) {
                             if (bullet.isCrit) {
-                                this.audio.critHit();
                                 this.skillManager.trigger(SkillEffectType.ON_CRIT, { bullet, enemy, enemies: this.enemyManager.pool, bulletManager: this.bulletManager, particleManager: this.particleManager });
-                            } else {
-                                this.audio.hit();
                             }
                         }
 
@@ -660,6 +657,9 @@ class Game {
      * 触发升级
      */
     applyWeaponImpact(bullet,primary) {
+        if(bullet.weaponType==='fireball' ? !bullet.exploded : bullet.generation===0) {
+            this.audio.weaponImpact(bullet.weaponType||'rifle',bullet.isCrit);
+        }
         if(bullet.weaponType==='shotgun') {
             const angle=Math.atan2(bullet.vy,bullet.vx);
             if(primary!==this.boss) {primary.knockbackX+=Math.cos(angle)*3;primary.knockbackY+=Math.sin(angle)*3;}
@@ -668,7 +668,6 @@ class Game {
         bullet.exploded=true;
         this.enemyManager.addImpact(bullet.x,bullet.y,'burst',0,65);
         this.particleManager.spawnExplosion(bullet.x,bullet.y,'#edaa55',12);
-        this.audio.weaponImpact('fireball');
         for(const enemy of this.enemyManager.pool) {
             if(!enemy.active||enemy.hp<=0||!Utils.circleCollision(bullet.x,bullet.y,65,enemy.x,enemy.y,enemy.size))continue;
             if(enemy!==primary) {

@@ -14,6 +14,7 @@ class SoundManager {
         this.masterVolume = 0.5;
         this.initialized = false;
         this.lastAttackCue = -Infinity;
+        this.lastWeaponImpact = {};
     }
 
     /**
@@ -117,8 +118,28 @@ class SoundManager {
         } else {this._playNoise(.045,.08,2500);this._playTone(480,.045,'triangle',.065);}
     }
 
-    weaponImpact(kind) {
-        if(kind==='fireball') {this._playNoise(.25,.12,800);this._playTone(90,.22,'sine',.10);}
+    weaponImpact(kind, crit=false) {
+        if(!this.enabled || !this.ctx) return;
+        kind=['rifle','shotgun','fireball'].includes(kind)?kind:'rifle';
+        const now=this.ctx.currentTime;
+        const spacing=kind==='shotgun'?.09:kind==='fireball'?.12:.045;
+        if(now-(this.lastWeaponImpact[kind]??-Infinity)<spacing)return;
+        this.lastWeaponImpact[kind]=now;
+        if(kind==='shotgun') {
+            // One substantial thud per cluster of pellets, with a short gravel edge.
+            this._playTone(105,.14,'triangle',.14);
+            this._playNoise(.10,.11,1300);
+            if(crit)this._playTone(310,.075,'triangle',.055);
+        } else if(kind==='fireball') {
+            this._playNoise(.28,.12,900);
+            this._playTone(75,.24,'sine',.12);
+            this._playNoise(.065,.055,3400);
+            if(crit)this._playTone(180,.16,'triangle',.055);
+        } else {
+            // Dry, bright tick; softer and shorter than the muzzle report.
+            this._playNoise(.035,.065,4200);
+            this._playTone(crit?1650:1150,crit?.065:.04,'triangle',crit?.07:.045);
+        }
     }
 
     shoot() {
