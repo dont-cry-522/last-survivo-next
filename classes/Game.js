@@ -607,6 +607,7 @@ class Game {
                         const dead = enemy.takeDamage(bullet.damage,
                             Utils.angle(bullet.x, bullet.y, enemy.x, enemy.y));
 
+                        this.enemyManager.addImpact(enemy.x,enemy.y,bullet.isCrit ? "crit" : "hit",bullet.angle);
                         this.uiManager.addDamageNumber(
                             enemy.x, enemy.y - enemy.size,
                             bullet.damage, bullet.isCrit

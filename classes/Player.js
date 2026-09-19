@@ -75,6 +75,7 @@ class Player {
         this.recoilTimer = 0;
         this.hurtTimer = 0;
         this.moving = false;
+        this.runBlend = 0;
 
         // 技能属性
         this._spreadAngle = null;
@@ -139,6 +140,8 @@ class Player {
     }
 
     takeDamage(amount) {
+        if (this.hp <= 0 || amount <= 0 || this.invincibleTimer > 0 || this.isDashing) return false;
+        this.invincibleTimer = this.invincibleDuration;
         if (this.shield > 0) {
             const d = Math.min(this.shield, amount);
             this.shield -= d;
@@ -284,7 +287,7 @@ class Player {
             this.afterimageTimer -= deltaTime;
             if (this.afterimageTimer <= 0) {
                 this.afterimageTimer = 0.03;
-                particleManager.spawnAfterimage(this.x, this.y, this.size, this.color);
+                particleManager.spawnTrail(this.x, this.y + this.size*.5, this.angle, "#d7c68d");
             }
         } else {
             let dx = 0, dy = 0;
@@ -298,13 +301,13 @@ class Player {
             this.y += dy * this.speed * deltaTime * 60;
             if (dx !== 0 || dy !== 0) {
                 moved = true;
-                this.walkCycle += deltaTime * 13;
-            } else {
-                this.walkCycle = 0;
+                // Gait is advanced below using a blended locomotion weight;
             }
         }
 
         this.moving = moved || this.isDashing;
+        this.runBlend += ((this.moving ? 1 : 0) - this.runBlend) * (1-Math.exp(-deltaTime*16));
+        if (!this.isDashing) this.walkCycle += deltaTime * 13 * this.runBlend;
         const aimTarget = this.findNearestEnemy(enemies);
         if (aimTarget) this.aimAngle = Utils.angle(this.x, this.y, aimTarget.x, aimTarget.y);
         else if (this.moving) this.aimAngle = this.angle;
@@ -357,6 +360,7 @@ class Player {
         this.recoilTimer = 0;
         this.hurtTimer = 0;
         this.moving = false;
+        this.runBlend = 0;
         this.walkCycle = 0;
         this.muzzleFlash = 0;
         this.animTimer = 0;

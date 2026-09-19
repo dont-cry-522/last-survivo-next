@@ -13,6 +13,7 @@ class SoundManager {
         this.enabled = true;
         this.masterVolume = 0.5;
         this.initialized = false;
+        this.lastAttackCue = -Infinity;
     }
 
     /**
@@ -157,6 +158,23 @@ class SoundManager {
         this._playTone(1800, 0.08, 'square', 0.1);
         this._playTone(900, 0.06, 'sawtooth', 0.06);
         this._playNoise(0.06, 0.06, 4000);
+    }
+
+    /** Readable attack cues, rate limited when many creatures attack together. */
+    enemyAttackCue(type, phase) {
+        if (!this.enabled || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        if (now - this.lastAttackCue < 0.10) return;
+        this.lastAttackCue = now;
+        if (phase === 'windup') {
+            this._playTone(type === 'tank' ? 130 : type === 'fast' ? 420 : 260, 0.16, 'triangle', 0.065);
+        } else if (type === 'tank') {
+            this._playTone(65, 0.30, 'sine', 0.22);
+            this._playTone(115, 0.14, 'triangle', 0.12);
+            this._playNoise(0.20, 0.13, 700);
+        } else {
+            this._playNoise(0.10, 0.065, type === 'fast' ? 2400 : 1400);
+        }
     }
 
     // ==================== 敌人音效 ====================

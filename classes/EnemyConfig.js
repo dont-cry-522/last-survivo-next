@@ -8,6 +8,12 @@
  */
 
 class EnemyConfig {
+    // Timings stay readable as difficulty increases. Distances are world pixels.
+    static ATTACKS = {
+        normal: { trigger:75, windup:0.42, strike:0.20, recover:0.72, distance:86, radius:15 },
+        fast: { trigger:260, windup:0.65, strike:0.32, recover:0.90, distance:280, radius:12 },
+        tank: { trigger:110, windup:0.90, strike:0.12, recover:1.15, distance:48, radius:70 },
+    };
     // ================================================================
     //  敌人类型属性表（迁移自 Config.ENEMY_TYPES）
     //  所有五种敌人的基础数值 + 视觉颜色

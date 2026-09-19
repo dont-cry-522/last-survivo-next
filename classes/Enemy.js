@@ -3,7 +3,7 @@
  *  Enemy.js - 敌人系统
  * ============================================================
  *  四种敌人类型：普通、快速、坦克、自爆
- *  统一AI：追踪玩家移动
+ *  普通/快速/重型怪使用预警、出招、收招状态；其他怪物沿用追踪
  *  Enemy 实体是纯数据+行为，不直接调用任何外部系统。
  *  所有跨系统效果（粒子/音效/经验/伤害）由 EnemyManager 统一处理。
  * ============================================================
@@ -56,6 +56,15 @@ class Enemy {
         if (!cfg) return;
 
         this.active = true;
+        if (Enemy._statusSystem) Enemy._statusSystem.reset(this);
+        this.combatState = 'approach';
+        this.combatTimer = 0;
+        this.attackHasHit = false;
+        this.attackStartX = this.attackX = x;
+        this.attackStartY = this.attackY = y;
+        this.attackAngle = 0;
+        this.strikeThisFrame = false;
+        this.attackCue = null;
         this.type = type;
         this.x = x;
         this.y = y;
@@ -119,40 +128,85 @@ class Enemy {
      * 仅处理：移动追踪 + 自爆接近标记
      */
     update(deltaTime, player) {
-        if (!this.active) return;
-
-        this.animTimer += this.frozen ? 0 : deltaTime;
+        this.strikeThisFrame = false;
+        this.attackCue = null;
+        if (!this.active || this.hp <= 0) return;
+        this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
         this.attackPose = Math.max(0, this.attackPose - deltaTime);
-
-        if (this.hitFlash > 0) {
-            this.hitFlash -= deltaTime;
-        }
-
-        if (this.contactCooldown > 0) {
-            this.contactCooldown -= deltaTime;
-        }
-
+        this.contactCooldown = Math.max(0, this.contactCooldown - deltaTime);
         if (Enemy._statusSystem) Enemy._statusSystem.update(this, deltaTime);
-
-        this.knockbackX *= this.knockbackDecay;
-        this.knockbackY *= this.knockbackDecay;
-
-        const angle = Utils.angle(this.x, this.y, player.x, player.y);
-        this.angle = angle;
         const speedMul = Enemy._statusSystem ? Enemy._statusSystem.getSpeedMultiplier(this) : 1;
-        const moveX = Math.cos(angle) * this.speed * speedMul * deltaTime * 60;
-        const moveY = Math.sin(angle) * this.speed * speedMul * deltaTime * 60;
+        if (speedMul <= 0) return;
+        this.animTimer += deltaTime * speedMul;
+        const decay = Math.pow(this.knockbackDecay, deltaTime * 60);
+        this.knockbackX *= decay;
+        this.knockbackY *= decay;
+        const attack = EnemyConfig.ATTACKS[this.type];
+        if (attack && this.combatState !== 'approach') {
+            this.advanceAttack(deltaTime * speedMul, attack);
+            return;
+        }
+        this.angle = Utils.angle(this.x, this.y, player.x, player.y);
+        if (attack && Utils.distanceSq(this.x,this.y,player.x,player.y) <= attack.trigger ** 2) {
+            this.combatState = 'windup';
+            this.combatTimer = attack.windup;
+            this.attackHasHit = false;
+            this.attackAngle = this.angle;
+            this.attackStartX = this.x;
+            this.attackStartY = this.y;
+            this.attackX = this.x + Math.cos(this.angle) * attack.distance;
+            this.attackY = this.y + Math.sin(this.angle) * attack.distance;
+            this.attackCue = 'windup';
+            return;
+        }
+        this.x += (Math.cos(this.angle) * this.speed * speedMul + this.knockbackX) * deltaTime * 60;
+        this.y += (Math.sin(this.angle) * this.speed * speedMul + this.knockbackY) * deltaTime * 60;
+        if (this.isExploder && Utils.distance(this.x,this.y,player.x,player.y) < this.explodeTriggerDistance) {
+            this._triggeredExplode = true;
+            this.active = false;
+        }
+    }
 
-        this.x += moveX + this.knockbackX;
-        this.y += moveY + this.knockbackY;
-
-        if (this.isExploder) {
-            const dist = Utils.distance(this.x, this.y, player.x, player.y);
-            if (dist < this.explodeTriggerDistance) {
-                this._triggeredExplode = true;
-                this.active = false;
+    advanceAttack(dt, attack) {
+        // Carry time across phase boundaries, including the last active strike frame.
+        let remaining = dt;
+        this.attackFromX = this.x;
+        this.attackFromY = this.y;
+        while (remaining > 1e-8 && this.combatState !== 'approach') {
+            const step = Math.min(remaining, this.combatTimer);
+            this.combatTimer -= step;
+            remaining -= step;
+            if (this.combatState === 'strike') {
+                this.strikeThisFrame = true;
+                this.attackPose = 0.24;
+                if (this.type !== 'tank') {
+                    const progress = 1 - this.combatTimer / attack.strike;
+                    this.x = this.attackStartX + Math.cos(this.attackAngle) * attack.distance * progress;
+                    this.y = this.attackStartY + Math.sin(this.attackAngle) * attack.distance * progress;
+                }
+            }
+            if (this.combatTimer > 1e-8) break;
+            if (this.combatState === 'windup') {
+                this.combatState = 'strike'; this.combatTimer = attack.strike;
+                this.attackCue = 'strike';
+            } else if (this.combatState === 'strike') {
+                this.combatState = 'recover'; this.combatTimer = attack.recover;
+            } else {
+                this.combatState = 'approach'; this.combatTimer = 0;
             }
         }
+    }
+
+    attackTouches(player) {
+        if (!this.strikeThisFrame || this.attackHasHit || this.hp <= 0 || this.frozen || this.paralyzed) return false;
+        const attack = EnemyConfig.ATTACKS[this.type];
+        if (!attack) return false;
+        if (this.type === 'tank') return Utils.circleCollision(this.attackX,this.attackY,attack.radius,player.x,player.y,player.size);
+        // Swept circle: a fast lunge must not jump over the player at low frame rates.
+        const dx = this.x - this.attackFromX, dy = this.y - this.attackFromY;
+        const lengthSq = dx*dx + dy*dy;
+        const t = lengthSq ? Math.max(0,Math.min(1,((player.x-this.attackFromX)*dx+(player.y-this.attackFromY)*dy)/lengthSq)) : 0;
+        return Utils.circleCollision(this.attackFromX+dx*t,this.attackFromY+dy*t,attack.radius,player.x,player.y,player.size);
     }
 
     /**
@@ -212,6 +266,7 @@ class EnemyManager extends ObjectPool {
         this.events = null;
         this.deathPoses = [];
         this.drawOrder = [];
+        this.impactMarks = [];
     }
 
     /**
@@ -244,6 +299,10 @@ class EnemyManager extends ObjectPool {
             const e = this.pool[i];
             if (!e.active) continue;
 
+            if (e.hp <= 0) {
+                this._handleDeath(e, player, particleManager, experienceManager, audio);
+                continue;
+            }
             e.update(deltaTime, player);
 
             if (!e.active) {
@@ -256,7 +315,19 @@ class EnemyManager extends ObjectPool {
                 continue;
             }
 
-            if (!e.isExploder && e.contactCooldown <= 0 && Utils.circleCollision(e.x, e.y, e.size, player.x, player.y, player.size)) {
+            if (EnemyConfig.ATTACKS[e.type]) {
+                if (e.attackCue && audio && Utils.distanceSq(e.x,e.y,player.x,player.y)<650*650) audio.enemyAttackCue(e.type,e.attackCue);
+                if (e.attackCue === 'strike' && e.type === 'tank') {
+                    this.addImpact(e.attackX,e.attackY,'slam',0,EnemyConfig.ATTACKS.tank.radius);
+                    particleManager.spawnExplosion(e.attackX,e.attackY,'#c5ad7a',8);
+                }
+                if (e.attackTouches(player)) {
+                    e.attackHasHit = true;
+                    player.takeDamage(e.damage);
+                }
+                continue;
+            }
+            if (!e.isExploder && !e.frozen && !e.paralyzed && e.contactCooldown <= 0 && Utils.circleCollision(e.x, e.y, e.size, player.x, player.y, player.size)) {
                 player.takeDamage(e.damage);
                 e.attackPose = 0.24;
                 e.contactCooldown = EnemyConfig.CONTACT_DAMAGE_COOLDOWN;
@@ -311,7 +382,17 @@ class EnemyManager extends ObjectPool {
         e.die();
     }
 
+    addImpact(x,y,kind,angle=0,radius=0) {
+        if (this.impactMarks.length >= 64) this.impactMarks.shift();
+        const duration = kind === 'slam' ? 0.42 : kind === 'crit' ? 0.23 : 0.12;
+        this.impactMarks.push({x,y,kind,angle,radius,life:duration,duration});
+    }
+
     updateDeathPoses(dt) {
+        for (let i=this.impactMarks.length-1;i>=0;i--) {
+            this.impactMarks[i].life-=dt;
+            if(this.impactMarks[i].life<=0) this.impactMarks.splice(i,1);
+        }
         for (let i = this.deathPoses.length - 1; i >= 0; i--) {
             this.deathPoses[i].life -= dt;
             if (this.deathPoses[i].life <= 0) this.deathPoses.splice(i, 1);
@@ -321,6 +402,7 @@ class EnemyManager extends ObjectPool {
     clear() {
         super.clear();
         this.deathPoses.length = 0;
+        this.impactMarks.length = 0;
         this.drawOrder.length = 0;
     }
 
@@ -334,8 +416,11 @@ class EnemyManager extends ObjectPool {
         }
         if (player) this.drawOrder.push(player);
         if (boss && boss.active) this.drawOrder.push(boss);
+        for (const actor of this.drawOrder) if (EnemyConfig.ATTACKS[actor.type]) ForestArt.telegraph(ctx,actor,cameraX,cameraY);
+        for (const mark of this.impactMarks) if(mark.kind==='slam') ForestArt.impact(ctx,mark,cameraX,cameraY);
         this.drawOrder.sort((a,b) => a.y - b.y);
         for (const actor of this.drawOrder) actor.draw(ctx, cameraX, cameraY);
+        for (const mark of this.impactMarks) if(mark.kind!=='slam') ForestArt.impact(ctx,mark,cameraX,cameraY);
     }
 }
 

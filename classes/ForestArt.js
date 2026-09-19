@@ -19,13 +19,19 @@ class ForestArt {
     }
     static player(c, p, cameraX = 0, cameraY = 0) {
         c.save(); c.translate(p.x-cameraX,p.y-cameraY);
+        if (p.isDashing && p.dashDirection) {
+            const a=Math.atan2(p.dashDirection.y,p.dashDirection.x);
+            c.save();c.rotate(a);
+            for(let i=0;i<3;i++) this.line(c,[[-18-i*5,-10+i*10],[-50-i*7,-10+i*10]],'rgba(224,215,162,.55)',2-i*.4);
+            c.restore();
+        }
         const scale = p.size / 20;
         c.scale(scale,scale);
         this.shadow(c,20);
-        const running = p.moving || p.isDashing;
+        const intensity = p.runBlend === undefined ? (p.moving || p.isDashing ? 1 : 0) : p.runBlend;
         const cycle = p.walkCycle || 0;
-        const stride = running ? Math.sin(cycle) * 6 : 0;
-        const bob = running ? -Math.abs(Math.cos(cycle))*2.2 : Math.sin(p.animTimer*2.6)*0.7;
+        const stride = Math.sin(cycle) * (p.isDashing ? 8 : 6) * intensity;
+        const bob = -Math.abs(Math.cos(cycle))*2.2*intensity + Math.sin(p.animTimer*2.6)*0.7*(1-intensity);
         const hurt = p.hurtTimer > 0;
         if (p.invincibleTimer > 0 && Math.floor(p.animTimer*16)%2) c.globalAlpha = 0.65;
         if (p.hp <= 0) { c.translate(0,8); c.rotate(1.2); }
@@ -39,12 +45,12 @@ class ForestArt {
         this.oval(c,-6+stride,16,6,3.6,'#3b342c');
         this.oval(c,8-stride,16,6,3.6,'#50402f');
         c.translate(hurt?-2:0,bob);
-        if (p.isDashing) c.rotate(0.16);
+        if (p.isDashing) { c.rotate(0.27); c.translate(3,2); }
         // Backpack, rolled blanket and scarf have their own follow-through.
         this.oval(c,-10,-7,8,12,'#756f44');
         this.line(c,[[-15,-14],[-16,-3]],'#b4b078',3);
         this.oval(c,-12,-19,8,4,'#aab287');
-        this.shape(c,[[-5,-16],[-23,-12+Math.sin(cycle-1)*3],[-18,-7],[-5,-10]],'#c5633d');
+        this.shape(c,[[-5,-16],[-23-(p.isDashing?9:0),-12+Math.sin(cycle-1)*3*intensity],[-18,-7],[-5,-10]],'#c5633d');
         this.shape(c,[[-10,-13],[7,-13],[11,2],[7,8],[-8,8],[-12,-1]],hurt?'#fff0c1':'#4e8074');
         this.shape(c,[[-9,-12],[-4,-12],[-2,5],[-8,4]],'#8eb29a',null);
         this.line(c,[[-9,4],[9,4]],'#704d32',4);
@@ -92,13 +98,28 @@ class ForestArt {
         }
         const scale=e.size/18;
         c.scale((Math.cos(e.angle)<0?-1:1)*scale,scale);
-        const t=e.animTimer || 0;
+        const state=e.combatState || 'approach';
+        const cfg=typeof EnemyConfig!=='undefined' ? EnemyConfig.ATTACKS[e.type] : null;
+        const windup=cfg && state==='windup' ? Math.max(0,Math.min(1,1-e.combatTimer/cfg.windup)) : 0;
+        const strike=cfg && state==='strike' ? Math.max(0,Math.min(1,1-e.combatTimer/cfg.strike)) : 0;
+        const resting=state==='windup'||state==='recover';
+        const t=resting ? 0 : e.animTimer || 0;
         const hurt=e.hitFlash>0;
         const attack=Math.max(0,e.attackPose||0)/0.24;
         c.translate(attack*4-(hurt?3:0),0);
         if (hurt) c.rotate(-0.1);
+        if(state==='windup' && e.type!=='tank') {
+            const squeeze=windup*(e.type==='fast'?.24:.22);
+            c.translate(-windup*3,12*squeeze);c.scale(1+squeeze*.45,1-squeeze);
+        }
+        if(state==='strike') {
+            if(e.type==='normal') {c.translate(0,-Math.sin(strike*Math.PI)*12);c.rotate(.15);}
+            else if(e.type==='fast') {c.translate(0,4);c.scale(1.18,.74);}
+            else if(e.type==='tank') {c.translate(0,3);c.scale(1.08,.88);}
+        }
+        if(state==='recover') {c.translate(0,2);c.rotate(.06);}
         if(e.type==='fast') this.crawler(c,t,hurt,attack);
-        else if(e.type==='tank') this.brute(c,t,hurt,attack);
+        else if(e.type==='tank') this.brute(c,t,hurt,attack,false,windup);
         else if(e.type==='elite') this.brute(c,t,hurt,attack,true);
         else this.mushroom(c,t,hurt,e.type==='exploder',attack);
         if(e.frozen) {
@@ -163,7 +184,7 @@ class ForestArt {
         this.shape(c,[[19,-1],[21,4+attack*3],[23,-1]],'#f4e6bb',null);
         this.line(c,[[-8,-9],[-3,-12],[3,-10]],'#b3c1b8',2.4);
     }
-    static brute(c,t,hurt,attack,elite=false) {
+    static brute(c,t,hurt,attack,elite=false,windup=0) {
         const step=Math.sin(t*4.4)*3;
         const hide=hurt?'#fff0d0':elite?'#857888':'#849070';
         this.oval(c,-9+step,13,8,5,'#465447');
@@ -171,10 +192,11 @@ class ForestArt {
         c.save(); c.translate(0,-Math.abs(step)*.5);
         this.oval(c,0,-3,20,19,hide);
         this.oval(c,2,1,12,12,elite?'#b8a69a':'#b5b58a');
-        this.line(c,[[-15,-9],[-22,-1-step],[-22,9-step]],hide,9);
-        this.line(c,[[15,-9],[22+attack*6,-2+step],[23+attack*6,8+step]],hide,9);
-        this.oval(c,-23,8-step,6,6,'#677761');
-        this.oval(c,24+attack*6,8+step,6,6,'#677761');
+        const lift=windup*46;
+        this.line(c,[[-15,-9],[-25,-1-step-lift*.55],[-22,9-step-lift]],hide,9);
+        this.line(c,[[15,-9],[25+attack*6,-2+step-lift*.55],[23+attack*6,8+step-lift]],hide,9);
+        this.oval(c,-23,8-step-lift,6,6,'#677761');
+        this.oval(c,24+attack*6,8+step-lift,6,6,'#677761');
         for(const side of [-1,1]) this.shape(c,[[side*10,-16],[side*18,-23],[side*26,-14],[side*22,-7],[side*12,-8]],elite?'#777888':'#6b7e79');
         this.oval(c,3,-20,14,12,hide);
         this.oval(c,7,-14,12,7,'#b3b18a');
@@ -191,6 +213,43 @@ class ForestArt {
             this.oval(c,4,-35,3,4,'#6bbdad');
             this.line(c,[[28,11],[31,-19]],'#705c43',4);
             this.shape(c,[[28,-20],[43,-25],[40,-11],[30,-6]],'#bdc7b1');
+        }
+        c.restore();
+    }
+    static telegraph(c,e,cameraX=0,cameraY=0) {
+        if (e.combatState!=='windup' || e.hp<=0) return;
+        const cfg=EnemyConfig.ATTACKS[e.type];
+        if(!cfg) return;
+        const p=Math.max(0,Math.min(1,1-e.combatTimer/cfg.windup));
+        c.save();
+        if(e.type==='tank') {
+            c.translate(e.attackX-cameraX,e.attackY-cameraY);
+            c.beginPath();c.arc(0,0,cfg.radius,0,Math.PI*2);
+            c.fillStyle='rgba(239,137,74,.13)';c.fill();c.strokeStyle='#f9ba7b';c.lineWidth=2;c.stroke();
+            c.beginPath();c.arc(0,0,cfg.radius*p,0,Math.PI*2);c.fillStyle='rgba(246,150,73,.21)';c.fill();
+            c.beginPath();c.arc(0,0,cfg.radius+4,-Math.PI/2,-Math.PI/2+p*Math.PI*2);c.strokeStyle='#ffdea0';c.lineWidth=3;c.stroke();
+            this.line(c,[[-8,0],[8,0]],'#f5d59b',2);this.line(c,[[0,-8],[0,8]],'#f5d59b',2);
+        } else {
+            c.translate(e.attackStartX-cameraX,e.attackStartY-cameraY);c.rotate(e.attackAngle);
+            c.beginPath();c.roundRect(-cfg.radius,-cfg.radius,cfg.distance+cfg.radius*2,cfg.radius*2,cfg.radius);
+            c.fillStyle='rgba(231,205,133,.11)';c.fill();c.strokeStyle=e.type==='fast'?'#f3ce7c':'#dccc8b';c.lineWidth=1.5;c.stroke();
+            this.line(c,[[0,0],[cfg.distance*p,0]],'rgba(255,223,150,.7)',2.5);
+            this.line(c,[[cfg.distance-9,-6],[cfg.distance,0],[cfg.distance-9,6]],'#ffdea0',2);
+        }
+        c.restore();
+    }
+    static impact(c,m,cameraX=0,cameraY=0) {
+        const p=1-m.life/m.duration;
+        c.save();c.translate(m.x-cameraX,m.y-cameraY);c.globalAlpha=Math.max(0,1-p);
+        if(m.kind==='slam') {
+            c.strokeStyle='#e1bd7e';c.lineWidth=4*(1-p)+1;c.beginPath();c.arc(0,0,m.radius*(.35+p*.8),0,Math.PI*2);c.stroke();
+            for(let i=0;i<8;i++) {const a=i*Math.PI/4;c.save();c.rotate(a);this.line(c,[[12,0],[28,3],[m.radius*.75,0]],'#c9a574',2);c.restore();}
+        } else {
+            c.rotate(m.angle||0);
+            const size=(m.kind==='crit'?25:12)*(1+p*.3);
+            this.line(c,[[-size,-size*.4],[size,size*.4]],m.kind==='crit'?'#ffce71':'#fff1c3',m.kind==='crit'?3:2);
+            this.line(c,[[-size*.35,size*.65],[size*.35,-size*.65]],'#fff3c5',2);
+            if(m.kind==='crit') {c.strokeStyle='#ffd080';c.lineWidth=2;c.beginPath();c.arc(0,0,size*.65,0,Math.PI*2);c.stroke();}
         }
         c.restore();
     }
@@ -248,12 +307,12 @@ class ForestArt {
         c.fillStyle='#c5cfb1';c.font='15px "Microsoft YaHei",sans-serif';
         const touch=document.body.classList.contains('touch-device');
         c.fillText(touch?'左侧摇杆移动 · 右侧按钮冲刺':'WASD 移动 · SHIFT 冲刺 · ESC 暂停',w/2,h/2+113);
-        c.fillStyle='#9bad8d';c.font='13px "Microsoft YaHei",sans-serif';c.fillText('自动瞄准射击 · 收集经验 · 选择技能搭配',w/2,h/2+142);
+        c.fillStyle='#9bad8d';c.font='13px "Microsoft YaHei",sans-serif';c.fillText('自动射击 · 侧移避开金色预警 · 收招时反击',w/2,h/2+142);
         c.save();c.translate(w*.21,h*.54);c.scale(2.5,2.5);
         this.player(c,{x:0,y:0,size:20,animTimer:t,walkCycle:t*10,moving:true,aimAngle:.1,recoilTimer:0,hp:100});c.restore();
         c.save();c.translate(w*.8,h*.55);c.scale(2.3,2.3);
         this.enemy(c,{x:0,y:0,size:18,type:'normal',angle:Math.PI,animTimer:t,hp:30,maxHp:30});c.restore();
-        c.fillStyle='#a8b994';c.font='12px "Microsoft YaHei",sans-serif';c.fillText('原创角色外观 · 动作样稿 01',w/2,h-55);
+        c.fillStyle='#a8b994';c.font='12px "Microsoft YaHei",sans-serif';c.fillText('战斗样稿 02 · 观察预警，闪避后反击',w/2,h-55);
         c.restore();
     }
 }
