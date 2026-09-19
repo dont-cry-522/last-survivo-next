@@ -28,6 +28,7 @@ class InfernoSkills {
                         ctx.enemy.burnStacks = Math.min(p.stacks, (ctx.enemy.burnStacks || 0) + 1);
                         ctx.enemy.burnDmgPerStack = player.bulletDamage * p.dps;
                         ctx.enemy.burnTimer = p.duration;
+                        sm.visuals.emit('fire',ctx.enemy.x,ctx.enemy.y,{radius:22});
                     }
                 });
             },
@@ -56,6 +57,7 @@ class InfernoSkills {
                     ctx.enemy.burnStacks = Math.min(p.maxStacks, cur + p.stacks);
                     ctx.enemy.burnDmgPerStack = player.bulletDamage * p.dps;
                     ctx.enemy.burnTimer = p.duration;
+                        sm.visuals.emit('fire',ctx.enemy.x,ctx.enemy.y,{radius:22});
                 });
             },
         },
@@ -79,6 +81,7 @@ class InfernoSkills {
                     if (!inst) return;
                     const p = inst.getCurrentEffect().params;
                     if (!sm.runtimeState._fireZones) sm.runtimeState._fireZones = [];
+                    sm.visuals.emit('fire',ctx.enemy.x,ctx.enemy.y,{radius:p.radius});
                     sm.runtimeState._fireZones.push({
                         x: ctx.enemy.x, y: ctx.enemy.y,
                         radius: p.radius, life: p.duration,
@@ -120,6 +123,7 @@ class InfernoSkills {
                                 t.burnStacks = p.spreadStacks;
                                 t.burnDmgPerStack = e.burnDmgPerStack;
                                 t.burnTimer = 2;
+                                sm.visuals.emit('fire',e.x,e.y,{x2:t.x,y2:t.y,radius:12});
                                 break;
                             }
                         }
@@ -165,7 +169,7 @@ class InfernoSkills {
                     }
                     if (!sm.runtimeState._fireZones) sm.runtimeState._fireZones = [];
                     sm.runtimeState._fireZones.push({ x: fx, y: fy, radius: p.radius, life: 3, dps: player.bulletDamage * p.dmgMul * 0.1 });
-                    ctx.particleManager.spawnExplosion(fx, fy, '#ff6600', 20);
+                    sm.visuals.emit('meteor',fx,fy,{radius:p.radius});
                 });
             },
         },
@@ -201,13 +205,6 @@ class InfernoSkills {
             ],
             apply: function(player, sm, params, prevParams) {
                 _ensureBurnProcessor(sm);
-                sm.registerDraw("supernova", function(ctx,cx,cy,p) {
-                    const st=sm.runtimeState._supernova; if(!st||st.timer>2||st.timer<=0)return;
-                    const snap=(2-st.timer)/2;
-                    ctx.save();ctx.globalAlpha=snap*0.6;ctx.strokeStyle="#ff4400";ctx.lineWidth=6;
-                    ctx.shadowBlur=20;ctx.shadowColor="#ff2200";
-                    ctx.beginPath();ctx.arc(p.x-cx,p.y-cy,600*(1-snap),0,Math.PI*2);ctx.stroke();ctx.restore();
-                });
                 sm.registerHandler(SkillEffectType.PERIODIC, 'supernova', function(dt, ctx) {
                     const inst = sm.getSkill('supernova');
                     if (!inst) return;
@@ -223,7 +220,7 @@ class InfernoSkills {
                         e.burnDmgPerStack = player.bulletDamage * 0.3;
                         e.burnTimer = 5;
                     }
-                    ctx.particleManager.spawnExplosion(ctx.player.x, ctx.player.y, '#ff4400', 50);
+                    sm.visuals.emit('nova',ctx.player.x,ctx.player.y,{radius:600});
                 });
             },
         },
@@ -253,6 +250,7 @@ class InfernoSkills {
                         px.onCd = true;
                         px.timer = p.cooldown;
                         ctx.player.hp = Math.floor(ctx.player.maxHp * p.healPct);
+                        sm.visuals.emit('phoenix',ctx.player.x,ctx.player.y,{radius:p.radius});
                         const x = ctx.player.x, y = ctx.player.y;
                         for (const e of ctx.game?.enemyManager?.pool || []) {
                             if (!e.active) continue;

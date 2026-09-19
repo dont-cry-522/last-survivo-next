@@ -34,12 +34,12 @@ class StormSkills {
                             if ((ctx.enemy.x - e.x) ** 2 + (ctx.enemy.y - e.y) ** 2 < 100 * 100) {
                                 e.paralyzed = true; e.paralyzeTimer = p.paralyze * 0.5;
                                 e.takeDamage(player.bulletDamage * p.elecDmg * 0.5);
-                                ctx.particleManager.spawnHit(e.x, e.y, '#ffee44', 3);
+                                sm.visuals.emit('lightning',ctx.enemy.x,ctx.enemy.y,{x2:e.x,y2:e.y});
                                 break;
                             }
                         }
                     }
-                    ctx.particleManager.spawnHit(ctx.enemy.x, ctx.enemy.y, '#ffff44', 4);
+                    sm.visuals.emit('lightning',ctx.enemy.x,ctx.enemy.y-26,{x2:ctx.enemy.x,y2:ctx.enemy.y});
                 });
             },
         },
@@ -76,7 +76,7 @@ class StormSkills {
                         hit.add(nearest);
                         nearest.takeDamage(player.bulletDamage * p.dmgMul);
                         nearest.paralyzed = true; nearest.paralyzeTimer = 0.3;
-                        ctx.particleManager.spawnHit(nearest.x, nearest.y, '#ffff66', 5);
+                        sm.visuals.emit('lightning',source.x,source.y,{x2:nearest.x,y2:nearest.y});
                         source = nearest;
                     }
                 });
@@ -97,19 +97,6 @@ class StormSkills {
             ],
             apply: function(player, sm, params, prevParams) {
                 _ensureBurnProcessor(sm);
-                sm.registerDraw("stormCloud", function(ctx,cx,cy,p) {
-                    const sc=sm.runtimeState._stormCloud; if(!sc)return;
-                    const x=p.x-cx, y=p.y-cy-40;
-                    ctx.save();ctx.globalAlpha=0.7;ctx.fillStyle="#667799";
-                    ctx.beginPath();ctx.arc(x-12,y+4,14,0,Math.PI*2);ctx.fill();
-                    ctx.beginPath();ctx.arc(x+14,y+2,16,0,Math.PI*2);ctx.fill();
-                    ctx.beginPath();ctx.arc(x+2,y-4,18,0,Math.PI*2);ctx.fill();
-                    ctx.fillStyle="#8899bb";ctx.beginPath();ctx.arc(x+26,y+8,12,0,Math.PI*2);ctx.fill();
-                    ctx.beginPath();ctx.arc(x-20,y+10,10,0,Math.PI*2);ctx.fill();
-                    if(Math.random()<0.2){ctx.strokeStyle="#ffff88";ctx.lineWidth=2;
-                    ctx.beginPath();ctx.moveTo(x,y+18);ctx.lineTo(x+(Math.random()-0.5)*30,p.y-cy+(Math.random()*30));ctx.stroke();}
-                    ctx.restore();
-                });
                 sm.registerHandler(SkillEffectType.PERIODIC, 'storm_cloud', function(dt, ctx) {
                     const inst = sm.getSkill('storm_cloud');
                     if (!inst) return;
@@ -130,7 +117,7 @@ class StormSkills {
                         const t = candidates[Math.floor(Math.random() * candidates.length)];
                         t.takeDamage(ctx.player.bulletDamage * p.dmgMul);
                         t.paralyzed = true; t.paralyzeTimer = p.paralyze;
-                        ctx.particleManager.spawnExplosion(t.x, t.y, '#ffff66', 8);
+                        sm.visuals.emit('lightning',ctx.player.x,ctx.player.y-65,{x2:t.x,y2:t.y});
                     }
                 });
             },
@@ -173,7 +160,8 @@ class StormSkills {
                             e.paralyzed = true; e.paralyzeTimer = p.paralyze;
                         }
                     }
-                    for (let i = 0; i < 8; i++) {
+                    sm.visuals.emit('lightning',best.x,best.y,{x2:best.x,y2:best.y-240,radius:p.radius});
+                    for (let i = 0; i < 2; i++) {
                         ctx.particleManager.spawnTrail(
                             best.x + (Math.random() - 0.5) * p.radius, best.y + (Math.random() - 0.5) * p.radius,
                             Math.PI / 2 + Math.random() * 0.3, '#ffff66'
@@ -241,7 +229,7 @@ class StormSkills {
                         hit.add(nearest);
                         nearest.takeDamage(ctx.player.bulletDamage * p.dmgMul);
                         nearest.paralyzed = true; nearest.paralyzeTimer = 0.3;
-                        ctx.particleManager.spawnHit(nearest.x, nearest.y, '#ffff88', 4);
+                        sm.visuals.emit('lightning',source.x,source.y,{x2:nearest.x,y2:nearest.y});
                         source = nearest;
                     }
                 });
@@ -275,7 +263,7 @@ class StormSkills {
                             e.paralyzed = true; e.paralyzeTimer = p.paralyze;
                         }
                     }
-                    ctx.particleManager.spawnExplosion(x, y, '#ffff44', 20);
+                    sm.visuals.emit('lightning',x,y,{x2:x,y2:y-70,radius:p.radius});
                 });
             },
         },
@@ -317,7 +305,7 @@ class StormSkills {
                                 e.paralyzed = true; e.paralyzeTimer = p.paralyze;
                             }
                         }
-                        ctx.particleManager.spawnExplosion(t.x, t.y, '#ffff66', 10);
+                        sm.visuals.emit('lightning',t.x,t.y,{x2:t.x,y2:t.y-260,radius:p.radius});
                     }
                 });
             },

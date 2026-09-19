@@ -160,3 +160,5 @@ body { background:radial-gradient(ellipse at center,#314635 0%,#17271f 75%); }
 }
 body.touch-device .loadout-menu { left:8px; right:auto; bottom:auto; top:8px; padding:6px; font-size:10px; }
 @media(max-height:340px) { .loadout-help { display:none; } }
+.loadout-guide { margin-top:10px; font-size:12px; }.loadout-guide a { color:#e0c894; text-decoration:none; border-bottom:1px solid #b6a477; }
+@media(max-height:500px) { .loadout-guide{margin-top:5px;font-size:11px} }

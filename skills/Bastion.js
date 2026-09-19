@@ -49,6 +49,7 @@ class BastionSkills {
                         const d2 = (ctx.player.x - e.x) ** 2 + (ctx.player.y - e.y) ** 2;
                         if (d2 < (p.radius || 60) * (p.radius || 60)) {
                             e.takeDamage(ctx.amount * p.reflectMul);
+                            sm.visuals.emit('shadow',e.x,e.y,{radius:30,color:'#b6ce9c'});
                         }
                     }
                 });
@@ -79,7 +80,7 @@ class BastionSkills {
                     const p = inst.getCurrentEffect().params;
                     if (!sm.runtimeState._sanctuary) sm.runtimeState._sanctuary = { standTimer: 0, active: false };
                     const s = sm.runtimeState._sanctuary;
-                    const moving = ctx.player.keys.w || ctx.player.keys.a || ctx.player.keys.s || ctx.player.keys.d;
+                    const moving = ctx.player.moving;
                     if (moving) { s.standTimer = 0; s.active = false; }
                     else { s.standTimer += dt; }
                     s.active = s.standTimer >= p.standTime;
@@ -140,6 +141,7 @@ class BastionSkills {
                         const capped = ctx.player.maxHp * p.cap;
                         ctx.player.hp = Math.max(1, ctx.player.hp + ctx.amount - capped);
                         ub.onCd = true; ub.timer = p.cooldown;
+                        sm.visuals.emit('pickup',ctx.player.x,ctx.player.y,{radius:48,color:'#e0d49a'});
                     }
                 });
             },
@@ -164,6 +166,7 @@ class BastionSkills {
                     if (!inst) return;
                     const p = inst.getCurrentEffect().params;
                     ctx.player.hp = Math.min(ctx.player.maxHp, ctx.player.hp + p.heal);
+                    sm.visuals.emit('heal',ctx.player.x,ctx.player.y,{radius:28});
                 });
             },
         },
@@ -182,15 +185,6 @@ class BastionSkills {
             ],
             apply: function(player, sm, params, prevParams) {
                 _ensureBurnProcessor(sm);
-                sm.registerDraw("phantoms", function(ctx,cx,cy,p) {
-                    const ph=sm.runtimeState._phantoms; if(!ph)return;
-                    for(const pp of ph) {
-                        const px=pp.x-cx, py=pp.y-cy, fade=Math.max(0.1,pp.life/4);
-                        ctx.save();ctx.globalAlpha=fade*0.6;ctx.strokeStyle="#88ff88";ctx.lineWidth=2;
-                        ctx.beginPath();ctx.arc(px,py,25,0,Math.PI*2);ctx.stroke();
-                        ctx.fillStyle="#88ff88";ctx.beginPath();ctx.arc(px,py,10,0,Math.PI*2);ctx.fill();ctx.restore();
-                    }
-                });
                 if (!sm.runtimeState._phantoms) sm.runtimeState._phantoms = [];
                 sm.registerHandler(SkillEffectType.ON_DASH, 'counter_stance', function(ctx) {
                     const inst = sm.getSkill('counter_stance');
@@ -199,7 +193,7 @@ class BastionSkills {
                     sm.runtimeState._phantoms.push({
                         x: ctx.player.x, y: ctx.player.y, life: p.duration,
                     });
-                    ctx.particleManager.spawnExplosion(ctx.player.x, ctx.player.y, '#88ff88', 8);
+                    sm.visuals.emit('pickup',ctx.player.x,ctx.player.y,{radius:35,color:'#b4cfa5'});
                 });
                 sm.registerHandler(SkillEffectType.PERIODIC, 'counter_stance', function(dt, ctx) {
                     const inst = sm.getSkill('counter_stance');
@@ -216,7 +210,7 @@ class BastionSkills {
                                     e.takeDamage(ctx.player.bulletDamage * p.dmgMul);
                                 }
                             }
-                            ctx.particleManager.spawnExplosion(ph.x, ph.y, '#88ff88', 15);
+                            sm.visuals.emit('shadow',ph.x,ph.y,{radius:p.radius,color:'#b4cfa5'});
                             phantoms.splice(i, 1);
                         }
                     }
@@ -249,6 +243,7 @@ class BastionSkills {
                     ha.timer = p.cooldown;
                     const lost = ctx.player.maxHp - ctx.player.hp;
                     ctx.player.hp = Math.min(ctx.player.maxHp, ctx.player.hp + lost * p.healPct);
+                    sm.visuals.emit('heal',ctx.player.x,ctx.player.y,{radius:45});
                     if (p.waveDmg) {
                         for (const e of ctx.enemies) {
                             if (!e.active) continue;
@@ -256,7 +251,7 @@ class BastionSkills {
                                 e.takeDamage(ctx.player.bulletDamage * p.waveDmg);
                             }
                         }
-                        ctx.particleManager.spawnExplosion(ctx.player.x, ctx.player.y, '#aaffaa', 20);
+                        sm.visuals.emit('pickup',ctx.player.x,ctx.player.y,{radius:p.waveRadius,color:'#b4cfa5'});
                     }
                 });
             },

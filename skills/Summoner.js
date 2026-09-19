@@ -20,15 +20,6 @@ class SummonerSkills {
             ],
             apply: function(player, sm, params, prevParams) {
                 _ensureBurnProcessor(sm);
-                sm.registerDraw("drones", function(ctx,cx,cy,p) {
-                    const d=sm.runtimeState._drones; if(!d)return;
-                    for(const dr of d) {
-                        const dx=p.x+Math.cos(dr.angle)*(dr.orbitR||60)-cx, dy=p.y+Math.sin(dr.angle)*(dr.orbitR||60)-cy;
-                        ctx.save();ctx.fillStyle="#ffcc00";ctx.shadowBlur=10;ctx.shadowColor="#ffaa00";
-                        ctx.beginPath();ctx.arc(dx,dy,6,0,Math.PI*2);ctx.fill();
-                        ctx.fillStyle="#ffffff";ctx.beginPath();ctx.arc(dx,dy,3,0,Math.PI*2);ctx.fill();ctx.restore();
-                    }
-                });
                 if (!sm.runtimeState._drones) sm.runtimeState._drones = [];
                 const drones = sm.runtimeState._drones;
                 while (drones.length < params.count) drones.push({ angle: Math.random() * Math.PI * 2, orbitR: 60, fireTimer: 0 });
@@ -54,6 +45,7 @@ class SummonerSkills {
                             if (d2 < nd) { nd = d2; nearest = e; }
                         }
                         if (nearest) {
+                            d.aimAngle=Math.atan2(nearest.y-dy,nearest.x-dx);
                             ctx.bulletManager.fire(dx, dy, Math.atan2(nearest.y - dy, nearest.x - dx), ctx.player.bulletDamage * p.dmgMul, ctx.player.bulletSpeed, p.pierce ? ctx.player.pierce : 0, nearest);
                         }
                     }
@@ -161,7 +153,7 @@ class SummonerSkills {
                                 e.takeDamage(ctx.player.bulletDamage * p.bombDmg);
                             }
                         }
-                        ctx.particleManager.spawnExplosion(dx, dy, '#ffaa00', 12);
+                        sm.visuals.emit('fire',dx,dy,{radius:p.bombRadius,color:'#ddbd80'});
                     }
                 });
             },
@@ -180,22 +172,6 @@ class SummonerSkills {
             ],
             apply: function(player, sm, params, prevParams) {
                 _ensureBurnProcessor(sm);
-                sm.registerDraw("mothership", function(ctx,cx,cy,p) {
-                    const ms=sm.runtimeState._mothership; if(!ms)return;
-                    if(ms.timer>0 || ms.interceptors?.length>0) {
-                        const mx=p.x-cx, my=p.y-cy-200;
-                        ctx.save();ctx.globalAlpha=0.5;ctx.fillStyle="#444466";ctx.shadowBlur=20;ctx.shadowColor="#334466";
-                        ctx.beginPath();ctx.ellipse(mx,my,80,20,0,0,Math.PI*2);ctx.fill();
-                        ctx.fillStyle="#666688";ctx.beginPath();ctx.ellipse(mx,my-4,50,12,0,0,Math.PI*2);ctx.fill();ctx.restore();
-                    }
-                    const ic=ms.interceptors; if(!ic)return;
-                    for(const i of ic) {
-                        const ix=i.x-cx, iy=i.y-cy;
-                        ctx.save();ctx.globalAlpha=0.7;ctx.strokeStyle="#ffaa00";ctx.lineWidth=2;
-                        ctx.beginPath();ctx.moveTo(ix,iy-8);ctx.lineTo(ix-6,iy+4);ctx.lineTo(ix+6,iy+4);ctx.closePath();ctx.stroke();
-                        ctx.fillStyle="#ffcc00";ctx.beginPath();ctx.arc(ix,iy+2,4,0,Math.PI*2);ctx.fill();ctx.restore();
-                    }
-                });
                 if (!sm.runtimeState._mothership) sm.runtimeState._mothership = { timer: 0, interceptors: [] };
                 sm.registerHandler(SkillEffectType.PERIODIC, 'mothership', function(dt, ctx) {
                     const inst = sm.getSkill('mothership');
@@ -225,6 +201,7 @@ class SummonerSkills {
                                 if (d2 < nd) { nd = d2; nearest = e; }
                             }
                             if (nearest) {
+                                ic.aimAngle=Math.atan2(nearest.y-ic.y,nearest.x-ic.x);
                                 ctx.bulletManager.fire(ic.x, ic.y, Math.atan2(nearest.y - ic.y, nearest.x - ic.x), ctx.player.bulletDamage * ic.dmgMul, ctx.player.bulletSpeed, 0, nearest);
                             }
                         }
@@ -261,7 +238,8 @@ class SummonerSkills {
                             e.takeDamage(ctx.player.bulletDamage * p.dmgMul);
                         }
                     }
-                    for (let i = -3; i <= 3; i++) {
+                    sm.visuals.emit('beam',ctx.player.x,ctx.player.y,{radius:p.radius});
+                    for (let i = -1; i <= 1; i++) {
                         ctx.particleManager.spawnExplosion(ctx.player.x + i * 40, ctx.player.y - 300, '#ffdd44', 5);
                     }
                 });

@@ -159,6 +159,7 @@ class Player {
             const d = Math.min(this.shield, amount);
             this.shield -= d;
             amount -= d;
+            if(d>0)this._onShieldHit?.();
         }
         this.hp -= amount;
         this.combo = 0;

@@ -105,6 +105,7 @@ class Game {
         // 创建玩家
         this.player = new Player(0, 0);
         this.player.audio = this.audio;
+        this.player._onShieldHit=()=>this.skillManager.visuals.emit('pickup',this.player.x,this.player.y,{radius:42,color:'#b4d3b5',duration:.28});
         this.player._onDamaged = (amount) => {
             this.skillManager.trigger(SkillEffectType.ON_DAMAGED, { amount, player: this.player, game: this, enemies: this.enemyManager.getActiveEnemies() });
         };

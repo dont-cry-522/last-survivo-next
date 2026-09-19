@@ -45,6 +45,7 @@ class ReaperSkills {
                     const hpPct = ctx.enemy.hp / ctx.enemy.maxHp;
                     if (hpPct <= p.threshold) {
                         ctx.bullet.damage *= p.dmgMul;
+                        sm.visuals.emit('mark',ctx.enemy.x,ctx.enemy.y,{radius:32});
                         if (p.healPct && ctx.enemy.hp <= 0) {
                             player.hp = Math.min(player.maxHp, player.hp + player.maxHp * p.healPct);
                         }
@@ -71,6 +72,7 @@ class ReaperSkills {
                     const inst = sm.getSkill('death_mark');
                     if (!inst) return;
                     sm.runtimeState._marks[ctx.enemy] = true;
+                    sm.visuals.emit('mark',ctx.enemy.x,ctx.enemy.y,{radius:26});
                 });
                 sm.registerHandler(SkillEffectType.ON_HIT, 'death_mark_amp', function(ctx) {
                     const inst = sm.getSkill('death_mark');
@@ -119,6 +121,7 @@ class ReaperSkills {
                     const inst = sm.getSkill('reap');
                     if (!inst) return;
                     player.dashCooldown = 0;
+                    sm.visuals.emit('soul',player.x,player.y,{radius:44});
                     player.attackSpeed *= (1 + inst.getCurrentEffect().params.atkBoost);
                     setTimeout(() => { player.attackSpeed /= (1 + inst.getCurrentEffect().params.atkBoost); }, inst.getCurrentEffect().params.duration * 1000);
                 });
@@ -148,6 +151,7 @@ class ReaperSkills {
                     const f = sm.runtimeState._frenzy;
                     f.stacks = Math.min(p.maxStacks, f.stacks + 1);
                     f.timer = p.duration;
+                    sm.visuals.emit('soul',player.x,player.y,{radius:26});
                 });
                 sm.registerHandler(SkillEffectType.PERIODIC, 'blood_frenzy', function(dt) {
                     const f = sm.runtimeState._frenzy;
@@ -177,6 +181,7 @@ class ReaperSkills {
                     const p = inst.getCurrentEffect().params;
                     if (!sm.runtimeState._cursed.has(ctx.enemy)) {
                         sm.runtimeState._cursed.add(ctx.enemy);
+                        sm.visuals.emit('mark',ctx.enemy.x,ctx.enemy.y,{radius:20});
                     } else {
                         ctx.bullet.damage *= (1 + p.dmgAmp);
                     }
@@ -204,6 +209,7 @@ class ReaperSkills {
                     if (!inst) return;
                     const p = inst.getCurrentEffect().params;
                     sm.runtimeState._souls = Math.min(p.maxSouls, (sm.runtimeState._souls || 0) + 1);
+                    sm.visuals.emit('soul',player.x,player.y,{radius:35});
                 });
             },
         },
@@ -231,6 +237,7 @@ class ReaperSkills {
                         sm.runtimeState._assassinated.add(ctx.enemy);
                         ctx.bullet.isCrit = true;
                         ctx.bullet.damage *= p.dmgMul;
+                        sm.visuals.emit('mark',ctx.enemy.x,ctx.enemy.y,{radius:32});
                         if (p.slow) { ctx.enemy.slowAmount = p.slow; }
                         if (p.burn) { ctx.enemy.burnStacks = p.burn; ctx.enemy.burnDmgPerStack = player.bulletDamage * 0.15; ctx.enemy.burnTimer = 3; }
                     }

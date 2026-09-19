@@ -11,18 +11,6 @@ class EffectDispatcher {
         this._systemReady = true;
         const sm = this.sm;
 
-        sm.registerDraw('fireZones', function(ctx, cx, cy, p) {
-            const zones = sm.runtimeState._fireZones;
-            if (!zones) return;
-            for (const z of zones) {
-                const zx = z.x - cx, zy = z.y - cy;
-                ctx.save(); ctx.globalAlpha = 0.25 + Math.sin(Date.now() * 0.01) * 0.1;
-                const grad = ctx.createRadialGradient(zx, zy, 0, zx, zy, z.radius);
-                grad.addColorStop(0, '#ff4400'); grad.addColorStop(0.5, '#ff6600'); grad.addColorStop(1, 'transparent');
-                ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(zx, zy, z.radius, 0, Math.PI * 2); ctx.fill();
-                ctx.restore();
-            }
-        });
         sm.registerHandler(SkillEffectType.PERIODIC, '__shield_regen__', function(dt, ctx) {
             if (sm.runtimeState._shieldRegen && ctx.player.shield > 0) {
                 ctx.player.shield = Math.min(sm.runtimeState._shieldMax || ctx.player.shield, ctx.player.shield + sm.runtimeState._shieldRegen * dt);
@@ -58,22 +46,7 @@ class EffectDispatcher {
         sm.registerHandler(SkillEffectType.PERIODIC, '__burn__', function(dt, ctx) {
             for (const e of ctx.enemies) {
                 if (!e.active || !e.burnStacks) continue;
-                e.takeDamage(e.burnDmgPerStack * e.burnStacks * dt);
-                if (ctx.particleManager && Math.random() < 0.3) {
-                    ctx.particleManager.spawnTrail(e.x + (Math.random()-0.5)*e.size, e.y + (Math.random()-0.5)*e.size, -Math.PI/2+Math.random()*0.5, '#ff6600');
-                }
-            }
-            for (const e of ctx.enemies) {
-                if (!e.active) continue;
-                if (e.frozen && ctx.particleManager && Math.random() < 0.7) {
-                    ctx.particleManager.spawnTrail(e.x+(Math.random()-0.5)*e.size*1.5, e.y+(Math.random()-0.5)*e.size*1.5, Math.PI/2+Math.random()*0.5, '#88ddff');
-                } else if (e.slowAmount > 0 && ctx.particleManager && Math.random() < 0.3) {
-                    ctx.particleManager.spawnHit(e.x+(Math.random()-0.5)*e.size, e.y+(Math.random()-0.5)*e.size, '#aaddff', 2);
-                }
-            }
-            for (const e of ctx.enemies) {
-                if (!e.active || !e.paralyzed || !ctx.particleManager) continue;
-                if (Math.random() < 0.6) ctx.particleManager.spawnHit(e.x+(Math.random()-0.5)*e.size, e.y+(Math.random()-0.5)*e.size, '#ffff88', 2);
+                e.takeDamage(e.burnDmgPerStack * e.burnStacks * dt,0,false);
             }
             const zones = sm.runtimeState._fireZones;
             if (zones) {
@@ -86,7 +59,7 @@ class EffectDispatcher {
                     for (const e of ctx.enemies) {
                         if (!e.active) continue;
                         if ((z.x-e.x)**2+(z.y-e.y)**2 < r*r) {
-                            e.takeDamage(d*dt); e.burnStacks=Math.min(5,(e.burnStacks||0)+1);
+                            e.takeDamage(d*dt,0,false); e.burnStacks=Math.min(5,(e.burnStacks||0)+1);
                             e.burnDmgPerStack=ctx.player.bulletDamage*0.10; e.burnTimer=Math.max(e.burnTimer||0,1);
                         }
                     }
@@ -100,11 +73,16 @@ class EffectDispatcher {
         this.handlers[effectType][skillId] = handler;
     }
 
+    owner(skillId) {
+        const aliases={ice_armor_timer:'ice_armor',shadow_step_blast:'shadow_step'};
+        return this.sm._findOwned(aliases[skillId]||skillId);
+    }
+
     trigger(effectType, context) {
         const handlers = this.handlers[effectType] || {};
         for (const skillId in handlers) {
-            const inst = this.sm._findOwned(skillId);
-            if (!inst) continue;
+            const inst = this.owner(skillId);
+            if (!inst && !skillId.startsWith('__')) continue;
             handlers[skillId](context, inst);
         }
     }
@@ -115,7 +93,7 @@ class EffectDispatcher {
         for (const skillId in sysHandlers) {
             if (skillId.startsWith('__')) {
                 sysHandlers[skillId](deltaTime, gameContext);
-            } else if (sm._findOwned(skillId) && !sm.effectRegistry[SkillEffectType.PERIODIC]?.some(i => i.id === skillId)) {
+            } else if (this.owner(skillId) && !sm.effectRegistry[SkillEffectType.PERIODIC]?.some(i => i.id === skillId)) {
                 sysHandlers[skillId](deltaTime, gameContext);
             }
         }

@@ -26,6 +26,7 @@ class SkillManager {
         this.activeBuffs = [];
 
         this.dispatcher = new EffectDispatcher(this);
+        this.visuals = new SkillVisuals();
     }
 
     // ================================================================
@@ -134,6 +135,11 @@ class SkillManager {
     acquire(skillId, gameState) {
         const existing = this._findOwned(skillId);
         const player = gameState ? gameState.player : null;
+        const definition=existing?.config||SkillConfig.POOL.find(d=>d.id===skillId);
+        if(player && definition && !existing?.isMaxed) {
+            this.visuals.audio=player.audio;
+            this.visuals.emit('pickup',player.x,player.y,{radius:40,color:SkillVisuals.COLORS[definition.category]});
+        }
 
         if (existing) {
             if (existing.isMaxed) {
@@ -268,6 +274,7 @@ class SkillManager {
      * 重置（新游戏开始时调用）
      */
     reset() {
+        this.visuals.clear();
         this.skills = [];
         this.effectRegistry = {};
         this.activeSynergies = [];
@@ -338,6 +345,8 @@ class SkillManager {
     }
 
     update(deltaTime, gameContext) {
+        this.visuals.audio=gameContext.player.audio;
+        this.visuals.update(deltaTime);
         if (!this.runtimeState._visualsReady) {
             this.runtimeState._visualsReady = true;
             this.dispatcher.ensureSystemEffects();
@@ -397,6 +406,7 @@ class SkillManager {
     registerDraw(name, fn) { this.dispatcher.registerDraw(name, fn); }
 
     drawSkillVisuals(ctx, cameraX, cameraY, player) {
+        this.visuals.draw(ctx,cameraX,cameraY,player,this);
         this.dispatcher.drawSkillVisuals(ctx, cameraX, cameraY, player);
     }
 }

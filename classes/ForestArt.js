@@ -174,12 +174,17 @@ class ForestArt {
         else if(e.type==='elite') this.brute(c,t,hurt,attack,true,windup,motion,state,strike,recovery);
         else this.mushroom(c,t,hurt,e.type==='exploder',attack,motion,windup,death);
         if(e.frozen) {
-            this.shape(c,[[-21,12],[-22,-12],[-10,-34],[10,-35],[22,-13],[20,13]],'rgba(165,232,245,.38)','#b0ebed',1);
+            this.shape(c,[[-21,12],[-22,-12],[-10,-34],[10,-35],[22,-13],[20,13]],'rgba(165,217,222,.22)','#b0d9db',1);
+            this.line(c,[[-10,-34],[-5,-14],[-15,2],[-6,11]],'#cce8df',1);
+            this.line(c,[[10,-35],[5,-16],[16,-8],[10,10]],'#a9d2d3',1);
+            this.shape(c,[[-24,12],[-23,1],[-16,12]],'#acd1d5','#719c9e',.7);
+            this.shape(c,[[15,12],[20,-2],[25,12]],'#c4dfdc','#719c9e',.7);
         } else if(e.burnStacks>0) {
-            this.shape(c,[[-13,8],[-16,-3],[-10,0],[-8,-12],[-2,-2],[3,-10],[7,1],[14,-5],[12,9]],'rgba(255,148,54,.65)',null);
+            for(let i=0;i<4;i++){const fx=-12+i*8,tip=8+Math.sin(t*9+i*2)*4;this.shape(c,[[fx-3,10],[fx-4,3],[fx,10-tip],[fx+2,4],[fx+4,10]],'#df995d',null);}
+            this.oval(c,Math.sin(t*4)*12,-15-(t*20)%17,1.3,2,'#edc58b',null);
         } else if(e.paralyzed) {
-            this.line(c,[[-19,-23],[-24,-13],[-18,-14],[-22,-5]],'#ffe289',2);
-            this.line(c,[[22,-20],[18,-10],[24,-12],[20,-2]],'#ffe289',2);
+            this.line(c,[[-19,-23],[-24,-13],[-18,-14],[-22,-5]],'#e9dba6',1.8);
+            this.line(c,[[22,-20],[18,-10],[24,-12],[20,-2]],'#e9dba6',1.8);
         }
         c.restore();
         if(!death && e.hp<e.maxHp) {

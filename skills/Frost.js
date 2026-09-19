@@ -24,6 +24,7 @@ class FrostSkills {
                     if (!inst) return;
                     const p = inst.getCurrentEffect().params;
                     ctx.enemy.slowAmount = Math.max(ctx.enemy.slowAmount || 0, p.slow);
+                    sm.visuals.emit('ice',ctx.enemy.x,ctx.enemy.y,{radius:18});
                     ctx.bullet.damage *= (1 + p.dmgBonus);
                     if (p.freeze && !ctx.enemy.slowAmount) {
                         ctx.enemy.frozen = true;
@@ -61,6 +62,7 @@ class FrostSkills {
                     if (h.hits >= p.hitsNeeded) {
                         ctx.enemy.frozen = true;
                         ctx.enemy.frozenTimer = p.freezeDuration;
+                        sm.visuals.emit('ice',ctx.enemy.x,ctx.enemy.y,{radius:35});
                         h.hits = 0;
                     }
                 });
@@ -86,6 +88,7 @@ class FrostSkills {
                     if (!ctx.enemy.frozen) return;
                     const p = inst.getCurrentEffect().params;
                     ctx.bullet.isCrit = true;
+                    sm.visuals.emit('ice',ctx.enemy.x,ctx.enemy.y,{radius:p.novaRadius||35});
                     ctx.bullet.damage *= (1 + p.critDmgBonus);
                     if (p.novaRadius) {
                         for (const e of ctx.enemies) {
@@ -95,7 +98,7 @@ class FrostSkills {
                                 e.slowAmount = 0.5;
                             }
                         }
-                        ctx.particleManager.spawnExplosion(ctx.enemy.x, ctx.enemy.y, '#88ccff', 12);
+
                     }
                 });
             },
@@ -162,7 +165,7 @@ class FrostSkills {
                             e.takeDamage(ctx.player.bulletDamage * p.dmgMul);
                             }
                         }
-                        ctx.particleManager.spawnExplosion(ctx.player.x, ctx.player.y, '#aaddff', 15);
+                        sm.visuals.emit('ice',ctx.player.x,ctx.player.y,{radius:p.radius});
                     }
                 });
             },
@@ -187,7 +190,7 @@ class FrostSkills {
                     for (const e of ctx.enemies) {
                         if (!e.active || !e.frozen || e.hp > 0) continue;
                         e.hp = 0; e.active = false;
-                        ctx.particleManager.spawnExplosion(e.x, e.y, '#88ccff', 10);
+                        sm.visuals.emit('ice',e.x,e.y,{radius:p.radius});
                         for (const t of ctx.enemies) {
                             if (!t.active || t === e) continue;
                             if ((e.x - t.x) ** 2 + (e.y - t.y) ** 2 < p.radius * p.radius) {
@@ -224,6 +227,7 @@ class FrostSkills {
                     const ia = sm.runtimeState._iceArmor;
                     if (ia.active) {
                         ia.active = false;
+                        sm.visuals.emit('ice',ctx.player.x,ctx.player.y,{radius:150});
                         ctx.player.hp = Math.min(ctx.player.maxHp, ctx.player.hp + ctx.amount);
                         ctx.player.hp = Math.max(ctx.player.hp, 1);
                         for (const e of ctx.enemies) {
@@ -273,7 +277,7 @@ class FrostSkills {
                     const p = inst.getCurrentEffect().params;
                     for (const e of ctx.enemies) {
                         if (!e.active || !e.frozen) continue;
-                        e.takeDamage(e.maxHp * p.hpDps * dt);
+                        e.takeDamage(e.maxHp * p.hpDps * dt,0,false);
                     }
                 });
             },

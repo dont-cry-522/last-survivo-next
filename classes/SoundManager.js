@@ -15,6 +15,7 @@ class SoundManager {
         this.initialized = false;
         this.lastAttackCue = -Infinity;
         this.lastWeaponImpact = {};
+        this.lastSkillCue=-Infinity;
     }
 
     /**
@@ -116,6 +117,16 @@ class SoundManager {
         } else if(kind==='fireball') {
             this._playTone(280,.18,'sine',.10);this._playTone(560,.12,'triangle',.06);this._playNoise(.18,.07,1800);
         } else {this._playNoise(.045,.08,2500);this._playTone(480,.045,'triangle',.065);}
+    }
+
+    skillCue(kind) {
+        if(!this.enabled||!this.ctx||this.ctx.currentTime-this.lastSkillCue<.16)return;
+        this.lastSkillCue=this.ctx.currentTime;
+        if(['fire','meteor','nova','phoenix'].includes(kind)){this._playNoise(.16,.055,950);this._playTone(95,.13,'sine',.065);}
+        else if(kind==='ice'){this._playTone(1250,.09,'triangle',.045);this._playNoise(.045,.025,3200);}
+        else if(kind==='lightning'||kind==='beam'){this._playNoise(.055,.045,3600);this._playTone(460,.07,'sawtooth',.025);}
+        else if(kind==='heal'||kind==='pickup'){this._playTone(660,.14,'sine',.035);this._playTone(990,.18,'sine',.02);}
+        else if(kind==='shadow'||kind==='soul'||kind==='mark')this._playNoise(.10,.035,750);
     }
 
     weaponImpact(kind, crit=false) {

@@ -102,10 +102,12 @@ class Enemy {
      * 受到伤害（纯数据变更，不产生外部效果）
      * @returns {boolean} 是否死亡
      */
-    takeDamage(amount, bulletAngle = 0) {
+    takeDamage(amount, bulletAngle = 0, showImpact = true) {
         this.hp -= amount;
-        this.hitFlash = EnemyConfig.HIT_FLASH_DURATION;
-        this.hurtAngle = bulletAngle;
+        if(showImpact) {
+            this.hitFlash = EnemyConfig.HIT_FLASH_DURATION;
+            this.hurtAngle = bulletAngle;
+        }
 
         const knockbackForce = amount * EnemyConfig.KNOCKBACK_FORCE_COEFFICIENT;
         this.knockbackX += Math.cos(bulletAngle) * knockbackForce;

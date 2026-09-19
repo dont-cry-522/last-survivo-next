@@ -20,14 +20,6 @@ class ShadowSkills {
             ],
             apply: function(player, sm, params, prevParams) {
                 _ensureBurnProcessor(sm);
-                sm.registerDraw("afterimages", function(ctx,cx,cy,p) {
-                    const im=sm.runtimeState._afterimages; if(!im)return;
-                    for(const i of im) {
-                        const ax=i.x-cx, ay=i.y-cy, fade=Math.max(0,i.life/0.5);
-                        ctx.save();ctx.globalAlpha=fade*0.8;ctx.fillStyle="#aa66ff";ctx.shadowBlur=10;ctx.shadowColor="#9966ff";
-                        ctx.beginPath();ctx.arc(ax,ay,8,0,Math.PI*2);ctx.fill();ctx.restore();
-                    }
-                });
                 if (!sm.runtimeState._afterimages) sm.runtimeState._afterimages = [];
                 sm.registerHandler(SkillEffectType.ON_DASH, 'afterimage_blast', function(ctx) {
                     const inst = sm.getSkill('afterimage_blast');
@@ -54,7 +46,7 @@ class ShadowSkills {
                                     e.takeDamage(im.dmg);
                                 }
                             }
-                            ctx.particleManager.spawnExplosion(im.x, im.y, '#aa66ff', 10);
+                            sm.visuals.emit('shadow',im.x,im.y,{radius:im.radius});
                             images.splice(i, 1);
                         }
                     }
@@ -86,6 +78,7 @@ class ShadowSkills {
                         const d2 = (ctx.player.x - e.x) ** 2 + (ctx.player.y - e.y) ** 2;
                         if (d2 < dashLen * dashLen) {
                             e.takeDamage(ctx.player.bulletDamage * p.dmgMul);
+                            sm.visuals.emit('shadow',e.x,e.y,{radius:28});
                             sm.runtimeState._marked[e] = p.markDuration;
                         }
                     }
@@ -133,7 +126,7 @@ class ShadowSkills {
                             e.takeDamage(ctx.player.bulletDamage * p.blastDmg);
                         }
                     }
-                    ctx.particleManager.spawnExplosion(ctx.player.x, ctx.player.y, '#9966ff', 15);
+                    sm.visuals.emit('shadow',ctx.player.x,ctx.player.y,{radius:150});
                 });
             },
         },
@@ -178,6 +171,7 @@ class ShadowSkills {
                                 if (d2 < nd) { nd = d2; nearest = e; }
                             }
                             if (nearest) {
+                                ec.aimAngle=Math.atan2(nearest.y-ec.y,nearest.x-ec.x);
                                 ctx.bulletManager.fire(ec.x, ec.y, Math.atan2(nearest.y - ec.y, nearest.x - ec.x), ctx.player.bulletDamage * ec.dmgMul, ctx.player.bulletSpeed, ctx.player.pierce, nearest);
                             }
                         }
@@ -201,15 +195,6 @@ class ShadowSkills {
             ],
             apply: function(player, sm, params, prevParams) {
                 _ensureBurnProcessor(sm);
-                sm.registerDraw("traps", function(ctx,cx,cy,p) {
-                    const tr=sm.runtimeState._traps; if(!tr)return;
-                    for(const t of tr) {
-                        const tx=t.x-cx, ty=t.y-cy;
-                        ctx.save();ctx.globalAlpha=0.6;ctx.strokeStyle="#9966ff";ctx.lineWidth=2;ctx.setLineDash([4,4]);
-                        ctx.beginPath();ctx.arc(tx,ty,t.radius,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
-                        ctx.fillStyle="#9966ff";ctx.beginPath();ctx.arc(tx,ty,5,0,Math.PI*2);ctx.fill();ctx.restore();
-                    }
-                });
                 if (!sm.runtimeState._traps) sm.runtimeState._traps = [];
                 sm.registerHandler(SkillEffectType.ON_DASH, 'trap_rune', function(ctx) {
                     const inst = sm.getSkill('trap_rune');
@@ -237,7 +222,7 @@ class ShadowSkills {
                             }
                         }
                         if (triggered) {
-                            ctx.particleManager.spawnExplosion(tr.x, tr.y, '#9966ff', 10);
+                            sm.visuals.emit('shadow',tr.x,tr.y,{radius:tr.radius});
                             traps.splice(i, 1);
                         }
                     }
@@ -263,6 +248,7 @@ class ShadowSkills {
                     if (!inst) return;
                     const p = inst.getCurrentEffect().params;
                     player._blinkCrit = { timer: p.duration, bonus: p.critBonus };
+                    sm.visuals.emit('shadow',player.x,player.y,{radius:40});
                 });
             },
         },
@@ -309,6 +295,7 @@ class ShadowSkills {
                                 if (d2 < nd) { nd = d2; nearest = e; }
                             }
                             if (nearest) {
+                                ph.aimAngle=Math.atan2(nearest.y-ph.y,nearest.x-ph.x);
                                 ctx.bulletManager.fire(ph.x, ph.y, Math.atan2(nearest.y - ph.y, nearest.x - ph.x), ctx.player.bulletDamage * ph.dmgMul, ctx.player.bulletSpeed, 0, nearest);
                             }
                         }
@@ -338,6 +325,7 @@ class ShadowSkills {
                     if (!inst) return;
                     const p = inst.getCurrentEffect().params;
                     sm.runtimeState._voidStacks = Math.min(p.maxStacks, (sm.runtimeState._voidStacks || 0) + 1);
+                    sm.visuals.emit('pickup',player.x,player.y,{radius:30,color:'#b6a3ce'});
                 });
             },
         },
