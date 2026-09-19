@@ -119,20 +119,61 @@ class SoundManager {
         } else {this._playNoise(.045,.08,2500);this._playTone(480,.045,'triangle',.065);}
     }
 
+    // Resolve a collision's sound after its real on-hit skill procs.
+    beginImpact(){this.pendingImpact={element:false,weapon:null};}
+    endImpact(){const pending=this.pendingImpact;this.pendingImpact=null;if(pending?.weapon&&!pending.element)this.weaponImpact(...pending.weapon);}
+
+    /** Noise grains and physical envelopes instead of pitched notification tones. */
+    _playElement(kind) {
+        this._ensureInit();
+        this.elementBuffers ||= {};
+        let buffer=this.elementBuffers[kind];
+        if(!buffer){
+            const rate=this.ctx.sampleRate,duration=kind==='fire'?.48:kind==='ice'?.30:.19;
+            buffer=this.ctx.createBuffer(1,Math.ceil(rate*duration),rate);
+            const data=buffer.getChannelData(0);let seed=317,low=0,previous=0;
+            for(let i=0;i<data.length;i++){
+                seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+                const noise=seed/2147483648-1,t=i/rate;low+=.035*(noise-low);
+                let value;
+                if(kind==='ice'){
+                    // Brittle initial crack followed by scattered, irregular shard ticks.
+                    const grain=t% .037,burst=Math.exp(-grain*430)*Math.exp(-t*10);
+                    const high=noise-previous;previous=noise;
+                    value=high*(.32*Math.exp(-t*85)+.42*burst);
+                }else if(kind==='lightning'){
+                    // Gated broadband arc with a descending electrical rasp.
+                    const gate=Math.sin(t*690+Math.sin(t*93)*3)>-.15?1:.12;
+                    value=(noise*.65+Math.sin(2*Math.PI*(160*t-250*t*t))*.18)*gate*Math.exp(-t*23);
+                }else{
+                    // A pressure thump, turbulent body and a fading flame tail.
+                    value=(Math.sin(2*Math.PI*(78*t-58*t*t))*.58*Math.exp(-t*17)+low*2.4*Math.exp(-t*7)+noise*.15*Math.exp(-t*65));
+                }
+                data[i]=Math.max(-.9,Math.min(.9,value))*Math.min(1,t*2500)*Math.min(1,(duration-t)*150);
+            }
+            this.elementBuffers[kind]=buffer;
+        }
+        const source=this.ctx.createBufferSource();source.buffer=buffer;
+        source.connect(this._gain(kind==='fire'?.48:.36));source.start();
+        source.onended=()=>source.disconnect();
+    }
+
     skillCue(kind) {
+        const elemental=['fire','meteor','nova','phoenix','ice','lightning','beam'].includes(kind);
+        if(elemental&&this.pendingImpact)this.pendingImpact.element=true;
         if(!this.enabled||!this.ctx)return;
         const family=['fire','meteor','nova','phoenix'].includes(kind)?'fire':kind==='beam'?'lightning':kind;
         this.skillCueTimes ||= {};
         if(this.ctx.currentTime-(this.skillCueTimes[family]??-Infinity)<.18)return;
         this.skillCueTimes[family]=this.ctx.currentTime;
-        if(['fire','meteor','nova','phoenix'].includes(kind)){this._playNoise(.24,.085,850);this._playTone(85,.18,'sine',.085);this._playNoise(.05,.035,2600);}
-        else if(kind==='ice'){this._playTone(1450,.13,'triangle',.07);this._playTone(2300,.08,'sine',.035);this._playNoise(.055,.04,4200);}
-        else if(kind==='lightning'||kind==='beam'){this._playNoise(.075,.07,3600);this._playTone(620,.09,'sawtooth',.045);this._playTone(120,.045,'square',.025);}
+        if(elemental)this._playElement(family);
         else if(kind==='heal'||kind==='pickup'){this._playTone(660,.14,'sine',.035);this._playTone(990,.18,'sine',.02);}
         else if(kind==='shadow'||kind==='soul'||kind==='mark')this._playNoise(.10,.035,750);
     }
 
     weaponImpact(kind, crit=false) {
+        if(this.pendingImpact){this.pendingImpact.weapon=[kind,crit];return;}
+        if(kind==='fireball'){this.skillCue('fire');return;}
         if(!this.enabled || !this.ctx) return;
         kind=['rifle','shotgun','fireball'].includes(kind)?kind:'rifle';
         const now=this.ctx.currentTime;

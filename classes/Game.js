@@ -605,6 +605,7 @@ class Game {
 
                 if (bullet.touches(enemy)) {
                     if (bullet.onHit(enemy, this.particleManager)) {
+                        this.audio.beginImpact?.();
                         const dead = enemy.takeDamage(bullet.damage,
                             Utils.angle(bullet.x, bullet.y, enemy.x, enemy.y));
                         this.applyWeaponImpact(bullet,enemy);
@@ -633,6 +634,7 @@ class Game {
                                 particleManager: this.particleManager,
                             });
                         }
+                        this.audio.endImpact?.();
                     }
                     if (!bullet.active) break;
                 }
