@@ -1,6 +1,6 @@
 /** Presentation only: effects use game time and never mutate combat or consume RNG. */
 class SkillVisuals {
-    static COLORS={bullet_storm:'#e5c98c',inferno:'#edab67',frost:'#afdcdf',storm:'#eadba2',bastion:'#a9d2aa',shadow:'#b8a4d2',reaper:'#d89194',summoner:'#cfbf86'};
+    static COLORS={bullet_storm:'#e5c98c',inferno:'#ff783b',frost:'#70d9ff',storm:'#ffe650',bastion:'#a9d2aa',shadow:'#b8a4d2',reaper:'#d89194',summoner:'#cfbf86'};
     constructor(){this.events=[];this.time=0;this.audio=null;}
     clear(){this.events.length=0;this.time=0;}
     emit(kind,x,y,options={}) {
@@ -59,11 +59,11 @@ class SkillVisuals {
             ForestArt.oval(c,zx,zy,r,r,'rgba(108,57,32,.045)',null);
             c.setLineDash([10,12]);SkillVisuals.ring(c,zx,zy,r,'rgba(226,157,92,.45)');c.setLineDash([]);
             for(let i=0;i<12;i++){const a=i*2.4,rr=r*(.3+(i%4)*.17),fx=zx+Math.cos(a)*rr,fy=zy+Math.sin(a)*rr,lift=9+Math.sin(t*7+i)*4;
-                ForestArt.shape(c,[[fx-4,fy],[fx-5,fy-6],[fx-1,fy-lift],[fx+2,fy-5],[fx+5,fy-8],[fx+4,fy]],i%2?'#cd8956':'#e0a567',null);}
+                ForestArt.shape(c,[[fx-4,fy],[fx-5,fy-6],[fx-1,fy-lift],[fx+2,fy-5],[fx+5,fy-8],[fx+4,fy]],i%2?'#f26332':'#ffae45',null);}
             c.restore();
         }
-        const frost=sm.getSkill('frost_aura');if(frost){const r=frost.getCurrentEffect().params.radius;c.save();c.globalAlpha=.32;SkillVisuals.ring(c,x,y,r,'#b2d7d3');for(let i=0;i<12;i++){const a=i*Math.PI/6+t*.025;SkillVisuals.crystal(c,x+Math.cos(a)*r,y+Math.sin(a)*r,5,'#a8cecf');}c.restore();}
-        const field=sm.getSkill('static_field');if(field){c.save();c.globalAlpha=.28;c.setLineDash([3,16]);SkillVisuals.ring(c,x,y,field.getCurrentEffect().params.radius,'#d7cd9a');c.restore();}
+        const frost=sm.getSkill('frost_aura');if(frost){const r=frost.getCurrentEffect().params.radius;c.save();c.globalAlpha=.32;SkillVisuals.ring(c,x,y,r,'#70d9ff');for(let i=0;i<12;i++){const a=i*Math.PI/6+t*.025;SkillVisuals.crystal(c,x+Math.cos(a)*r,y+Math.sin(a)*r,5,'#a1e8ff');}c.restore();}
+        const field=sm.getSkill('static_field');if(field){c.save();c.globalAlpha=.28;c.setLineDash([3,16]);SkillVisuals.ring(c,x,y,field.getCurrentEffect().params.radius,'#ffe650');c.restore();}
         for(const tr of (state._traps||[]).slice(-32)){if(!visible(tr.x,tr.y,tr.radius))continue;c.save();c.globalAlpha=Math.min(.38,tr.life);SkillVisuals.rune(c,tr.x-cx,tr.y-cy,tr.radius,'#b6a1ce',4);SkillVisuals.rune(c,tr.x-cx,tr.y-cy,12,'#d0b5df',4);c.restore();}
         for(const m of (state._mines?.mines||[]).slice(-32)){if(!visible(m.x,m.y))continue;c.save();c.globalAlpha=m.armed?.85:.4;ForestArt.oval(c,m.x-cx,m.y-cy,8,5,'#6b7051','#c3ab71',1);ForestArt.oval(c,m.x-cx,m.y-cy-2,2,2,m.armed?'#ebaa67':'#c8c39d',null);c.restore();}
         if(state._sanctuary?.active){c.save();c.globalAlpha=.55;SkillVisuals.rune(c,x,y+10,37,'#b1d3a3');c.restore();}
@@ -95,10 +95,12 @@ class SkillVisuals {
     drawEvent(c,e,cx,cy){
         const progress=1-e.life/e.duration,x=e.x-cx,y=e.y-cy,r=e.radius;
         c.save();c.globalAlpha=Math.min(1,e.life/e.duration*1.5);
-        const palette={ice:'#b4dde0',fire:'#e9ae70',meteor:'#e6a16a',nova:'#e3a867',phoenix:'#ecc282',lightning:'#e3d39a',beam:'#d9dcb4',shadow:'#b8a3ce',heal:'#b8d5a3',soul:'#d7a0ae',mark:'#cf929a',gun:'#e6cd98',pickup:'#d6c793'};
+        const palette={ice:'#70d9ff',fire:'#ff853e',meteor:'#ff6433',nova:'#ff7134',phoenix:'#ffb844',lightning:'#ffe650',beam:'#d9dcb4',shadow:'#b8a3ce',heal:'#b8d5a3',soul:'#d7a0ae',mark:'#cf929a',gun:'#e6cd98',pickup:'#d6c793'};
         const color=e.color||palette[e.kind]||'#dccca1';
         if(e.kind==='lightning'){
-            SkillVisuals.bolt(c,x,y,(e.x2??e.x)-cx,(e.y2??e.y-100)-cy,color,e.born,2);
+            SkillVisuals.bolt(c,x,y,(e.x2??e.x)-cx,(e.y2??e.y-100)-cy,color,e.born,2.8);
+            const tx=(e.x2??e.x)-cx,ty=(e.y2??e.y)-cy;
+            for(let i=0;i<5;i++){const a=i*Math.PI*2/5+progress;ForestArt.line(c,[[tx+Math.cos(a)*5,ty+Math.sin(a)*5],[tx+Math.cos(a)*(12+progress*14),ty+Math.sin(a)*(12+progress*14)]],color,2);}
             if(r>50){c.globalAlpha*=.45;SkillVisuals.ring(c,x,y,r*(.8+progress*.2),color);}
         }else if(e.kind==='fire' && Number.isFinite(e.x2)){
             for(let i=0;i<4;i++){const f=Math.max(0,Math.min(1,progress*1.4-i*.08));ForestArt.oval(c,x+(e.x2-e.x)*f,y+(e.y2-e.y)*f-Math.sin(f*Math.PI)*15,2.5,3,color,null);}

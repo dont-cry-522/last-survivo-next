@@ -120,11 +120,14 @@ class SoundManager {
     }
 
     skillCue(kind) {
-        if(!this.enabled||!this.ctx||this.ctx.currentTime-this.lastSkillCue<.16)return;
-        this.lastSkillCue=this.ctx.currentTime;
-        if(['fire','meteor','nova','phoenix'].includes(kind)){this._playNoise(.16,.055,950);this._playTone(95,.13,'sine',.065);}
-        else if(kind==='ice'){this._playTone(1250,.09,'triangle',.045);this._playNoise(.045,.025,3200);}
-        else if(kind==='lightning'||kind==='beam'){this._playNoise(.055,.045,3600);this._playTone(460,.07,'sawtooth',.025);}
+        if(!this.enabled||!this.ctx)return;
+        const family=['fire','meteor','nova','phoenix'].includes(kind)?'fire':kind==='beam'?'lightning':kind;
+        this.skillCueTimes ||= {};
+        if(this.ctx.currentTime-(this.skillCueTimes[family]??-Infinity)<.18)return;
+        this.skillCueTimes[family]=this.ctx.currentTime;
+        if(['fire','meteor','nova','phoenix'].includes(kind)){this._playNoise(.24,.085,850);this._playTone(85,.18,'sine',.085);this._playNoise(.05,.035,2600);}
+        else if(kind==='ice'){this._playTone(1450,.13,'triangle',.07);this._playTone(2300,.08,'sine',.035);this._playNoise(.055,.04,4200);}
+        else if(kind==='lightning'||kind==='beam'){this._playNoise(.075,.07,3600);this._playTone(620,.09,'sawtooth',.045);this._playTone(120,.045,'square',.025);}
         else if(kind==='heal'||kind==='pickup'){this._playTone(660,.14,'sine',.035);this._playTone(990,.18,'sine',.02);}
         else if(kind==='shadow'||kind==='soul'||kind==='mark')this._playNoise(.10,.035,750);
     }
