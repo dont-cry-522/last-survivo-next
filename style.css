@@ -152,6 +152,18 @@ body { background:radial-gradient(ellipse at center,#314635 0%,#17271f 75%); }
 .loadout-eyebrow { color:#c3b176; letter-spacing:3px; font-size:12px; margin-bottom:14px; }
 .loadout h1 { font-size:34px; margin-bottom:12px; }
 .loadout-intro { color:#bcc9ab; font-size:14px; }
+.map-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0 8px}
+.map-choices button{overflow:hidden;padding:0 0 12px;border:1px solid #667d64;border-radius:10px;background:#243c32;color:#eee2be;cursor:pointer;text-align:left}
+.map-choices button[aria-pressed="true"]{border-color:#efd397;box-shadow:inset 0 0 0 2px #efd397}
+.map-choices button:focus-visible{outline:3px solid #fff4c6;outline-offset:3px}
+.map-choices strong,.map-choices small{display:block;padding:0 12px}.map-choices strong{font-size:17px;margin:9px 0 5px}.map-choices small{font-size:12px;line-height:1.5;color:#bed0b8}
+.map-art{position:relative;display:block;height:66px;overflow:hidden;background:linear-gradient(160deg,#587556,#243c32)}
+.map-art::before,.map-art::after{content:'';position:absolute;bottom:-10px;width:100px;height:65px;background:#355b39;border-radius:60% 60% 0 0;box-shadow:70px 12px 0 #51714b,145px -8px 0 #2b4936;left:12px}
+.map-art::after{left:48%;bottom:-24px;opacity:.6;transform:scale(.7)}
+.map-art-snow{background:linear-gradient(160deg,#c3ddda,#729da8)}.map-art-snow::before,.map-art-snow::after{border-radius:0;background:#dce9e2;clip-path:polygon(0 100%,20% 55%,14% 55%,37% 10%,58% 52%,52% 52%,80% 100%);height:85px;width:150px;box-shadow:none}
+.map-art-ash{background:linear-gradient(160deg,#b17d58,#44383a)}.map-art-ash::before,.map-art-ash::after{border-radius:5px;background:#4c4043;transform:rotate(-12deg);height:85px;width:45px;box-shadow:70px 20px 0 #735751,150px 5px 0 #554249}
+@media(max-width:500px){.map-choices{gap:6px}.map-choices strong{font-size:14px;padding:0 7px}.map-choices small{font-size:10px;padding:0 7px}.map-art{height:44px}}
+@media(max-height:500px){.map-art{height:26px}.map-choices{margin:10px 0 0}.map-choices button{padding-bottom:6px}.map-choices strong{margin:4px 0;font-size:14px}}
 .weapon-choices { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:26px 0; }
 .weapon-choices button { font:inherit; color:inherit; background:#2a4032; border:2px solid #53684c; border-radius:16px; padding:18px 10px; cursor:pointer; text-align:center; }
 .weapon-choices button:hover { background:#354c39; }

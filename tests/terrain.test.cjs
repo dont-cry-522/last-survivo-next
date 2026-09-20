@@ -15,6 +15,12 @@ function run(code){
     return c.result;
 }
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
+test('snow, ice and ash affect real player and enemy movement equally',()=>{
+    for(const [map,x,y,mul]of [['snow',420,280,.65],['snow',1250,330,1.12],['ash',420,280,.7]]){
+        const r=run(`ForestMap.select('${map}');hero.x=enemy.x=${x};hero.y=enemy.y=target.y=${y};const px=hero.x,ex=enemy.x;step(0);enemy.update(1/60,target,0);result={p:(hero.x-px)/hero.speed,e:(enemy.x-ex)/enemy.speed};`);
+        near(r.p,mul);near(r.e,mul);
+    }
+});
 test('ground slows actual player and enemy travel equally in three spatial regions',()=>{
     for(const [x,y,mul] of [[420,640,.75],[1350,300,.8],[-1400,300,.85]]){
         const r=run(`hero.x=enemy.x=${x};hero.y=enemy.y=target.y=${y};const px=hero.x,ex=enemy.x;step(0);enemy.update(1/60,target,0);

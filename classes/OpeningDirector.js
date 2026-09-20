@@ -2,7 +2,7 @@
 class OpeningDirector {
     constructor(){this.trained=false;this.ruinsHint=false;this.claimTime=null;this.trial=null;this.trialStarted=false;this.trialWon=false;this.bossStarted=false;}
     static phase(time){
-        if(time>=300)return {name:'深入森林',interval:1,count:1,intensity:1};
+        if(time>=300)return {name:'深入险境',interval:1,count:1,intensity:1};
         if(time<25)return {name:'初探',interval:2,count:1,intensity:.8};
         const rest=(time-25)%45<15;
         return rest?{name:'喘息',interval:6,count:1,intensity:.65}:{name:'围攻',interval:1.7,count:2,intensity:1.12};
@@ -28,7 +28,7 @@ class OpeningDirector {
             if(e){this.trial=e;e.openingTrial=this;this.trialStarted=true;e.combatState='recover';e.combatTimer=1.2;game._announce('精英追击：试试你的新搭配！','#ecc17b');}
         }
         if(this.trialStarted&&!this.trialWon&&(!this.trial.active||this.trial.hp<=0||this.trial.openingTrial!==this)){
-            this.trialWon=true;game._announce('精英击败！继续探索森林','#d4df9a');
+            this.trialWon=true;game._announce('精英击败！继续探索','#d4df9a');
         }
         if(time>=240&&!this.bossStarted&&!game.boss.active&&game.ruins.state!=='guarded'&&(this.claimTime===null||this.trialWon)){
             game.spawnBoss();this.bossStarted=true;game.bossTimer=Config.DIFFICULTY.bossInterval;

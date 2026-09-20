@@ -3,7 +3,10 @@ class WoodlandScene {
     static GROUND = [
         {name:'泥地',speed:.75,fill:'#74533b',edge:'#b49365',fleck:'#c49c63'},
         {name:'浅水',speed:.8,fill:'#386e71',edge:'#9bc9b8',fleck:'#c0e7d3'},
-        {name:'碎石',speed:.85,fill:'#726f5c',edge:'#c7b78a',fleck:'#d9cba3'}
+        {name:'碎石',speed:.85,fill:'#726f5c',edge:'#c7b78a',fleck:'#d9cba3'},
+        {name:'积雪',speed:.65,fill:'#d4e1da',edge:'#eef6e7',fleck:'#9ebcbf'},
+        {name:'冰面',speed:1.12,fill:'#6faab9',edge:'#d2f4ea',fleck:'#d8f9f2'},
+        {name:'灰烬',speed:.7,fill:'#48434a',edge:'#be8e67',fleck:'#d5ab81'}
     ];
     // Identical footprints in each phase prevent hazards appearing underfoot at transitions.
     static PATCHES = [
@@ -73,7 +76,13 @@ class WoodlandScene {
             c.save();c.beginPath();c.ellipse(0,0,p.rx-2,p.ry-2,0,0,Math.PI*2);c.clip();
             for(let i=0;i<24;i++){
                 const a=i*2.4,r=Math.sqrt((i+.5)/24),x=Math.cos(a)*p.rx*r,y=Math.sin(a)*p.ry*r;
-                if(index===2){
+                if(index===4){
+                    c.globalAlpha=.6;ForestArt.line(c,[[x-12,y-7],[x,y],[x+14,y-4]],ground.fleck,1.2);
+                }else if(index===3){
+                    c.globalAlpha=.4;ForestArt.oval(c,x,y,16,4,ground.fleck,null);
+                }else if(index===5){
+                    c.globalAlpha=.5;ForestArt.oval(c,x,y,2+i%3,1,ground.fleck,null);
+                }else if(index===2){
                     ForestArt.shape(c,[[x-5,y],[x-2,y-4],[x+5,y-3],[x+7,y+2],[x,y+4]],i%2?'#a89f83':'#565b51','#454b42',1);
                 }else if(index===1){
                     c.globalAlpha=.35;ForestArt.line(c,[[x-9,y],[x,y+1],[x+8,y]],ground.fleck,1.4);
@@ -106,7 +115,7 @@ class WoodlandScene {
     static drawPlayerStatus(c,player,cx,cy,time) {
         const ground=this.surfaceAt(player.x,player.y,time);
         if(!ground)return;
-        const text=player.isDashing?'冲刺脱离':`${ground.name} · 移速 −${Math.round((1-ground.speed)*100)}%`;
+        const text=player.isDashing?'冲刺脱离':`${ground.name} · 移速 ${ground.speed>1?'+':'−'}${Math.round(Math.abs(1-ground.speed)*100)}%`;
         c.save();c.font='bold 13px "Microsoft YaHei"';c.textAlign='center';
         const width=c.measureText(text).width+20,x=player.x-cx,y=player.y-cy-player.size-30;
         c.fillStyle='rgba(21,34,28,.88)';c.fillRect(x-width/2,y-15,width,23);

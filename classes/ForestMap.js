@@ -1,5 +1,25 @@
 /** One finite forest, with shared visible obstacles and swept actor movement. */
 class ForestMap {
+    static selected='forest';
+    static MAPS={
+        forest:{name:'古木林地',desc:'树木掩护 · 泥地与浅溪减速',base:'#486443',path:'#a59c6c',camp:'#8c895d',leaf:'#78905c'},
+        snow:{name:'霜雪山谷',desc:'积雪减速 35% · 冰面加速 12%',base:'#91adb0',path:'#c2d5cd',camp:'#b5bfb0',leaf:'#dae6d6'},
+        ash:{name:'赤岩荒原',desc:'灰烬减速 30% · 岩柱阻挡弹道',base:'#674e42',path:'#ad8160',camp:'#927453',leaf:'#ba8a61'}
+    };
+    static get theme(){return this.MAPS[this.selected];}
+    static select(id){
+        this._forest ||= {regions:this.regions,patches:this.patches};
+        this.selected=this.MAPS[id]?id:'forest';this._trees=null;
+        if(this.selected==='forest'){this.regions=this._forest.regions;this.patches=this._forest.patches;return;}
+        const snow=this.selected==='snow';
+        this.regions=[{name:snow?'避风营地':'岩间营地',color:snow?'#bbc8b9':'#9a7755',x:0,y:0},
+            {name:snow?'雪松高地':'黑岩石林',color:snow?'#739c9c':'#594840',x:0,y:-950},
+            {name:snow?'冰镜湖':'灰烬盆地',color:snow?'#73b5bf':'#8c6350',x:1500,y:0},
+            {name:snow?'霜封遗迹':'赤岩遗迹',color:snow?'#a4b7b5':'#af815a',x:-1500,y:0}];
+        this.patches=[{x:420,y:280,rx:170,ry:75,kind:snow?3:5},{x:-340,y:-700,rx:230,ry:150,kind:snow?3:5},
+            {x:1250,y:330,rx:340,ry:180,kind:snow?4:5},{x:1850,y:-350,rx:300,ry:200,kind:snow?4:2},
+            {x:-1500,y:340,rx:260,ry:150,kind:snow?3:2},{x:800,y:1000,rx:260,ry:120,kind:snow?3:5}];
+    }
     static width=5120;
     static height=2880;
     static regions=[
@@ -22,12 +42,15 @@ class ForestMap {
         if(this._trees)return this._trees;
         const trees=[];
         for(let row=0;row<12;row++)for(let col=0;col<24;col++){
-            const n=row*24+col,x=-2420+col*210+Math.sin(n*17)*24,y=-1260+row*230+Math.cos(n*13)*22;
+            const n=row*24+col,offset=this.selected==='snow'?57:this.selected==='ash'?111:0,x=-2420+col*210+Math.sin(n*17+offset)*24,y=-1260+row*230+Math.cos(n*13+offset)*22;
             if(Math.abs(x)<150||Math.abs(y)<145||(Math.abs(x)<610&&Math.abs(y)<410))continue;
+            // Snow groves leave diagonal clearings; ash pillars form smaller clusters.
+            if(this.selected==='snow'&&(row+col)%5===0)continue;
+            if(this.selected==='ash'&&(row%3===1||col%4===1))continue;
             if(this.patches.some(p=>((x-p.x)/(p.rx+90))**2+((y-p.y)/(p.ry+90))**2<1))continue;
             trees.push({x,y,r:22+n%9,crown:75+n%25});
         }
-        for(const [x,y]of [[-400,-550],[460,1050]])for(let part=0;part<3;part++)trees.push({x:x+part*25,y,r:20,crown:0,fallen:true,part});
+        if(this.selected!=='ash')for(const [x,y]of [[-400,-550],[460,1050]])for(let part=0;part<3;part++)trees.push({x:x+part*25,y,r:20,crown:0,fallen:true,part});
         return this._trees=trees.sort((a,b)=>a.y-b.y);
     }
     static clear(x,y,r){
@@ -84,7 +107,7 @@ class ForestMap {
     static ground(c,cx,cy,w,h,time){
         c.fillStyle='#172b24';c.fillRect(0,0,w,h);c.save();c.translate(-cx,-cy);
         c.beginPath();c.rect(-2560,-1440,5120,2880);c.clip();
-        c.fillStyle='#486443';c.fillRect(-2560,-1440,5120,2880);
+        c.fillStyle=this.theme.base;c.fillRect(-2560,-1440,5120,2880);
         // Soft region stains blend into each other instead of switching on a timer.
         for(const z of this.regions){const g=c.createRadialGradient(z.x,z.y,80,z.x,z.y,1100);g.addColorStop(0,z.color);g.addColorStop(1,'rgba(40,70,45,0)');c.fillStyle=g;c.fillRect(z.x-1100,z.y-1100,2200,2200);}
         for(let y=Math.floor(cy/100)*100;y<cy+h+100;y+=100)for(let x=Math.floor(cx/100)*100;x<cx+w+100;x+=100){
@@ -92,14 +115,14 @@ class ForestMap {
             c.globalAlpha=.07;ForestArt.oval(c,px,py,35+n*12,16,'#91a16b',null);c.globalAlpha=.5;
             for(let i=0;i<4;i++){
                 const gx=px+Math.sin(x+y+i*7)*35,gy=py+Math.cos(x-y+i*13)*30;
-                ForestArt.line(c,[[gx-3,gy],[gx,gy-5-i],[gx+3,gy-2]],i%2?'#78905c':'#2e5036',1);
+                ForestArt.line(c,[[gx-3,gy],[gx,gy-5-i],[gx+3,gy-2]],i%2?this.theme.leaf:this.theme.base,1);
             }
-            if(n>.7){c.save();c.translate(px,py);for(let i=0;i<5;i++){c.rotate(1.25);ForestArt.oval(c,0,-6,3,9,'#527543','#2f5035',.6);}c.restore();}
+            if(n>.7&&this.selected==='forest'){c.save();c.translate(px,py);for(let i=0;i<5;i++){c.rotate(1.25);ForestArt.oval(c,0,-6,3,9,'#527543','#2f5035',.6);}c.restore();}
         }c.globalAlpha=1;
         c.strokeStyle='#a59c6c';c.lineWidth=130;c.globalAlpha=.4;
-        ForestArt.line(c,[[-2560,0],[-1500,15],[-600,0],[0,0],[800,-10],[1600,0],[2560,0]],'#a59c6c',130);
-        ForestArt.line(c,[[0,-1440],[20,-650],[0,0],[-15,800],[0,1440]],'#a59c6c',120);c.globalAlpha=1;
-        ForestArt.oval(c,0,0,290,190,'#8c895d',null);
+        ForestArt.line(c,[[-2560,0],[-1500,15],[-600,0],[0,0],[800,-10],[1600,0],[2560,0]],this.theme.path,130);
+        ForestArt.line(c,[[0,-1440],[20,-650],[0,0],[-15,800],[0,1440]],this.theme.path,120);c.globalAlpha=1;
+        ForestArt.oval(c,0,0,290,190,this.theme.camp,null);
         for(const p of this.patches){
             if(p.x+p.rx<cx||p.x-p.rx>cx+w||p.y+p.ry<cy||p.y-p.ry>cy+h)continue;
             WoodlandScene.drawPatches(c,p.kind,[p]);
@@ -125,6 +148,12 @@ class ForestMap {
     static trunks(c,cx,cy,w,h){
         for(const t of this.trees){if(t.x<cx-130||t.x>cx+w+130||t.y<cy-130||t.y>cy+h+160)continue;
             const x=t.x-cx,y=t.y-cy;
+            if(this.selected==='ash'){
+                ForestArt.oval(c,x+14,y+10,t.r+14,18,'rgba(24,19,20,.28)',null);
+                ForestArt.shape(c,[[x-t.r,y],[x-t.r+3,y-55],[x-4,y-78],[x+t.r-2,y-57],[x+t.r,y+3],[x,y+12]],'#55494a','#302f34',3);
+                ForestArt.shape(c,[[x-4,y-78],[x+4,y-28],[x+t.r,y+3],[x+t.r-2,y-57]],'#8a6960',null);
+                ForestArt.line(c,[[x-10,y-45],[x-3,y-27],[x-8,y-10]],'#b58461',2);continue;
+            }
             if(t.fallen){
                 if(t.part===0){ForestArt.line(c,[[x,y],[x+50,y]],'#473c2d',40);ForestArt.line(c,[[x,y-5],[x+50,y-5]],'#8a6a42',24);ForestArt.oval(c,x+52,y,10,18,'#c0a271','#564b33',2);}
                 continue;
@@ -141,6 +170,13 @@ class ForestMap {
             const x=t.x-cx,y=t.y-cy-85,r=t.crown;
             const covered=actors.some(a=>Math.abs(a.x-t.x)<r+a.size&&Math.abs(a.y-(t.y-85))<r*.7+a.size);
             c.save();c.globalAlpha=covered?.075:1;
+            if(this.selected==='ash'){c.restore();continue;}
+            if(this.selected==='snow'){
+                for(let layer=0;layer<3;layer++){const top=y-65+layer*35,span=r*(.45+layer*.17);
+                    ForestArt.shape(c,[[x,top],[x+span,top+68],[x,top+55],[x-span,top+68]],'#3c6865','#34514f',2);
+                    ForestArt.shape(c,[[x,top],[x+span*.72,top+47],[x+12,top+39],[x-3,top+48],[x-span*.72,top+47]],'#dbe6dd','#aec8c3',1);
+                }c.restore();continue;
+            }
             for(let i=0;i<5;i++){const a=i*2.4,dx=Math.cos(a)*r*.4,dy=Math.sin(a)*r*.24;
                 ForestArt.oval(c,x+dx+Math.sin(time*.7+t.x)*2,y+dy,r*.63,r*.46,i%2?'#446b42':'#355b39','#284b32',2);
             }
@@ -153,14 +189,23 @@ class ForestMap {
     }
     static minimap(c,player){
         const w=c.canvas.width,h=c.canvas.height;
-        c.clearRect(0,0,w,h);c.fillStyle='#304c39';c.fillRect(0,0,w,h);
-        c.fillStyle='#476a60';c.fillRect(w*.63,0,w*.37,h);c.fillStyle='#777954';c.fillRect(0,0,w*.37,h);
+        c.clearRect(0,0,w,h);c.fillStyle=this.theme.base;c.fillRect(0,0,w,h);
+        c.fillStyle=this.regions[2].color;c.fillRect(w*.63,0,w*.37,h);c.fillStyle=this.regions[3].color;c.fillRect(0,0,w*.37,h);
         c.strokeStyle='#a39e70';c.lineWidth=3;ForestArt.line(c,[[0,h/2],[w,h/2]],'#a39e70',3);ForestArt.line(c,[[w/2,0],[w/2,h]],'#a39e70',3);
         c.font='11px sans-serif';c.textAlign='center';c.fillStyle='#e4dfb8';
-        c.fillText('密林',w/2,14);c.fillText('密林',w/2,h-7);c.fillText('营地',w/2,h/2-6);c.fillText('遗迹',w*.17,h/2-6);c.fillText('湿地',w*.83,h/2-6);
+        c.fillText(this.regions[1].name.slice(0,2),w/2,14);c.fillText(this.regions[1].name.slice(0,2),w/2,h-7);c.fillText('营地',w/2,h/2-6);c.fillText('遗迹',w*.17,h/2-6);c.fillText(this.regions[2].name.slice(0,2),w*.83,h/2-6);
         const x=(player.x+2560)/5120*w,y=(player.y+1440)/2880*h;
         c.fillStyle='#e1b653';c.fillRect((1060/5120)*w-3,h/2-3,6,6);
         ForestArt.oval(c,x,y,4,4,'#fff2aa','#263d2d',1);
         c.strokeStyle='#b4b888';c.lineWidth=2;c.strokeRect(1,1,w-2,h-2);
+    }
+    static weather(c,w,h,time){
+        if(this.selected==='forest')return;
+        const snow=this.selected==='snow';c.save();c.globalAlpha=snow?.48:.4;
+        for(let i=0;i<36;i++){
+            const x=((i*173+Math.sin(time*.5+i)*25+time*(snow?12:7))%(w+30)+w+30)%(w+30)-15;
+            const y=((i*97+time*(snow?20:-16))%(h+30)+h+30)%(h+30)-15;
+            ForestArt.oval(c,x,y,snow?1.5:1,snow?2:2.5,snow?'#edf8f3':'#edac65',null);
+        }c.restore();
     }
 }

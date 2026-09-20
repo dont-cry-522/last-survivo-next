@@ -277,6 +277,7 @@ class Game {
      * 重置游戏
      */
     resetGame() {
+        ForestMap.select(this.selectedMap||'forest');
         // 重置玩家
         this.player.reset(0, 0);
         this.weaponFields=[];this.weaponPaths?.reset();
@@ -803,6 +804,7 @@ class Game {
         // 绘制子弹（顶层）
         this.bulletManager.draw(ctx, this.cameraX, this.cameraY);
         ForestMap.crowns(ctx,this.cameraX,this.cameraY,w,h,[this.player,...this.enemyManager.getActiveEnemies(),...(this.boss.active?[this.boss]:[])],this.survivalTime);
+        ForestMap.weather(ctx,w,h,this.survivalTime);
         WoodlandScene.drawPlayerStatus(ctx,this.player,this.cameraX,this.cameraY,this.survivalTime);
 
         ctx.restore();
