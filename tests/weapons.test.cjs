@@ -27,6 +27,12 @@ test('fast pellets cannot pass through a small enemy between frames',()=>{
  const r=run(`const b=new Bullet();b.init(0,0,0,10,20,0);b.size=3;b.update(1/30,[],particles);result=b.touches({x:20,y:0,size:5});`);
  assert.equal(r,true);
 });
+test('trained fireball reaches targets beyond its original splash radius',()=>{
+ for(const [radius,want] of [[65,120],[95,102]]){
+  const r=run(`const manager=new EnemyManager(2),a=manager.spawn('tank',0,0),b=manager.spawn('tank',105,0);const g=Object.create(Game.prototype);g.enemyManager=manager;g.boss={active:false};g.statusSystem=Enemy._statusSystem;g.particleManager=particles;g.uiManager={addDamageNumber(){}};g.audio={weaponImpact(){}};const bullet=new Bullet();bullet.init(0,0,0,30,6,0);bullet.weaponType='fireball';bullet.blastRadius=${radius};g.applyWeaponImpact(bullet,a);const hp=b.hp;bullet.init(0,0,0,10,8,0);result={hp,reset:bullet.blastRadius};`);
+  assert.equal(r.hp,want);assert.equal(r.reset,65);
+ }
+});
 
 test('normal and critical hits use their weapon sound for enemies and bosses without generic overlays',()=>{
  for(const kind of ['rifle','shotgun','fireball'])for(const bossHit of [false,true])for(const crit of [false,true]) {

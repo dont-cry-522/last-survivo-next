@@ -53,7 +53,7 @@ class Enemy {
      * 初始化敌人
      */
     init(type, x, y, hpMultiplier = 1, speedMultiplier = 1) {
-        this.ruinGuard=null;this._forestDetour=null;this.terrainAware=false;
+        this.ruinGuard=null;this.openingTrial=null;this._forestDetour=null;this.terrainAware=false;
         const cfg = EnemyConfig.TYPES[type];
         if (!cfg) return;
 

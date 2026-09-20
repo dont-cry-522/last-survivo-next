@@ -16,6 +16,7 @@ class Player {
     };
 
     setWeapon(kind) {
+        this.blastRadius=65;
         this.weaponType=Player.WEAPONS[kind]?kind:'rifle';
         const weapon=Player.WEAPONS[this.weaponType];
         this.attackSpeed=weapon.rate;this.bulletDamage=Config.PLAYER.bulletDamage*weapon.damage;
@@ -280,6 +281,7 @@ class Player {
                 if (bullet) {
                     bullet.isCrit = isCrit;
                     bullet.weaponType=this.weaponType||'rifle';
+                    bullet.blastRadius=this.blastRadius||65;
                     bullet.size=this.weaponType==='fireball'?9:this.weaponType==='shotgun'?3:4;
                     bullet.color=this.weaponType==='fireball'?'#f3a354':'#e5c783';
                     bullet.life=weapon.range/(this.bulletSpeed*60);
@@ -354,6 +356,7 @@ class Player {
     }
 
     reset(x, y) {
+        this.blastRadius=65;
         const cfg = Config.PLAYER;
         this.x = x;
         this.y = y;

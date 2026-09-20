@@ -78,7 +78,7 @@ class ExperienceOrb {
 
         // 磁铁检测
         const dist = Utils.distance(this.x, this.y, player.x, player.y);
-        if (dist < player.magnetRange) {
+        if (dist < (player.level===1?Math.max(140,player.magnetRange):player.magnetRange)) {
             this.isAttracting = true;
         }
 

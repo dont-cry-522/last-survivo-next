@@ -118,6 +118,9 @@ body.touch-device { min-height: 100dvh; padding: 0; }
 
 #forest-map{position:fixed;right:18px;bottom:70px;z-index:18;padding:8px;background:#1b3029ed;border:1px solid #82966a;border-radius:9px;pointer-events:none;color:#e5d7ab;width:178px}
 #forest-map[hidden]{display:none}#forest-map strong{display:block;font-size:13px;margin-bottom:5px}#forest-map canvas{width:100%;display:block}#forest-map small{display:block;font-size:10px;margin-top:4px;color:#b4c0a1}
+#opening-objective{position:fixed;top:18px;left:50%;transform:translateX(-50%);max-width:65vw;padding:8px 14px;border:1px solid #71815d;border-radius:8px;background:#20382ded;color:#e4d5ab;font-size:13px;pointer-events:none;z-index:19;text-align:center}#opening-objective[hidden]{display:none}
+@media(pointer:coarse){#opening-objective{top:125px;width:92vw;max-width:92vw;font-size:11px;padding:5px 8px}}
+@media(pointer:coarse) and (orientation:landscape){#opening-objective{top:auto;bottom:7px;width:auto;max-width:55vw;font-size:10px}}
 @media(pointer:coarse){#forest-map{width:142px;right:12px;bottom:180px;padding:6px}}
 @media(pointer:coarse) and (orientation:landscape){#forest-map{width:118px;top:65px;bottom:auto;right:8px}#forest-map small{display:none}#forest-map strong{font-size:11px}}
 

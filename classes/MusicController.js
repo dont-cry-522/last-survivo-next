@@ -7,7 +7,7 @@ class MusicController {
             this.source=this.audio.ctx.createBufferSource();this.source.buffer=buffer;this.source.loop=true;this.source.connect(this.gain);this.source.start();this.target=-1;
         }catch(error){console.warn('背景音乐加载失败，可继续游戏',error);}finally{this.loading=false;}}
     setVolume(value){this.volume=Math.max(0,Math.min(1,Number(value)||0));try{localStorage.setItem('woodland-music-volume',String(this.volume));}catch{}this.target=-1;}
-    update(state){if(!this.gain)return;const target=!this.audio.enabled||document.hidden?0:this.volume*(state==='playing'?.5:state==='paused'||state==='upgrading'?.16:.28);
+    update(state,intensity=1){if(!this.gain)return;const target=!this.audio.enabled||document.hidden?0:this.volume*(state==='playing'?.5*Math.max(.5,Math.min(1.2,intensity)):state==='paused'||state==='upgrading'?.16:.28);
         if(target===this.target)return;this.target=target;const now=this.audio.ctx.currentTime;this.gain.gain.cancelScheduledValues(now);this.gain.gain.setTargetAtTime(target,now,.2);}
 }
 class AudioSettings {

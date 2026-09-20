@@ -108,6 +108,7 @@ class Game {
         // 创建玩家
         this.player = new Player(0, 0);
         this.ruins=new RuinEncounter();
+        this.opening=new OpeningDirector();this.player.expToNext=15;
         this.player.audio = this.audio;
         this.player._onShieldHit=()=>this.skillManager.visuals.emit('pickup',this.player.x,this.player.y,{radius:42,color:'#b4d3b5',duration:.28});
         this.player._onDamaged = (amount) => {
@@ -278,6 +279,7 @@ class Game {
         // 重置玩家
         this.player.reset(0, 0);
         this.ruins=new RuinEncounter();
+        this.opening=new OpeningDirector();this.player.expToNext=15;
         this.player.setWeapon(this.selectedWeapon||'rifle');
         if(this.loadout) this.loadout.hide();
 
@@ -365,7 +367,10 @@ class Game {
             this.mapPanel.hidden=!['playing','paused'].includes(this.state);
             if(!this.mapPanel.hidden){ForestMap.minimap(this.mapContext,this.player);this.mapPanel.querySelector('strong').textContent=ForestMap.region(this.player.x,this.player.y).name;this.mapPanel.querySelector('.ruins-status').textContent=this.ruins.label;}
         }
-        this.audio.music?.update(this.state);
+        const musicIntensity=this.boss.active||this.ruins.state==='guarded'||(this.opening.trialStarted&&!this.opening.trialWon)?1.2:OpeningDirector.phase(this.survivalTime).intensity;
+        this.audio.music?.update(this.state,musicIntensity);
+        const objective=document.getElementById('opening-objective');
+        if(objective){objective.hidden=!['playing','paused'].includes(this.state);objective.textContent=`${OpeningDirector.phase(this.survivalTime).name} · ${this.opening.objective(this)}`;}
 
         // 更新
         if (this.state === 'playing') {
@@ -464,6 +469,7 @@ class Game {
             this.triggerUpgrade();
         }
         this.ruins.update(this);
+        this.opening.update(this);
 
         // 更新粒子
         this.particleManager.update(deltaTime);
@@ -498,8 +504,8 @@ class Game {
         );
 
         // 敌人属性逐渐增强
-        this.hpMultiplier = 1 + this.survivalTime * Config.DIFFICULTY.enemyHpMultiplier;
-        this.speedMultiplier = 1 + this.survivalTime * Config.DIFFICULTY.enemySpeedMultiplier;
+        this.hpMultiplier = 1 + Math.min(300,this.survivalTime)*.004+Math.max(0,this.survivalTime-300)*Config.DIFFICULTY.enemyHpMultiplier;
+        this.speedMultiplier = 1 + Math.min(300,this.survivalTime)*.0015+Math.max(0,this.survivalTime-300)*Config.DIFFICULTY.enemySpeedMultiplier;
 
         // 波次（每30秒一波）
         this.wave = Math.floor(this.survivalTime / 30) + 1;
@@ -509,6 +515,15 @@ class Game {
      * 敌人生成
      */
     updateSpawning(deltaTime) {
+        if(this.survivalTime<300){
+            const phase=OpeningDirector.phase(this.survivalTime);
+            this.spawnTimer-=deltaTime;
+            if(this.spawnTimer<=0){
+                this.spawnTimer=phase.interval*(this.ruins.state==='guarded'?2:1);
+                for(let i=0;i<phase.count&&this.enemyManager.getActiveCount()<90;i++)this.spawnEnemy();
+            }
+            return;
+        }
         // 普通敌人
         this.spawnTimer -= deltaTime;
         if (this.spawnTimer <= 0) {
@@ -544,7 +559,7 @@ class Game {
         this._checkWaveAnnounce();
 
         const type = Utils.randomChoice(types);
-        const pos = ForestMap.spawn(this.player,50,this.canvas.width,this.canvas.height);
+        const pos = this.survivalTime<25?ForestMap.spawn(this.player,50,600,360):ForestMap.spawn(this.player,50,this.canvas.width,this.canvas.height);
 
         this.enemyManager.spawn(type, pos.x, pos.y, this.hpMultiplier, this.speedMultiplier);
     }
@@ -684,17 +699,18 @@ class Game {
         }
         if(bullet.weaponType!=='fireball'||bullet.exploded) return;
         bullet.exploded=true;
-        this.enemyManager.addImpact(bullet.x,bullet.y,'burst',0,65);
+        const radius=bullet.blastRadius||65;
+        this.enemyManager.addImpact(bullet.x,bullet.y,'burst',0,radius);
         this.particleManager.spawnExplosion(bullet.x,bullet.y,'#edaa55',12);
         for(const enemy of this.enemyManager.pool) {
-            if(!enemy.active||enemy.hp<=0||!Utils.circleCollision(bullet.x,bullet.y,65,enemy.x,enemy.y,enemy.size))continue;
+            if(!enemy.active||enemy.hp<=0||!Utils.circleCollision(bullet.x,bullet.y,radius,enemy.x,enemy.y,enemy.size))continue;
             if(enemy!==primary) {
                 enemy.takeDamage(bullet.damage*.6,Utils.angle(bullet.x,bullet.y,enemy.x,enemy.y));
                 this.uiManager.addDamageNumber(enemy.x,enemy.y-enemy.size,bullet.damage*.6,false);
             }
             this.statusSystem.applyBurn(enemy,Math.max(1,enemy.burnStacks),Math.max(enemy.burnDmgPerStack,bullet.damage*.12),2);
         }
-        if(this.boss.active && this.boss!==primary && Utils.circleCollision(bullet.x,bullet.y,65,this.boss.x,this.boss.y,this.boss.size))this.boss.takeDamage(bullet.damage*.6);
+        if(this.boss.active && this.boss!==primary && Utils.circleCollision(bullet.x,bullet.y,radius,this.boss.x,this.boss.y,this.boss.size))this.boss.takeDamage(bullet.damage*.6);
     }
 
     triggerUpgrade() {
@@ -788,12 +804,12 @@ class Game {
         ctx.save();ctx.font='16px "Microsoft YaHei"';ctx.fillStyle='#e2d2a9';ctx.fillText(ForestMap.region(this.player.x,this.player.y).name,20,h-18);ctx.restore();
         // 波次公告
         if (this._announcements) {
-            for (const a of this._announcements) {
+            for (const [index,a] of this._announcements.slice(-2).entries()) {
                 const alpha = Math.min(1, a.life);
                 ctx.save(); ctx.globalAlpha = alpha;
                 ctx.fillStyle = a.color; ctx.font = 'bold 28px Arial'; ctx.textAlign = 'center';
                 ctx.shadowBlur = 10; ctx.shadowColor = a.color;
-                ctx.fillText(a.text, w / 2, h / 2 - 50);
+                ctx.fillText(a.text, w / 2, h / 2 - 110 + index*38);
                 ctx.restore();
             }
         }

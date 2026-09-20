@@ -39,6 +39,7 @@ class Bullet {
         this.active = true;
         this.weaponType='rifle';this.soundKind=null;
         this.exploded=false;
+        this.blastRadius=65;
         this.size=5;
         this.color=Config.COLORS.bullet;
         this.glowColor=Config.COLORS.bulletGlow;
