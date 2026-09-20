@@ -139,7 +139,7 @@ class MobileControls {
         if (state !== this.previousState) {
             this.release();
             this.previousState = state;
-            this.action.textContent = { start: '开始游戏', playing: '暂停', paused: '继续游戏', upgrading: '点击卡片升级', gameover: '重新开始' }[state];
+            this.action.textContent = { start: '开始游戏', playing: '暂停', paused: '继续游戏', upgrading: '点击卡片升级', gameover: '重新开始', victory:'远征成功' }[state];
             this.action.disabled = state === 'upgrading';
             this.upgrades.hidden = state !== 'upgrading';
             if (state === 'upgrading') this.showUpgrades();
@@ -149,7 +149,7 @@ class MobileControls {
         if(this.terrainTip)this.terrainTip.textContent=ground&&['playing','paused'].includes(state)
             ?`${ground.name}：双方移速 ${ground.speed>1?'+':'−'}${Math.round(Math.abs(1-ground.speed)*100)}% · 可冲刺脱离`
             :'自动攻击 · 绕开湿地和碎石，或利用它们牵制怪物';
-        if(this.terrainTip&&this.game.ruins&&Math.hypot(this.game.player.x-this.game.ruins.x,this.game.player.y-this.game.ruins.y)<300)this.terrainTip.textContent=this.game.ruins.label;
+        if(!this.game.expedition&&this.terrainTip&&this.game.ruins&&Math.hypot(this.game.player.x-this.game.ruins.x,this.game.player.y-this.game.ruins.y)<300)this.terrainTip.textContent=this.game.ruins.label;
         if(this.hud){
             this.hud.hidden=!['playing','paused','upgrading'].includes(state);
             const p=this.game.player;

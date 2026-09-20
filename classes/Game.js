@@ -278,6 +278,7 @@ class Game {
      * 重置游戏
      */
     resetGame() {
+        this.expedition?.dispose();this.expedition=null;
         ForestMap.select(this.selectedMap||'forest');
         this.mapEventHit=-1;this.mapEventNotice=-1;
         // 重置玩家
@@ -323,6 +324,7 @@ class Game {
         this._announcements = [];
         this.statusSystem = new StatusSystem();
         Enemy._statusSystem = this.statusSystem;
+        if(this.selectedMode==='chapter'&&this.selectedMap==='forest')this.expedition=new Expedition(this);
     }
 
     /**
@@ -371,14 +373,14 @@ class Game {
         this.weaponPaths?.update();
         if(this.mapPanel){
             this.mapPanel.hidden=!['playing','paused'].includes(this.state);
-            if(!this.mapPanel.hidden){ForestMap.minimap(this.mapContext,this.player,this.survivalTime);this.mapPanel.querySelector('strong').textContent=ForestMap.region(this.player.x,this.player.y).name;this.mapPanel.querySelector('.ruins-status').textContent=this.ruins.label;}
+            if(!this.mapPanel.hidden){ForestMap.minimap(this.mapContext,this.player,this.survivalTime);this.mapPanel.querySelector('strong').textContent=ForestMap.region(this.player.x,this.player.y).name;this.mapPanel.querySelector('.ruins-status').textContent=this.expedition?'林地闯关 · '+Math.min(2,this.expedition.index)+'/2 巢穴':this.ruins.label;}
         }
-        let musicIntensity=this.boss.active||this.ruins.state==='guarded'||(this.opening.trialStarted&&!this.opening.trialWon)?1.2:OpeningDirector.phase(this.survivalTime).intensity;
+        let musicIntensity=this.expedition?.fighting||this.boss.active||this.ruins.state==='guarded'||(this.opening.trialStarted&&!this.opening.trialWon)?1.2:OpeningDirector.phase(this.survivalTime).intensity;
         const weather=ForestMap.eventAt(this.survivalTime);
         if(weather&&weather.phase!=='rest'&&(weather.kind==='snow'||Math.hypot(this.player.x-weather.x,this.player.y-weather.y)<650))musicIntensity=Math.max(musicIntensity,1.04);
         this.audio.music?.update(this.state,musicIntensity,this.state==='start'?this.selectedMap||'forest':ForestMap.selected);
         const objective=document.getElementById('opening-objective');
-        if(objective){objective.hidden=!['playing','paused'].includes(this.state);objective.textContent=`${OpeningDirector.phase(this.survivalTime).name} · ${this.opening.objective(this)}`;}
+        if(objective){objective.hidden=!['playing','paused'].includes(this.state);objective.textContent=this.expedition?this.expedition.objective:`${OpeningDirector.phase(this.survivalTime).name} · ${this.opening.objective(this)}`;}
 
         // 更新
         if (this.state === 'playing') {
@@ -446,6 +448,7 @@ class Game {
                 this.player.addKill(true);
                 this.screenShake = Math.max(this.screenShake, 20);
                 this.audio.bossDead();
+                if(this.expedition?.win())return;
             }
         }
 
@@ -478,8 +481,8 @@ class Game {
             }
             this.triggerUpgrade();
         }
-        this.ruins.update(this);
-        this.opening.update(this);
+        if(this.expedition){this.opening.train(this);this.expedition.update();}
+        else {this.ruins.update(this);this.opening.update(this);}
 
         // 更新粒子
         this.particleManager.update(deltaTime);
@@ -517,6 +520,7 @@ class Game {
         this.hpMultiplier = 1 + Math.min(300,this.survivalTime)*.004+Math.max(0,this.survivalTime-300)*Config.DIFFICULTY.enemyHpMultiplier;
         this.speedMultiplier = 1 + Math.min(300,this.survivalTime)*.0015+Math.max(0,this.survivalTime-300)*Config.DIFFICULTY.enemySpeedMultiplier;
 
+        if(this.expedition){this.hpMultiplier=Math.min(2.5,this.hpMultiplier);this.speedMultiplier=Math.min(1.4,this.speedMultiplier);}
         // 波次（每30秒一波）
         this.wave = Math.floor(this.survivalTime / 30) + 1;
     }
@@ -525,6 +529,7 @@ class Game {
      * 敌人生成
      */
     updateSpawning(deltaTime) {
+        if(this.expedition){this.expedition.spawnAmbient(deltaTime);return;}
         if(this.survivalTime<300){
             const phase=OpeningDirector.phase(this.survivalTime);
             this.spawnTimer-=deltaTime;
@@ -608,7 +613,7 @@ class Game {
         this._announce('BOSS 出现了！', '#ee5253');
 
         const pos = ForestMap.spawn(this.player,50,this.canvas.width,this.canvas.height);
-        const bossIndex = Math.floor(this.survivalTime / Config.DIFFICULTY.bossInterval);
+        const bossIndex = this.expedition?0:Math.floor(this.survivalTime / Config.DIFFICULTY.bossInterval);
         this.boss.init(pos.x, pos.y, this.hpMultiplier * (1 + bossIndex * 0.5));
         this.screenShake = Math.max(this.screenShake, 15);
         this.audio.bossAppear();
@@ -794,7 +799,8 @@ class Game {
         // Ground effects sit below feet; actors overlap according to world Y.
         ForestMap.trunks(ctx,this.cameraX,this.cameraY,w,h);
         WeaponPaths.drawFields(ctx,this);
-        this.ruins.draw(ctx,this.cameraX,this.cameraY,this.survivalTime);
+        if(this.expedition)this.expedition.draw(ctx,this.cameraX,this.cameraY,this.survivalTime);
+        else this.ruins.draw(ctx,this.cameraX,this.cameraY,this.survivalTime);
         this.skillManager.drawSkillVisuals(ctx, this.cameraX, this.cameraY, this.player);
         ForestMap.drawEnvironment(ctx,this.cameraX,this.cameraY,w,h,this.survivalTime);
         WoodlandScene.drawFooting(ctx,this.player,this.cameraX,this.cameraY,this.survivalTime,this.player.moving);

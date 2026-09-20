@@ -4,7 +4,7 @@ class Loadout {
         this.game=game;
         this.panel=document.createElement('section');
         this.panel.className='loadout';this.panel.setAttribute('aria-label','出发前选择武器');
-        this.panel.innerHTML=`<div class="loadout-inner"><p class="loadout-eyebrow">林地远征 / 战斗声音 17</p><h1>这次，去哪里远征？</h1><p class="loadout-intro">先选地图，再选武器。环境影响你，也影响追来的怪物。2 级强化武器，3 级选择分支。</p><p class="loadout-guide"><a href="skills.html">查看 64 个技能特效 ↗</a></p><div class="weapon-choices" role="group" aria-label="武器"></div><button class="loadout-start" type="button">带上连发枪 · 出发</button><p class="loadout-help">电脑：1 / 2 / 3 选择 · Enter 出发 · WASD 移动 · Shift 冲刺<br>手机：点选地图与武器 · 左侧摇杆移动 · 右侧冲刺</p></div>`;
+        this.panel.innerHTML=`<div class="loadout-inner"><p class="loadout-eyebrow">林地远征 / 林地闯关 25</p><h1>这次，去哪里远征？</h1><p class="loadout-intro">先选地图，再选武器。环境影响你，也影响追来的怪物。2 级强化武器，3 级选择分支。</p><p class="loadout-guide"><a href="skills.html">查看 64 个技能特效 ↗</a></p><div class="weapon-choices" role="group" aria-label="武器"></div><button class="loadout-start" type="button">带上连发枪 · 出发</button><p class="loadout-help">电脑：1 / 2 / 3 选择 · Enter 出发 · WASD 移动 · Shift 冲刺<br>手机：点选地图与武器 · 左侧摇杆移动 · 右侧冲刺</p></div>`;
         const descriptions={rifle:['持续压制','射速快 · 中远距离','适合边移动边持续输出'],shotgun:['近身爆发','五发散射 · 强击退','贴近时伤害更集中'],fireball:['范围灼烧','火球爆炸 · 持续燃烧','适合应对聚集的怪群']};
         for(const [kind,weapon] of Object.entries(Player.WEAPONS)) {
             const button=document.createElement('button');button.type='button';button.dataset.weapon=kind;
@@ -23,6 +23,10 @@ class Loadout {
         }
         this.panel.querySelector('.weapon-choices').before(maps);
         this.mapNotes=document.createElement('p');this.mapNotes.className='map-notes';this.mapNotes.setAttribute('aria-live','polite');maps.after(this.mapNotes);
+        const modes=document.createElement('div');modes.className='expedition-modes';
+        modes.innerHTML='<button data-mode="chapter" type="button">林地闯关 · 有终点</button><button data-mode="endless" type="button">无尽生存 · 三张地图</button>';
+        maps.before(modes);game.selectedMode='chapter';
+        for(const b of modes.children)b.onclick=()=>{game.selectedMode=b.dataset.mode;this.selectMap(b.dataset.mode==='chapter'?'forest':game.selectedMap);};
         this.selectMap('forest');
         this.panel.querySelector('.loadout-start').addEventListener('click',()=>game.startGame());
         this.menu=document.createElement('button');this.menu.type='button';this.menu.className='loadout-menu';this.menu.textContent='换地图 / 武器';
@@ -41,8 +45,11 @@ class Loadout {
     }
     selectMap(id){
         if(!ForestMap.MAPS[id])return;this.game.selectedMap=id;
+        if(id!=='forest')this.game.selectedMode='endless';
+        for(const b of this.panel.querySelectorAll('[data-mode]'))b.setAttribute('aria-pressed',String(b.dataset.mode===this.game.selectedMode));
         for(const b of this.panel.querySelectorAll('[data-map]'))b.setAttribute('aria-pressed',String(b.dataset.map===id));
         this.mapNotes.textContent={forest:'林地：敌人组合均衡，利用树木挡住追击。',snow:'雪谷：灰爪兽更多；间歇风雪使积雪减速 50%，主路和冰面不受风雪影响。',ash:'荒原：岩甲兽与爆燃菇更多；橙圈倒计时后喷发，可以引怪进入。'}[id];
+        if(this.game.selectedMode==='chapter')this.mapNotes.textContent='林地闯关：清理两处巢穴 → 选择补给或精英路线 → 击败首领，完成远征。';
     }
     hide(){this.panel.hidden=true;document.activeElement?.blur();}
 }
