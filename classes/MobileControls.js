@@ -147,7 +147,7 @@ class MobileControls {
         document.body.dataset.gameState=state;
         const ground=WoodlandScene.surfaceAt(this.game.player.x,this.game.player.y,this.game.survivalTime);
         if(this.terrainTip)this.terrainTip.textContent=ground&&['playing','paused'].includes(state)
-            ?`${ground.name}：双方移速 −${Math.round((1-ground.speed)*100)}% · 可冲刺脱离`
+            ?`${ground.name}：双方移速 ${ground.speed>1?'+':'−'}${Math.round(Math.abs(1-ground.speed)*100)}% · 可冲刺脱离`
             :'自动攻击 · 绕开湿地和碎石，或利用它们牵制怪物';
         if(this.terrainTip&&this.game.ruins&&Math.hypot(this.game.player.x-this.game.ruins.x,this.game.player.y-this.game.ruins.y)<300)this.terrainTip.textContent=this.game.ruins.label;
         if(this.hud){

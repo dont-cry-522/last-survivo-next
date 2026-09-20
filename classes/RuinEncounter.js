@@ -7,7 +7,9 @@ class RuinEncounter {
         const distance=Math.hypot(game.player.x-this.x,game.player.y-this.y);
         if(this.state==='sealed'&&distance<180&&game.state==='playing'&&game.player.hp>0){
             const spawned=[];
-            for(const [type,dx,dy]of [['elite',-220,0],['tank',30,-120],['tank',30,120]]){
+            const types=ForestMap.selected==='snow'?['elite','fast','fast']:ForestMap.selected==='ash'?['elite','tank','exploder']:['elite','tank','tank'];
+            for(const [i,[dx,dy]]of [[-220,0],[30,-120],[30,120]].entries()){
+                const type=types[i];
                 const e=game.enemyManager.spawn(type,this.x+dx,this.y+dy,1,1);
                 if(!e){spawned.forEach(a=>{a.active=false;a.ruinGuard=null;});return;}
                 e.ruinGuard=this.token;e.combatState='recover';e.combatTimer=1.2;spawned.push(e);

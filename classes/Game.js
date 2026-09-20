@@ -278,6 +278,7 @@ class Game {
      */
     resetGame() {
         ForestMap.select(this.selectedMap||'forest');
+        this.mapEventHit=-1;this.mapEventNotice=-1;
         // 重置玩家
         this.player.reset(0, 0);
         this.weaponFields=[];this.weaponPaths?.reset();
@@ -369,7 +370,7 @@ class Game {
         this.weaponPaths?.update();
         if(this.mapPanel){
             this.mapPanel.hidden=!['playing','paused'].includes(this.state);
-            if(!this.mapPanel.hidden){ForestMap.minimap(this.mapContext,this.player);this.mapPanel.querySelector('strong').textContent=ForestMap.region(this.player.x,this.player.y).name;this.mapPanel.querySelector('.ruins-status').textContent=this.ruins.label;}
+            if(!this.mapPanel.hidden){ForestMap.minimap(this.mapContext,this.player,this.survivalTime);this.mapPanel.querySelector('strong').textContent=ForestMap.region(this.player.x,this.player.y).name;this.mapPanel.querySelector('.ruins-status').textContent=this.ruins.label;}
         }
         const musicIntensity=this.boss.active||this.ruins.state==='guarded'||(this.opening.trialStarted&&!this.opening.trialWon)?1.2:OpeningDirector.phase(this.survivalTime).intensity;
         this.audio.music?.update(this.state,musicIntensity);
@@ -430,6 +431,7 @@ class Game {
         const killsBefore = this.player.kills;
 
         // 更新敌人
+        ForestMap.updateEnvironment(this);
         WeaponPaths.updateFields(this,deltaTime);
         this.enemyManager.update(deltaTime, this.player, this.particleManager, this.experienceManager, this.audio, this.survivalTime);
 
@@ -555,10 +557,7 @@ class Game {
      * 生成普通敌人
      */
     spawnEnemy() {
-        const types = ['normal'];
-        if (this.survivalTime > 30) types.push('fast');
-        if (this.survivalTime > 60) types.push('tank');
-        if (this.survivalTime > 90) types.push('exploder');
+        const types = ForestMap.enemyTypes(this.survivalTime);
 
         // 波次公告
         this._checkWaveAnnounce();
@@ -794,6 +793,7 @@ class Game {
         WeaponPaths.drawFields(ctx,this);
         this.ruins.draw(ctx,this.cameraX,this.cameraY,this.survivalTime);
         this.skillManager.drawSkillVisuals(ctx, this.cameraX, this.cameraY, this.player);
+        ForestMap.drawEnvironment(ctx,this.cameraX,this.cameraY,w,h,this.survivalTime);
         WoodlandScene.drawFooting(ctx,this.player,this.cameraX,this.cameraY,this.survivalTime,this.player.moving);
         for(const enemy of this.enemyManager.pool){
             if(enemy.active)WoodlandScene.drawFooting(ctx,enemy,this.cameraX,this.cameraY,this.survivalTime,enemy.combatState==='approach'&&!enemy.frozen&&!enemy.paralyzed);

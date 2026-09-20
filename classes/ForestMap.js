@@ -7,6 +7,63 @@ class ForestMap {
         ash:{name:'赤岩荒原',desc:'灰烬减速 30% · 岩柱阻挡弹道',base:'#674e42',path:'#ad8160',camp:'#927453',leaf:'#ba8a61'}
     };
     static get theme(){return this.MAPS[this.selected];}
+    static enemyTypes(time){
+        const types=['normal'];
+        if(time>30)types.push('fast');if(time>60)types.push('tank');if(time>90)types.push('exploder');
+        if(this.selected==='snow'&&time>30)types.push('fast','fast');
+        if(this.selected==='ash'){if(time>60)types.push('tank');if(time>90)types.push('exploder');}
+        return types;
+    }
+    static vents=[{x:420,y:280},{x:1250,y:330},{x:800,y:1000}];
+    static eventAt(time){
+        if(this.selected==='snow'&&time>=30){
+            const cycle=Math.floor((time-30)/30),t=(time-30)%30;
+            return {kind:'snow',cycle,phase:t<2?'warning':t<8?'active':'rest',progress:Math.min(1,t/2)};
+        }
+        if(this.selected==='ash'&&time>=45){
+            const cycle=Math.floor((time-45)/18),t=(time-45)%18;
+            return {kind:'ash',cycle,...this.vents[cycle%this.vents.length],r:80,phase:t<1.6?'warning':t<2?'active':'rest',progress:Math.min(1,t/1.6)};
+        }
+        return null;
+    }
+    static updateEnvironment(g){
+        if(g.state!=='playing'||g.player.hp<=0)return;
+        const e=this.eventAt(g.survivalTime);if(!e||e.phase==='rest')return;
+        const nearby=e.kind==='snow'||Math.hypot(g.player.x-e.x,g.player.y-e.y)<650;
+        if(nearby&&g.mapEventNotice!==e.cycle){g.mapEventNotice=e.cycle;g._announce(e.kind==='snow'?'风雪将至：离开积雪，沿主路移动':'地热预警：避开橙色喷口圈',e.kind==='snow'?'#caeee7':'#f3bd85');}
+        if(e.kind!=='ash'||e.phase!=='active'||g.mapEventHit===e.cycle)return;
+        g.mapEventHit=e.cycle;
+        const inside=a=>Math.hypot(a.x-e.x,a.y-e.y)<=e.r+(a.size||0);
+        if(inside(g.player))g.player.takeDamage(18);
+        for(const enemy of g.enemyManager.pool)if(enemy.active&&enemy.hp>0&&inside(enemy))enemy.takeDamage(36,0,false);
+        if(g.boss.active&&inside(g.boss))g.boss.takeDamage(36);
+        if(nearby)g.audio.skillCue('explosion');
+    }
+    static drawEnvironment(c,cx,cy,w,h,time){
+        const e=this.eventAt(time);
+        if(this.selected==='ash')for(const vent of this.vents){
+            const x=vent.x-cx,y=vent.y-cy;if(x<-120||x>w+120||y<-120||y>h+120)continue;
+            ForestArt.oval(c,x,y,28,18,'#322d31','#c39065',2);
+            for(let j=0;j<3;j++)ForestArt.line(c,[[x-17+j*14,y+4],[x-10+j*10,y-3],[x-14+j*15,y-9]],'#da9b63',2);
+        }
+        if(!e||e.phase==='rest')return;
+        c.save();
+        if(e.kind==='snow'){
+            for(const p of this.patches.filter(p=>p.kind===3)){
+                if(p.x+p.rx<cx||p.x-p.rx>cx+w||p.y+p.ry<cy||p.y-p.ry>cy+h)continue;
+                c.strokeStyle='#e2fbf3';c.lineWidth=3;c.setLineDash(e.phase==='warning'?[8,6]:[]);c.beginPath();c.ellipse(p.x-cx,p.y-cy,p.rx,p.ry,0,0,Math.PI*2);c.stroke();
+            }
+        }else{
+            const x=e.x-cx,y=e.y-cy;
+            if(x>=-100&&x<=w+100&&y>=-100&&y<=h+100){
+                c.globalAlpha=.22;ForestArt.oval(c,x,y,e.r,e.r,e.phase==='warning'?'#ffb85b':'#ffdb90',null);c.globalAlpha=1;
+                c.strokeStyle='#ffe0a3';c.lineWidth=3;c.setLineDash(e.phase==='warning'?[9,6]:[]);c.beginPath();c.arc(x,y,e.r,0,Math.PI*2);c.stroke();c.setLineDash([]);
+                if(e.phase==='warning'){c.lineWidth=5;c.strokeStyle='#f5a65d';c.beginPath();c.arc(x,y,e.r-7,-Math.PI/2,-Math.PI/2+e.progress*Math.PI*2);c.stroke();}
+                else for(let i=0;i<8;i++){const a=i*Math.PI/4,px=x+Math.cos(a)*45,py=y+Math.sin(a)*45;ForestArt.shape(c,[[px-9,py+12],[px-4,py-20],[px+3,py-40],[px+12,py+12]],'#f6b969',null);}
+                c.font='bold 15px "Microsoft YaHei"';c.textAlign='center';c.fillStyle='#fff0c6';c.fillText(e.phase==='warning'?'即将喷发':'地热喷发',x,y-e.r-12);
+            }
+        }c.restore();
+    }
     static select(id){
         this._forest ||= {regions:this.regions,patches:this.patches};
         this.selected=this.MAPS[id]?id:'forest';this._trees=null;
@@ -187,7 +244,7 @@ class ForestMap {
             }c.restore();
         }
     }
-    static minimap(c,player){
+    static minimap(c,player,time=0){
         const w=c.canvas.width,h=c.canvas.height;
         c.clearRect(0,0,w,h);c.fillStyle=this.theme.base;c.fillRect(0,0,w,h);
         c.fillStyle=this.regions[2].color;c.fillRect(w*.63,0,w*.37,h);c.fillStyle=this.regions[3].color;c.fillRect(0,0,w*.37,h);
@@ -196,14 +253,22 @@ class ForestMap {
         c.fillText(this.regions[1].name.slice(0,2),w/2,14);c.fillText(this.regions[1].name.slice(0,2),w/2,h-7);c.fillText('营地',w/2,h/2-6);c.fillText('遗迹',w*.17,h/2-6);c.fillText(this.regions[2].name.slice(0,2),w*.83,h/2-6);
         const x=(player.x+2560)/5120*w,y=(player.y+1440)/2880*h;
         c.fillStyle='#e1b653';c.fillRect((1060/5120)*w-3,h/2-3,6,6);
+        if(this.selected==='ash'){
+            const e=this.eventAt(time);
+            for(const [i,v]of this.vents.entries()){
+                const active=e&&e.phase!=='rest'&&e.cycle%this.vents.length===i;
+                ForestArt.oval(c,(v.x+2560)/5120*w,(v.y+1440)/2880*h,active?4:2,active?4:2,active?'#ffb76b':'#b8784e','#402f2b',1);
+            }
+        }
         ForestArt.oval(c,x,y,4,4,'#fff2aa','#263d2d',1);
         c.strokeStyle='#b4b888';c.lineWidth=2;c.strokeRect(1,1,w-2,h-2);
     }
     static weather(c,w,h,time){
         if(this.selected==='forest')return;
         const snow=this.selected==='snow';c.save();c.globalAlpha=snow?.48:.4;
-        for(let i=0;i<36;i++){
-            const x=((i*173+Math.sin(time*.5+i)*25+time*(snow?12:7))%(w+30)+w+30)%(w+30)-15;
+        const storm=snow&&this.eventAt(time)?.phase==='active';
+        for(let i=0;i<(storm?54:36);i++){
+            const x=((i*173+Math.sin(time*.5+i)*25+time*(storm?95:snow?12:7))%(w+30)+w+30)%(w+30)-15;
             const y=((i*97+time*(snow?20:-16))%(h+30)+h+30)%(h+30)-15;
             ForestArt.oval(c,x,y,snow?1.5:1,snow?2:2.5,snow?'#edf8f3':'#edac65',null);
         }c.restore();

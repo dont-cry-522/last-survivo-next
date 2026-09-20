@@ -16,8 +16,10 @@ class WoodlandScene {
     ];
     static surfaceAt(x,y,time) {
         const patch=ForestMap.patches.find(p=>((x-p.x)/p.rx)**2+((y-p.y)/p.ry)**2<=1);
+        if(patch?.kind===3&&ForestMap.eventAt(time)?.phase==='active')return this.STORM_SNOW;
         return patch?this.GROUND[patch.kind]:null;
     }
+    static STORM_SNOW={name:'风雪积雪',speed:.5,fill:'#d4e1da',edge:'#eef6e7',fleck:'#d6f0ee'};
     static THEMES=[
         {name:'晨光林地',base:'#56764d',patch:'#688450',path:'#a29568',leaf:'#385d40',light:'#dae8a6',stone:'#a4aa87',accent:'#e4ba72'},
         {name:'幽蓝深林',base:'#344f4b',patch:'#42645c',path:'#697c6a',leaf:'#224439',light:'#96d4bb',stone:'#758e87',accent:'#9edbc7'},
