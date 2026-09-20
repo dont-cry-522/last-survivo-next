@@ -1,0 +1,65 @@
+{
+  "forest": {
+    "bpm": 112,
+    "duration": 68.57142857142857,
+    "stems": {
+      "theme": {
+        "bytes": 823841,
+        "rms": 0.1168,
+        "peak": 0.5315
+      },
+      "rhythm": {
+        "bytes": 823841,
+        "rms": 0.0621,
+        "peak": 0.4512
+      },
+      "tension": {
+        "bytes": 823841,
+        "rms": 0.0476,
+        "peak": 0.3673
+      }
+    }
+  },
+  "snow": {
+    "bpm": 108,
+    "duration": 71.11111111111111,
+    "stems": {
+      "theme": {
+        "bytes": 854561,
+        "rms": 0.1089,
+        "peak": 0.5071
+      },
+      "rhythm": {
+        "bytes": 854561,
+        "rms": 0.0594,
+        "peak": 0.431
+      },
+      "tension": {
+        "bytes": 854561,
+        "rms": 0.046,
+        "peak": 0.3348
+      }
+    }
+  },
+  "ash": {
+    "bpm": 120,
+    "duration": 64.0,
+    "stems": {
+      "theme": {
+        "bytes": 768984,
+        "rms": 0.1014,
+        "peak": 0.5054
+      },
+      "rhythm": {
+        "bytes": 768984,
+        "rms": 0.0715,
+        "peak": 0.4716
+      },
+      "tension": {
+        "bytes": 768984,
+        "rms": 0.0514,
+        "peak": 0.3575
+      }
+    }
+  }
+}

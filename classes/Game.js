@@ -267,6 +267,7 @@ class Game {
      * 开始游戏
      */
     startGame() {
+        this.audio.music?.start(this.selectedMap||'forest');
         this.audio.init();
         this.audio.gameStart();
         this.resetGame();
@@ -372,8 +373,10 @@ class Game {
             this.mapPanel.hidden=!['playing','paused'].includes(this.state);
             if(!this.mapPanel.hidden){ForestMap.minimap(this.mapContext,this.player,this.survivalTime);this.mapPanel.querySelector('strong').textContent=ForestMap.region(this.player.x,this.player.y).name;this.mapPanel.querySelector('.ruins-status').textContent=this.ruins.label;}
         }
-        const musicIntensity=this.boss.active||this.ruins.state==='guarded'||(this.opening.trialStarted&&!this.opening.trialWon)?1.2:OpeningDirector.phase(this.survivalTime).intensity;
-        this.audio.music?.update(this.state,musicIntensity);
+        let musicIntensity=this.boss.active||this.ruins.state==='guarded'||(this.opening.trialStarted&&!this.opening.trialWon)?1.2:OpeningDirector.phase(this.survivalTime).intensity;
+        const weather=ForestMap.eventAt(this.survivalTime);
+        if(weather&&weather.phase!=='rest'&&(weather.kind==='snow'||Math.hypot(this.player.x-weather.x,this.player.y-weather.y)<650))musicIntensity=Math.max(musicIntensity,1.04);
+        this.audio.music?.update(this.state,musicIntensity,this.state==='start'?this.selectedMap||'forest':ForestMap.selected);
         const objective=document.getElementById('opening-objective');
         if(objective){objective.hidden=!['playing','paused'].includes(this.state);objective.textContent=`${OpeningDirector.phase(this.survivalTime).name} · ${this.opening.objective(this)}`;}
 
