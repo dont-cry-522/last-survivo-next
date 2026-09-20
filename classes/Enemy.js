@@ -32,6 +32,7 @@ class Enemy {
         this._triggeredExplode = false;
 
         this.hitFlash = 0;
+        this.impactTimer=0;this.impactStrength=0;
         this.hurtAngle = 0;
 
         this.knockbackX = 0;
@@ -78,6 +79,7 @@ class Enemy {
         this.color = cfg.color;
         this.glowColor = cfg.glowColor;
         this.hitFlash = 0;
+        this.impactTimer=0;this.impactStrength=0;
         this.hurtAngle = 0;
         this.knockbackX = 0;
         this.knockbackY = 0;
@@ -107,6 +109,7 @@ class Enemy {
         if(showImpact) {
             this.hitFlash = EnemyConfig.HIT_FLASH_DURATION;
             this.hurtAngle = bulletAngle;
+            this.impactTimer=.18;this.impactStrength=Math.min(1.6,.45+amount/Math.max(1,this.maxHp)*4);
         }
 
         const knockbackForce = amount * EnemyConfig.KNOCKBACK_FORCE_COEFFICIENT;
@@ -136,6 +139,7 @@ class Enemy {
         this.attackCue = null;
         if (!this.active || this.hp <= 0) return;
         this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
+        this.impactTimer=Math.max(0,this.impactTimer-deltaTime);
         this.attackPose = Math.max(0, this.attackPose - deltaTime);
         this.contactCooldown = Math.max(0, this.contactCooldown - deltaTime);
         if (Enemy._statusSystem) Enemy._statusSystem.update(this, deltaTime);
@@ -402,7 +406,7 @@ class EnemyManager extends ObjectPool {
 
     addImpact(x,y,kind,angle=0,radius=0) {
         if (this.impactMarks.length >= 64) this.impactMarks.shift();
-        const duration = kind === 'burst' ? 0.5 : kind === 'sweep' ? 0.28 : kind === 'slam' ? 0.42 : kind === 'crit' ? 0.23 : 0.12;
+        const duration = ['rifle-hit','armor-hit','ember-hit'].includes(kind) ? .18 : kind==='shotgun-hit' ? .25 : kind === 'burst' ? 0.5 : kind === 'sweep' ? 0.28 : kind === 'slam' ? 0.42 : kind === 'crit' ? 0.23 : 0.12;
         this.impactMarks.push({x,y,kind,angle,radius,life:duration,duration});
     }
 

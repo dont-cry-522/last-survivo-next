@@ -31,6 +31,7 @@ class Game {
         this.cameraX = 0;
         this.cameraY = 0;
         this.screenShake = 0;
+        this.impactKick=null;this.lastImpactAt=-1;
 
         // 时间
         this.survivalTime = 0;
@@ -301,6 +302,7 @@ class Game {
         this.cameraX = 0;
         this.cameraY = 0;
         this.screenShake = 0;
+        this.impactKick=null;this.lastImpactAt=-1;
 
         // 重置UI
         this.uiManager.reset();
@@ -386,6 +388,7 @@ class Game {
      * 更新游戏逻辑
      */
     update(deltaTime) {
+        if(this.impactKick){this.impactKick.life-=deltaTime;if(this.impactKick.life<=0)this.impactKick=null;}
         // 存活时间
         this.survivalTime += deltaTime;
 
@@ -612,7 +615,7 @@ class Game {
                             Utils.angle(bullet.x, bullet.y, enemy.x, enemy.y));
                         this.applyWeaponImpact(bullet,enemy);
 
-                        this.enemyManager.addImpact(enemy.x,enemy.y,bullet.isCrit ? "crit" : "hit",Math.atan2(bullet.vy,bullet.vx));
+                        this.enemyManager.addImpact(enemy.x,enemy.y,bullet.weaponType==='shotgun'?'shotgun-hit':bullet.weaponType==='fireball'?'ember-hit':['tank','elite'].includes(enemy.type)?'armor-hit':'rifle-hit',Math.atan2(bullet.vy,bullet.vx));
                         this.uiManager.addDamageNumber(
                             enemy.x, enemy.y - enemy.size,
                             bullet.damage, bullet.isCrit
@@ -662,6 +665,9 @@ class Game {
      * 触发升级
      */
     applyWeaponImpact(bullet,primary) {
+        if((bullet.weaponType==='shotgun'||bullet.weaponType==='fireball'||bullet.isCrit) && (this.survivalTime||0)-(this.lastImpactAt??-1)>.12){
+            this.lastImpactAt=this.survivalTime||0;this.impactKick={life:.09,angle:Math.atan2(bullet.vy,bullet.vx),strength:bullet.weaponType==='shotgun'?2.8:2};
+        }
         if(bullet.weaponType==='fireball' ? !bullet.exploded : bullet.generation===0) {
             if(bullet.soundKind)this.audio.skillCue(bullet.soundKind);
             else this.audio.weaponImpact(bullet.weaponType||'rifle',bullet.isCrit,primary.type);
@@ -728,7 +734,9 @@ class Game {
         }
 
         ctx.save();
-        ctx.translate(shakeX, shakeY);
+        const kick=this.impactKick;
+        const pulse=kick?Math.sin(kick.life/.09*Math.PI)*kick.strength:0;
+        ctx.translate(shakeX+(kick?Math.cos(kick.angle)*pulse:0),shakeY+(kick?Math.sin(kick.angle)*pulse:0));
 
         // 清空画布
         ctx.fillStyle = Config.COLORS.background;
@@ -762,6 +770,8 @@ class Game {
 
         ctx.restore();
 
+        WoodlandScene.foreground(ctx,w,h,this.survivalTime);
+        ctx.save();ctx.font='16px "Microsoft YaHei"';ctx.fillStyle='#e2d2a9';ctx.fillText(WoodlandScene.THEMES[WoodlandScene.phase(this.survivalTime)].name,20,h-18);ctx.restore();
         // 波次公告
         if (this._announcements) {
             for (const a of this._announcements) {
@@ -806,7 +816,7 @@ class Game {
      * 绘制背景网格
      */
     drawGrid(ctx) {
-        ForestArt.terrain(ctx, this.cameraX, this.cameraY, this.canvas.width, this.canvas.height);
+        WoodlandScene.draw(ctx, this.cameraX, this.cameraY, this.canvas.width, this.canvas.height,this.survivalTime);
     }
 
 }

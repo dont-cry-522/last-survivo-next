@@ -50,7 +50,7 @@ class ForestArt {
             this.line(c,[[foot-3,19-lift],[foot+5,19-lift]],'#bc9b64',1.4);
             this.line(c,[[foot,15-lift],[foot+3,15-lift]],'#c6ad77',1);
         }
-        c.translate(hurt?-2:0,bob);
+        c.translate((hurt?-2:0)-Math.max(0,p.recoilTimer||0)*(p.weaponType==='shotgun'?10:4),bob);
         c.rotate((p.isDashing?.25:.055)*travel*intensity);
         if (p.isDashing) c.translate(travel*3,2);
         // Backpack, rolled blanket and scarf have their own follow-through.
@@ -135,8 +135,8 @@ class ForestArt {
                 c.rotate(direction*death*1.5);c.scale(1-death*.25,1-death*.3);
             }
         }
-        if(e.hitFlash>0 && !death) {
-            const recoil=Math.sin(Math.min(1,e.hitFlash/.1)*Math.PI);
+        if((e.impactTimer||e.hitFlash)>0 && !death) {
+            const recoil=Math.sin(Math.min(1,(e.impactTimer||e.hitFlash)/.18)*Math.PI)*(e.impactStrength||1);
             const heavy=e.type==='tank'||e.type==='elite';
             const kick=recoil*(heavy?2:6);
             c.translate(Math.cos(e.hurtAngle||0)*kick,Math.sin(e.hurtAngle||0)*kick);
@@ -373,7 +373,21 @@ class ForestArt {
     static impact(c,m,cameraX=0,cameraY=0) {
         const p=1-m.life/m.duration;
         c.save();c.translate(m.x-cameraX,m.y-cameraY);c.globalAlpha=Math.max(0,1-p);
-        if(m.kind==='sweep') {
+        if(['rifle-hit','armor-hit','shotgun-hit','ember-hit'].includes(m.kind)) {
+            c.rotate(m.angle||0);
+            const heavy=m.kind==='shotgun-hit',armor=m.kind==='armor-hit',fire=m.kind==='ember-hit';
+            const size=heavy?28:armor?17:14,color=fire?'#ffac50':armor?'#e4dbb2':'#d5b17c';
+            // Compact impact core and directional fragments, rather than a generic X.
+            if(p<.35)ForestArt.shape(c,[[-5,-4],[5,-2],[9,0],[3,5],[-4,3]],fire?'#ffdf85':'#fff0c5',null);
+            for(let i=0;i<(heavy?9:5);i++){
+                const a=(i/(heavy?8:4)-.5)*2.7,dist=4+p*size*1.6,fx=Math.cos(a)*dist,fy=Math.sin(a)*dist+p*p*9;
+                c.save();c.translate(fx,fy);c.rotate(i+p*5);
+                if(armor)ForestArt.line(c,[[0,0],[6*(1-p),0]],color,1.5);
+                else ForestArt.shape(c,[[-2,-1],[2,-2],[3,1],[-1,2]],color,null);
+                c.restore();
+            }
+            if(heavy){c.globalAlpha*=.28;ForestArt.oval(c,10+p*18,0,6+p*20,5+p*14,'#c5ac80',null);}
+        } else if(m.kind==='sweep') {
             c.rotate(m.angle||0);
             const halfArc=EnemyConfig.ATTACKS.elite.halfArc;
             c.beginPath();c.arc(0,0,m.radius,-halfArc,-halfArc+2*halfArc*Math.min(1,p*2+.2));
