@@ -28,7 +28,7 @@ class WeaponPaths {
     reset(){this.dialog.close();}
     update(){
         const g=this.game;if(g.state!=='playing'||g.player.level<3||g.player.weaponPath||this.dialog.open)return;
-        g.state='paused';g.player.keys={};g.mobileControls?.release();
+        g.state='paused';for(const key of Object.keys(g.player.keys))g.player.keys[key]=false;g.mobileControls?.release();
         this.dialog.innerHTML='<small>武器进阶 · 本局选择一次</small><h2 id="weapon-path-title">这把武器，走哪条路线？</h2><p>选择期间战斗暂停。后续技能强化继续生效。</p><div class="weapon-path-options"></div>';
         for(const [id,d]of Object.entries(WeaponPaths.PATHS))if(d.weapon===g.player.weaponType){
             const b=document.createElement('button');b.type='button';b.dataset.path=id;b.innerHTML=`<strong>${d.name}</strong><canvas width="180" height="105" aria-hidden="true"></canvas><span>${d.desc}</span>`;

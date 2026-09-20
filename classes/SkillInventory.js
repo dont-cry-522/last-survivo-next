@@ -13,7 +13,7 @@ class SkillInventory {
         this.update();
     }
     update(){this.button.hidden=!['playing','paused'].includes(this.game.state);const skills=this.game.skillManager.skills;const signature=skills.map(s=>s.id+':'+s.currentTier).join('|');if(signature!==this.signature||!this.signature){this.signature=signature;this.button.textContent=`技能 · ${skills.length}`;}}
-    open(){if(!['playing','paused'].includes(this.game.state))return;this.resume=this.game.state==='playing';if(this.resume)this.game.togglePause();this.game.mobileControls.release();this.game.player.keys={};const nav=this.dialog.querySelector('nav');nav.replaceChildren();
+    open(){if(!['playing','paused'].includes(this.game.state))return;this.resume=this.game.state==='playing';if(this.resume)this.game.togglePause();this.game.mobileControls.release();for(const key of Object.keys(this.game.player.keys))this.game.player.keys[key]=false;const nav=this.dialog.querySelector('nav');nav.replaceChildren();
         for(const skill of this.game.skillManager.skills){const b=document.createElement('button');b.type='button';b.dataset.skill=skill.id;b.style.setProperty('--skill-color',SkillCategory.getColor(skill.category));b.textContent=`${skill.name} · ${skill.currentTier} 阶`;b.addEventListener('click',()=>this.select(skill));nav.append(b);}
         this.dialog.querySelector('article').textContent='还没有获得技能。击败怪物、收集经验，升级后就能选择新技能。';
         if(this.game.skillManager.skills.length)this.select(this.game.skillManager.skills[0]);this.dialog.showModal();this.dialog.querySelector('.inventory-close').focus();
