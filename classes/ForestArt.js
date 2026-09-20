@@ -136,8 +136,14 @@ class ForestArt {
             }
         }
         if(e.hitFlash>0 && !death) {
-            const kick=Math.sin(Math.min(1,e.hitFlash/.1)*Math.PI)*4;
+            const recoil=Math.sin(Math.min(1,e.hitFlash/.1)*Math.PI);
+            const heavy=e.type==='tank'||e.type==='elite';
+            const kick=recoil*(heavy?2:6);
             c.translate(Math.cos(e.hurtAngle||0)*kick,Math.sin(e.hurtAngle||0)*kick);
+            // Visual deformation only: heavy armor rocks, beasts flinch, caps compress.
+            if(heavy)c.rotate(Math.cos(e.hurtAngle||0)*recoil*.045);
+            else if(e.type==='fast'){c.rotate(Math.cos(e.hurtAngle||0)*recoil*.12);c.scale(1+recoil*.08,1-recoil*.08);}
+            else c.scale(1+recoil*.14,1-recoil*.13);
         }
         const scale=e.size/18;
         c.scale((Math.cos(e.angle)<0?-1:1)*scale,scale);

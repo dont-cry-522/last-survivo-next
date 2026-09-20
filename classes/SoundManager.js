@@ -420,7 +420,11 @@ class SoundManager {
 
     /** 拾取经验 */
     pickup() {
-        this._playTone(1000, 0.06, 'sine', 0.04);
+        if(!this.enabled||!this.ctx)return;
+        const now=this.ctx.currentTime;
+        if(now-(this.lastPickup??-Infinity)<.15)return;
+        this.lastPickup=now;
+        this._playNoise(.045,.018,1100);
     }
 
     /** UI点击 */
