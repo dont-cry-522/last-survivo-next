@@ -152,7 +152,9 @@ class Enemy {
         this.knockbackY *= decay;
         const attack = EnemyConfig.ATTACKS[this.type];
         if (attack && this.combatState !== 'approach') {
+            const startX=this.x,startY=this.y;
             this.advanceAttack(deltaTime * speedMul, attack);
+            if(terrainTime!==null)ForestMap.resolve(this,startX,startY);
             return;
         }
         this.angle = Utils.angle(this.x, this.y, player.x, player.y);
@@ -168,8 +170,11 @@ class Enemy {
             this.attackCue = 'windup';
             return;
         }
+        if(terrainTime!==null)this.angle=ForestMap.steer(this,player);
+        const startX=this.x,startY=this.y;
         this.x += (Math.cos(this.angle) * this.speed * speedMul * terrainSpeed + this.knockbackX) * deltaTime * 60;
         this.y += (Math.sin(this.angle) * this.speed * speedMul * terrainSpeed + this.knockbackY) * deltaTime * 60;
+        if(terrainTime!==null)ForestMap.resolve(this,startX,startY);
     }
 
     advanceAttack(dt, attack) {

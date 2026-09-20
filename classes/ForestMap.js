@@ -1,0 +1,148 @@
+/** One finite forest, with shared visible obstacles and swept actor movement. */
+class ForestMap {
+    static width=5120;
+    static height=2880;
+    static regions=[
+        {name:'中央营地',color:'#687b48',x:0,y:0},
+        {name:'古木密林',color:'#35543c',x:0,y:-950},
+        {name:'雾溪湿地',color:'#416963',x:1500,y:0},
+        {name:'断墙遗迹',color:'#77794f',x:-1500,y:0}
+    ];
+    static patches=[
+        {x:420,y:640,rx:145,ry:52,kind:0},
+        {x:-300,y:-820,rx:180,ry:90,kind:0},
+        {x:1350,y:300,rx:300,ry:160,kind:1},
+        {x:1850,y:-330,rx:250,ry:150,kind:1},
+        {x:2000,y:780,rx:240,ry:130,kind:1},
+        {x:-1400,y:300,rx:270,ry:150,kind:2},
+        {x:-1950,y:-380,rx:230,ry:110,kind:2}
+    ];
+    static region(x,y){return Math.abs(x)<600&&Math.abs(y)<400?this.regions[0]:x>650?this.regions[2]:x<-650?this.regions[3]:this.regions[1];}
+    static get trees(){
+        if(this._trees)return this._trees;
+        const trees=[];
+        for(let row=0;row<12;row++)for(let col=0;col<24;col++){
+            const n=row*24+col,x=-2420+col*210+Math.sin(n*17)*24,y=-1260+row*230+Math.cos(n*13)*22;
+            if(Math.abs(x)<150||Math.abs(y)<145||(Math.abs(x)<610&&Math.abs(y)<410))continue;
+            if(this.patches.some(p=>((x-p.x)/(p.rx+90))**2+((y-p.y)/(p.ry+90))**2<1))continue;
+            trees.push({x,y,r:22+n%9,crown:75+n%25});
+        }
+        for(const [x,y]of [[-400,-550],[460,1050]])for(let part=0;part<3;part++)trees.push({x:x+part*25,y,r:20,crown:0,fallen:true,part});
+        return this._trees=trees.sort((a,b)=>a.y-b.y);
+    }
+    static clear(x,y,r){
+        return Math.abs(x)<=2560-r&&Math.abs(y)<=1440-r&&!this.trees.some(t=>(x-t.x)**2+(y-t.y)**2<(r+t.r)**2);
+    }
+    static move(actor,dx,dy){
+        const r=actor.size||20,steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/10));
+        for(let i=0;i<steps;i++){
+            const x=Math.max(-2560+r,Math.min(2560-r,actor.x+dx/steps));
+            if(this.clear(x,actor.y,r))actor.x=x;
+            const y=Math.max(-1440+r,Math.min(1440-r,actor.y+dy/steps));
+            if(this.clear(actor.x,y,r))actor.y=y;
+        }
+    }
+    static resolve(actor,x,y){const dx=actor.x-x,dy=actor.y-y;actor.x=x;actor.y=y;this.move(actor,dx,dy);}
+    static steer(actor,target){
+        let angle=Math.atan2(target.y-actor.y,target.x-actor.x);
+        const ux=Math.cos(angle),uy=Math.sin(angle),r=actor.size||20;
+        for(const t of this.trees){
+            const dx=t.x-actor.x,dy=t.y-actor.y,ahead=dx*ux+dy*uy,lateral=dx*uy-dy*ux;
+            if(ahead>0&&ahead<r+t.r+75&&Math.abs(lateral)<r+t.r+12){
+                angle+= (lateral>=0?1:-1)*1.05;break;
+            }
+        }
+        return angle;
+    }
+    static spawn(player,r,w,h){
+        const start=Math.random()*Math.PI*2;
+        for(let i=0;i<80;i++){
+            const a=start+i*2.4,x=player.x+Math.cos(a)*(w*.6+100),y=player.y+Math.sin(a)*(h*.6+100);
+            if(this.clear(x,y,r)&&Math.hypot(x-player.x,y-player.y)>350)return {x,y};
+        }
+        // The clear central trails provide a bounded fallback even at a corner.
+        const candidates=[{x:0,y:0},{x:1200,y:0},{x:-1200,y:0},{x:0,y:1000},{x:0,y:-1000}];
+        return candidates.sort((a,b)=>Math.hypot(b.x-player.x,b.y-player.y)-Math.hypot(a.x-player.x,a.y-player.y))[0];
+    }
+    static ground(c,cx,cy,w,h,time){
+        c.fillStyle='#172b24';c.fillRect(0,0,w,h);c.save();c.translate(-cx,-cy);
+        c.beginPath();c.rect(-2560,-1440,5120,2880);c.clip();
+        c.fillStyle='#486443';c.fillRect(-2560,-1440,5120,2880);
+        // Soft region stains blend into each other instead of switching on a timer.
+        for(const z of this.regions){const g=c.createRadialGradient(z.x,z.y,80,z.x,z.y,1100);g.addColorStop(0,z.color);g.addColorStop(1,'rgba(40,70,45,0)');c.fillStyle=g;c.fillRect(z.x-1100,z.y-1100,2200,2200);}
+        for(let y=Math.floor(cy/100)*100;y<cy+h+100;y+=100)for(let x=Math.floor(cx/100)*100;x<cx+w+100;x+=100){
+            const n=Math.sin(x*13+y*17),px=x+n*30,py=y+Math.cos(x+y)*25;
+            c.globalAlpha=.07;ForestArt.oval(c,px,py,35+n*12,16,'#91a16b',null);c.globalAlpha=.5;
+            for(let i=0;i<4;i++){
+                const gx=px+Math.sin(x+y+i*7)*35,gy=py+Math.cos(x-y+i*13)*30;
+                ForestArt.line(c,[[gx-3,gy],[gx,gy-5-i],[gx+3,gy-2]],i%2?'#78905c':'#2e5036',1);
+            }
+            if(n>.7){c.save();c.translate(px,py);for(let i=0;i<5;i++){c.rotate(1.25);ForestArt.oval(c,0,-6,3,9,'#527543','#2f5035',.6);}c.restore();}
+        }c.globalAlpha=1;
+        c.strokeStyle='#a59c6c';c.lineWidth=130;c.globalAlpha=.4;
+        ForestArt.line(c,[[-2560,0],[-1500,15],[-600,0],[0,0],[800,-10],[1600,0],[2560,0]],'#a59c6c',130);
+        ForestArt.line(c,[[0,-1440],[20,-650],[0,0],[-15,800],[0,1440]],'#a59c6c',120);c.globalAlpha=1;
+        ForestArt.oval(c,0,0,290,190,'#8c895d',null);
+        for(const p of this.patches){
+            if(p.x+p.rx<cx||p.x-p.rx>cx+w||p.y+p.ry<cy||p.y-p.ry>cy+h)continue;
+            WoodlandScene.drawPatches(c,p.kind,[p]);
+            if(p.kind===1)for(let j=0;j<12;j++){
+                const a=j*2.4,x=p.x+Math.cos(a)*(p.rx+8),y=p.y+Math.sin(a)*(p.ry+8);
+                ForestArt.line(c,[[x-6,y-9],[x,y+2],[x+3,y-19]],'#afbb77',2);
+            }
+        }
+        // Camp landmarks remain passable; only the clearly drawn tree bases collide.
+        ForestArt.shape(c,[[-240,-65],[-170,-165],[-100,-65]],'#c4ac6f','#4d5439',3);
+        ForestArt.shape(c,[[-205,-66],[-170,-132],[-148,-66]],'#495741',null);
+        ForestArt.line(c,[[130,-90],[180,-100]],'#674c32',17);
+        for(let i=0;i<9;i++){const a=i*Math.PI*2/9;ForestArt.oval(c,Math.cos(a)*35,70+Math.sin(a)*20,8,5,'#b0ae88','#53634c');}
+        ForestArt.shape(c,[[-14,72],[1,38+Math.sin(time*6)*3],[8,57],[17,44],[17,74]],'#e7a654',null);
+        ForestArt.shape(c,[[-5,72],[3,55],[10,73]],'#f7d680',null);
+        for(let j=0;j<18;j++){const x=-1650+(j%6)*57,y=-180+Math.floor(j/6)*42;ForestArt.shape(c,[[x,y],[x+48,y-2],[x+51,y+30],[x-3,y+32]],'#a09a78','#576347',2);}
+        for(const x of [-1710,-1300]){ForestArt.shape(c,[[x,-260],[x+55,-265],[x+47,-170],[x-8,-165]],'#96987a','#46543d',3);ForestArt.line(c,[[x+10,-240],[x+30,-218],[x+13,-193]],'#59664e',3);}
+        // Boundary rock belt sits outside the walkable rectangle, not over hidden floor.
+        for(let x=-2640;x<=2640;x+=90)for(const y of [-1475,1475])ForestArt.oval(c,x,y,60,48,'#465446','#263c30',3);
+        for(let y=-1440;y<=1440;y+=90)for(const x of [-2595,2595])ForestArt.oval(c,x,y,50,60,'#465446','#263c30',3);
+        c.restore();
+    }
+    static trunks(c,cx,cy,w,h){
+        for(const t of this.trees){if(t.x<cx-130||t.x>cx+w+130||t.y<cy-130||t.y>cy+h+160)continue;
+            const x=t.x-cx,y=t.y-cy;
+            if(t.fallen){
+                if(t.part===0){ForestArt.line(c,[[x,y],[x+50,y]],'#473c2d',40);ForestArt.line(c,[[x,y-5],[x+50,y-5]],'#8a6a42',24);ForestArt.oval(c,x+52,y,10,18,'#c0a271','#564b33',2);}
+                continue;
+            }
+            ForestArt.oval(c,x+20,y+12,t.crown*.8,27,'rgba(14,30,22,.22)',null);
+            ForestArt.oval(c,x,y,t.r,t.r,'#594633','#a39162',2);
+            ForestArt.shape(c,[[x-t.r,y+5],[x-14,y-80],[x+15,y-80],[x+t.r,y+5]],'#76593a','#394431',3);
+            ForestArt.line(c,[[x-5,y],[x-3,y-70]],'#b29359',3);
+        }
+    }
+    static crowns(c,cx,cy,w,h,actors,time){
+        for(const t of this.trees){if(t.x<cx-130||t.x>cx+w+130||t.y<cy-40||t.y>cy+h+180)continue;
+            if(t.fallen)continue;
+            const x=t.x-cx,y=t.y-cy-85,r=t.crown;
+            const covered=actors.some(a=>Math.abs(a.x-t.x)<r+a.size&&Math.abs(a.y-(t.y-85))<r*.7+a.size);
+            c.save();c.globalAlpha=covered?.075:1;
+            for(let i=0;i<5;i++){const a=i*2.4,dx=Math.cos(a)*r*.4,dy=Math.sin(a)*r*.24;
+                ForestArt.oval(c,x+dx+Math.sin(time*.7+t.x)*2,y+dy,r*.63,r*.46,i%2?'#446b42':'#355b39','#284b32',2);
+            }
+            ForestArt.oval(c,x-14,y-20,r*.47,r*.28,'#5a7d49',null);
+            for(let i=0;i<12;i++){
+                const a=i*2.4,rr=r*.65*Math.sqrt((i+.5)/12),lx=x+Math.cos(a)*rr,ly=y+Math.sin(a)*rr*.6;
+                ForestArt.line(c,[[lx-5,ly+2],[lx,ly-2],[lx+5,ly]],i%3?'#70905a':'#294c34',2);
+            }c.restore();
+        }
+    }
+    static minimap(c,player){
+        const w=c.canvas.width,h=c.canvas.height;
+        c.clearRect(0,0,w,h);c.fillStyle='#304c39';c.fillRect(0,0,w,h);
+        c.fillStyle='#476a60';c.fillRect(w*.63,0,w*.37,h);c.fillStyle='#777954';c.fillRect(0,0,w*.37,h);
+        c.strokeStyle='#a39e70';c.lineWidth=3;ForestArt.line(c,[[0,h/2],[w,h/2]],'#a39e70',3);ForestArt.line(c,[[w/2,0],[w/2,h]],'#a39e70',3);
+        c.font='11px sans-serif';c.textAlign='center';c.fillStyle='#e4dfb8';
+        c.fillText('密林',w/2,14);c.fillText('密林',w/2,h-7);c.fillText('营地',w/2,h/2-6);c.fillText('遗迹',w*.17,h/2-6);c.fillText('湿地',w*.83,h/2-6);
+        const x=(player.x+2560)/5120*w,y=(player.y+1440)/2880*h;
+        ForestArt.oval(c,x,y,4,4,'#fff2aa','#263d2d',1);
+        c.strokeStyle='#b4b888';c.lineWidth=2;c.strokeRect(1,1,w-2,h-2);
+    }
+}

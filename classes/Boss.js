@@ -198,6 +198,7 @@ class Boss {
     update(deltaTime, player, particleManager, game) {
         if (!this.active) return;
         const walkSpeed=this.speed*(game?.survivalTime==null?1:(WoodlandScene.surfaceAt(this.x,this.y,game.survivalTime)?.speed ?? 1));
+        const move=(dx,dy)=>{if(game?.survivalTime!=null)ForestMap.move(this,dx,dy);else{this.x+=dx;this.y+=dy;}};
 
         this.animTimer += deltaTime;
 
@@ -220,8 +221,7 @@ class Boss {
             this.chargeWindupTimer -= deltaTime;
             // 前摇期间缓慢跟随
             const angle = Utils.angle(this.x, this.y, player.x, player.y);
-            this.x += Math.cos(angle) * walkSpeed * 0.3 * deltaTime * 60;
-            this.y += Math.sin(angle) * walkSpeed * 0.3 * deltaTime * 60;
+            move(Math.cos(angle)*walkSpeed*.3*deltaTime*60,Math.sin(angle)*walkSpeed*.3*deltaTime*60);
 
             if (this.chargeWindupTimer <= 0) {
                 this.executeCharge();
@@ -232,8 +232,7 @@ class Boss {
         // 冲撞中
         if (this.isCharging) {
             this.chargeCurrentDuration -= deltaTime;
-            this.x += this.chargeDirection.x * this.chargeSpeed * deltaTime * 60;
-            this.y += this.chargeDirection.y * this.chargeSpeed * deltaTime * 60;
+            move(this.chargeDirection.x*this.chargeSpeed*deltaTime*60,this.chargeDirection.y*this.chargeSpeed*deltaTime*60);
 
             // 冲撞接触伤害
             if (Utils.circleCollision(this.x, this.y, this.size, player.x, player.y, player.size)) {
@@ -260,15 +259,13 @@ class Boss {
             }
             // 警告期间正常移动但减速
             const angle = Utils.angle(this.x, this.y, player.x, player.y);
-            this.x += Math.cos(angle) * walkSpeed * 0.5 * deltaTime * 60;
-            this.y += Math.sin(angle) * walkSpeed * 0.5 * deltaTime * 60;
+            move(Math.cos(angle)*walkSpeed*.5*deltaTime*60,Math.sin(angle)*walkSpeed*.5*deltaTime*60);
             return;
         }
 
         // 普通追踪移动
-        const angle = Utils.angle(this.x, this.y, player.x, player.y);
-        this.x += Math.cos(angle) * walkSpeed * deltaTime * 60;
-        this.y += Math.sin(angle) * walkSpeed * deltaTime * 60;
+        const angle = game?.survivalTime!=null?ForestMap.steer(this,player):Utils.angle(this.x, this.y, player.x, player.y);
+        move(Math.cos(angle)*walkSpeed*deltaTime*60,Math.sin(angle)*walkSpeed*deltaTime*60);
 
         // 接触伤害
         if (Utils.circleCollision(this.x, this.y, this.size, player.x, player.y, player.size)) {

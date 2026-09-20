@@ -12,11 +12,8 @@ class WoodlandScene {
         {x:840,y:880,rx:110,ry:65}
     ];
     static surfaceAt(x,y,time) {
-        const tx=((x%1024)+1024)%1024,ty=((y%1024)+1024)%1024;
-        if(!this.PATCHES.some(p=>((tx-p.x)/p.rx)**2+((ty-p.y)/p.ry)**2<=1))return null;
-        const index=this.phase(time),ground=this.GROUND[index];
-        const blend=index===0?1:Math.min(1,(time-index*90)/8);
-        return blend===1?ground:{...ground,speed:this.GROUND[index-1].speed*(1-blend)+ground.speed*blend};
+        const patch=ForestMap.patches.find(p=>((x-p.x)/p.rx)**2+((y-p.y)/p.ry)**2<=1);
+        return patch?this.GROUND[patch.kind]:null;
     }
     static THEMES=[
         {name:'晨光林地',base:'#56764d',patch:'#688450',path:'#a29568',leaf:'#385d40',light:'#dae8a6',stone:'#a4aa87',accent:'#e4ba72'},
@@ -68,9 +65,9 @@ class WoodlandScene {
         c.restore();}
         this.tiles[index]=tile;return tile;
     }
-    static drawPatches(c,index) {
+    static drawPatches(c,index,patches=this.PATCHES) {
         const ground=this.GROUND[index];
-        for(const p of this.PATCHES){
+        for(const p of patches){
             c.save();c.translate(p.x,p.y);
             ForestArt.oval(c,0,0,p.rx,p.ry,ground.fill,ground.edge,2);
             c.save();c.beginPath();c.ellipse(0,0,p.rx-2,p.ry-2,0,0,Math.PI*2);c.clip();
@@ -94,7 +91,7 @@ class WoodlandScene {
         const ground=this.surfaceAt(entity.x,entity.y,time);
         const x=entity.x-cx,y=entity.y-cy;
         if(!ground||!moving||x<-80||y<-80||x>c.canvas.width+80||y>c.canvas.height+80)return;
-        const phase=this.phase(time),cycle=(time*3+entity.x*.003)%1;
+        const phase=this.GROUND.indexOf(ground),cycle=((time*3+entity.x*.003)%1+1)%1;
         c.save();c.translate(x,y+entity.size*.5);c.globalAlpha=(1-cycle)*.6;
         if(phase===1){
             c.strokeStyle=ground.fleck;c.lineWidth=1.5;c.beginPath();c.ellipse(0,0,10+cycle*19,4+cycle*7,0,0,Math.PI*2);c.stroke();

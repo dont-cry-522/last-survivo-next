@@ -290,6 +290,7 @@ class Player {
     }
 
     update(deltaTime, enemies, bulletManager, particleManager, terrainTime = null) {
+        const startX=this.x,startY=this.y;
         const ground=terrainTime===null?null:WoodlandScene.surfaceAt(this.x,this.y,terrainTime);
         const terrainSpeed=ground?.speed ?? 1;
         this.animTimer += deltaTime;
@@ -329,7 +330,8 @@ class Player {
             }
         }
 
-        this.moving = moved || this.isDashing;
+        if(terrainTime!==null)ForestMap.resolve(this,startX,startY);
+        this.moving = (moved || this.isDashing)&&Math.hypot(this.x-startX,this.y-startY)>.01;
         this.runBlend += ((this.moving ? 1 : 0) - this.runBlend) * (1-Math.exp(-deltaTime*16));
         if (!this.isDashing) this.walkCycle += deltaTime * 13 * this.runBlend * terrainSpeed;
         const aimTarget = this.findNearestEnemy(enemies);

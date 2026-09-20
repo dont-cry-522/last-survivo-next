@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 function run(code){
     const c=vm.createContext({window:{},Math,console});
-    for(const name of ['Config','Utils','ObjectPool','StatusSystem','EnemyConfig','Enemy','Player','Boss','WoodlandScene'])
+    for(const name of ['Config','Utils','ObjectPool','StatusSystem','EnemyConfig','Enemy','Player','Boss','ForestMap','WoodlandScene'])
         vm.runInContext(fs.readFileSync(path.join(__dirname,'../classes',name+'.js'),'utf8'),c);
     vm.runInContext(`const particles={spawnTrail(){},spawnAfterimage(){}};
         Enemy._statusSystem=new StatusSystem();
@@ -15,9 +15,9 @@ function run(code){
     return c.result;
 }
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
-test('ground slows actual player and enemy travel equally, including all three phases',()=>{
-    for(const [time,mul] of [[0,.75],[100,.8],[190,.85]]){
-        const r=run(`const px=hero.x,ex=enemy.x;step(${time});enemy.update(1/60,target,${time});
+test('ground slows actual player and enemy travel equally in three spatial regions',()=>{
+    for(const [x,y,mul] of [[420,640,.75],[1350,300,.8],[-1400,300,.85]]){
+        const r=run(`hero.x=enemy.x=${x};hero.y=enemy.y=target.y=${y};const px=hero.x,ex=enemy.x;step(0);enemy.update(1/60,target,0);
             result={p:(hero.x-px)/hero.speed,e:(enemy.x-ex)/enemy.speed};`);
         near(r.p,mul);near(r.e,mul);
     }
@@ -28,15 +28,15 @@ test('leaving ground restores movement without overwriting speed upgrades or att
         result={distance:hero.x,speed,after:hero.speed,rate,afterRate:hero.attackSpeed};`);
     near(r.distance,r.speed);near(r.after,r.speed);near(r.afterRate,r.rate);
 });
-test('wet ground wraps into negative world coordinates and leaves a dry route around its edge',()=>{
+test('terrain no longer repeats at negative world coordinates and leaves a dry route',()=>{
     const r=run(`hero.x=-604;hero.y=-384;step(0);const wet=hero.x+604;
         hero.x=420;hero.y=720;step(0);result={wet,dry:hero.x-420,speed:hero.speed};`);
-    near(r.wet,r.speed*.75);near(r.dry,r.speed);
+    near(r.wet,r.speed);near(r.dry,r.speed);
 });
-test('terrain phase transitions change movement gradually on the same footprint',()=>{
+test('terrain stays fixed when time passes',()=>{
     const r=run(`result=[];for(const time of [89.99,90,94,98,180,184,188]){
         hero.x=420;hero.y=640;step(time);result.push((hero.x-420)/hero.speed);}`);
-    [.75,.75,.775,.8,.8,.825,.85].forEach((want,i)=>near(r[i],want));
+    [.75,.75,.75,.75,.75,.75,.75].forEach((want,i)=>near(r[i],want));
 });
 test('dash and committed enemy leap preserve their distance through mud',()=>{
     const r=run(`hero.dashCooldown=0;hero.tryDash();step(0);

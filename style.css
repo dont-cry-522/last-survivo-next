@@ -116,6 +116,11 @@ body.touch-device { min-height: 100dvh; padding: 0; }
     .touch-device .mobile-tip { display: none; }
 }
 
+#forest-map{position:fixed;right:18px;bottom:70px;z-index:18;padding:8px;background:#1b3029ed;border:1px solid #82966a;border-radius:9px;pointer-events:none;color:#e5d7ab;width:178px}
+#forest-map[hidden]{display:none}#forest-map strong{display:block;font-size:13px;margin-bottom:5px}#forest-map canvas{width:100%;display:block}#forest-map small{display:block;font-size:10px;margin-top:4px;color:#b4c0a1}
+@media(pointer:coarse){#forest-map{width:142px;right:12px;bottom:180px;padding:6px}}
+@media(pointer:coarse) and (orientation:landscape){#forest-map{width:118px;top:65px;bottom:auto;right:8px}#forest-map small{display:none}#forest-map strong{font-size:11px}}
+
 /* Woodland edition: muted greens and brass frame the brighter characters. */
 html, body { background:#17271f; color:#e9e3ca; }
 body { background:radial-gradient(ellipse at center,#314635 0%,#17271f 75%); }

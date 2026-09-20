@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>林地远征 · Last Survivor Next</title>
-    <link rel="stylesheet" href="style.css?v=forest15">
+    <link rel="stylesheet" href="style.css?v=forest16">
 </head>
 <body>
     <div id="game-container">
@@ -13,6 +13,7 @@
         <div class="game-footer">WASD 移动 | Shift 冲刺 | ESC 暂停 | R 重开 | M 静音</div>
     </div>
 
+    <aside id="forest-map" hidden aria-label="森林区域地图"><strong>中央营地</strong><canvas width="160" height="90" aria-label="营地居中，密林在南北，湿地在东，遗迹在西；亮点为你的位置" role="img"></canvas><small>5120 × 2880 · 有限地图</small></aside>
     <div id="mobile-controls" aria-label="触屏游戏操作">
         <div class="mobile-toolbar">
             <a class="mobile-gallery" href="gallery.html">图鉴</a>
@@ -26,44 +27,44 @@
     </div>
 
     <!-- 游戏类文件 - 按依赖顺序加载 -->
-    <script src="classes/Config.js?v=forest15"></script>
-    <script src="classes/Utils.js?v=forest15"></script>
-    <script src="classes/ObjectPool.js?v=forest15"></script>
-    <script src="classes/StatusSystem.js?v=forest15"></script>
-    <script src="classes/MusicController.js?v=forest15"></script>
-    <script src="classes/SoundManager.js?v=forest15"></script>
-    <script src="classes/Particle.js?v=forest15"></script>
-    <script src="classes/Bullet.js?v=forest15"></script>
-    <script src="classes/Experience.js?v=forest15"></script>
-    <script src="classes/EnemyConfig.js?v=forest15"></script>
-    <script src="classes/Enemy.js?v=forest15"></script>
-    <script src="classes/Boss.js?v=forest15"></script>
-    <script src="classes/ForestArt.js?v=forest15"></script>
-    <script src="classes/Player.js?v=forest15"></script>
-    <script src="classes/Upgrade.js?v=forest15"></script>
-    <script src="classes/UI.js?v=forest15"></script>
-    <script src="classes/SkillTypes.js?v=forest15"></script>
-    <script src="skills/BulletStorm.js?v=forest15"></script>
-    <script src="skills/Inferno.js?v=forest15"></script>
-    <script src="skills/Frost.js?v=forest15"></script>
-    <script src="skills/Storm.js?v=forest15"></script>
-    <script src="skills/Bastion.js?v=forest15"></script>
-    <script src="skills/Shadow.js?v=forest15"></script>
-    <script src="skills/Reaper.js?v=forest15"></script>
-    <script src="skills/Summoner.js?v=forest15"></script>
-    <script src="classes/SkillConfig.js?v=forest15"></script>
-    <script src="classes/SkillInstance.js?v=forest15"></script>
-    <script src="classes/SkillVisuals.js?v=forest15"></script>
-    <script src="classes/EffectDispatcher.js?v=forest15"></script>
-    <script src="classes/SkillManager.js?v=forest15"></script>
-    <script src="classes/SkillUI.js?v=forest15"></script>
-    <script src="classes/WoodlandScene.js?v=forest15"></script>
-<script src="classes/Game.js?v=forest15"></script>
+    <script src="classes/Config.js?v=forest16"></script>
+    <script src="classes/Utils.js?v=forest16"></script>
+    <script src="classes/ObjectPool.js?v=forest16"></script>
+    <script src="classes/StatusSystem.js?v=forest16"></script>
+    <script src="classes/MusicController.js?v=forest16"></script>
+    <script src="classes/SoundManager.js?v=forest16"></script>
+    <script src="classes/Particle.js?v=forest16"></script>
+    <script src="classes/Bullet.js?v=forest16"></script>
+    <script src="classes/Experience.js?v=forest16"></script>
+    <script src="classes/EnemyConfig.js?v=forest16"></script>
+    <script src="classes/Enemy.js?v=forest16"></script>
+    <script src="classes/Boss.js?v=forest16"></script>
+    <script src="classes/ForestArt.js?v=forest16"></script>
+    <script src="classes/Player.js?v=forest16"></script>
+    <script src="classes/Upgrade.js?v=forest16"></script>
+    <script src="classes/UI.js?v=forest16"></script>
+    <script src="classes/SkillTypes.js?v=forest16"></script>
+    <script src="skills/BulletStorm.js?v=forest16"></script>
+    <script src="skills/Inferno.js?v=forest16"></script>
+    <script src="skills/Frost.js?v=forest16"></script>
+    <script src="skills/Storm.js?v=forest16"></script>
+    <script src="skills/Bastion.js?v=forest16"></script>
+    <script src="skills/Shadow.js?v=forest16"></script>
+    <script src="skills/Reaper.js?v=forest16"></script>
+    <script src="skills/Summoner.js?v=forest16"></script>
+    <script src="classes/SkillConfig.js?v=forest16"></script>
+    <script src="classes/SkillInstance.js?v=forest16"></script>
+    <script src="classes/SkillVisuals.js?v=forest16"></script>
+    <script src="classes/EffectDispatcher.js?v=forest16"></script>
+    <script src="classes/SkillManager.js?v=forest16"></script>
+    <script src="classes/SkillUI.js?v=forest16"></script>
+    <script src="classes/ForestMap.js?v=forest16"></script><script src="classes/WoodlandScene.js?v=forest16"></script>
+<script src="classes/Game.js?v=forest16"></script>
 
     <!-- 游戏入口 -->
-    <script src="classes/MobileControls.js?v=forest15"></script>
-    <script src="classes/Loadout.js?v=forest15"></script>
-    <script src="classes/SkillInventory.js?v=forest15"></script>
-    <script src="game.js?v=forest15"></script>
+    <script src="classes/MobileControls.js?v=forest16"></script>
+    <script src="classes/Loadout.js?v=forest16"></script>
+    <script src="classes/SkillInventory.js?v=forest16"></script>
+    <script src="game.js?v=forest16"></script>
 </body>
 </html>

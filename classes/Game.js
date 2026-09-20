@@ -16,6 +16,8 @@ class Game {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
+        this.mapPanel=document.getElementById('forest-map');
+        this.mapContext=this.mapPanel?.querySelector('canvas').getContext('2d');
 
         // 画布尺寸
         this.canvas.width = Config.CANVAS_WIDTH;
@@ -357,6 +359,10 @@ class Game {
 
         if (this.mobileControls) this.mobileControls.update();
         this.skillInventory?.update();
+        if(this.mapPanel){
+            this.mapPanel.hidden=!['playing','paused'].includes(this.state);
+            if(!this.mapPanel.hidden){ForestMap.minimap(this.mapContext,this.player);this.mapPanel.querySelector('strong').textContent=ForestMap.region(this.player.x,this.player.y).name;}
+        }
         this.audio.music?.update(this.state);
 
         // 更新
@@ -535,10 +541,7 @@ class Game {
         this._checkWaveAnnounce();
 
         const type = Utils.randomChoice(types);
-        const pos = Utils.spawnPositionAround(
-            this.player.x, this.player.y,
-            this.canvas.width, this.canvas.height
-        );
+        const pos = ForestMap.spawn(this.player,50,this.canvas.width,this.canvas.height);
 
         this.enemyManager.spawn(type, pos.x, pos.y, this.hpMultiplier, this.speedMultiplier);
     }
@@ -566,10 +569,7 @@ class Game {
      */
     spawnElite() {
         this._announce('岩冠督军 出现了！', '#44ccdd');
-        const pos = Utils.spawnPositionAround(
-            this.player.x, this.player.y,
-            this.canvas.width, this.canvas.height
-        );
+        const pos = ForestMap.spawn(this.player,50,this.canvas.width,this.canvas.height);
         this.enemyManager.spawn('elite', pos.x, pos.y, this.hpMultiplier * 2, this.speedMultiplier);
         // 精英出现警告
         // TODO: 屏幕边缘警告箭头
@@ -582,10 +582,7 @@ class Game {
         if (this.boss.active) return;
         this._announce('BOSS 出现了！', '#ee5253');
 
-        const pos = Utils.spawnPositionAround(
-            this.player.x, this.player.y,
-            this.canvas.width, this.canvas.height
-        );
+        const pos = ForestMap.spawn(this.player,50,this.canvas.width,this.canvas.height);
         const bossIndex = Math.floor(this.survivalTime / Config.DIFFICULTY.bossInterval);
         this.boss.init(pos.x, pos.y, this.hpMultiplier * (1 + bossIndex * 0.5));
         this.screenShake = Math.max(this.screenShake, 15);
@@ -762,6 +759,7 @@ class Game {
         this.particleManager.draw(ctx, this.cameraX, this.cameraY);
 
         // Ground effects sit below feet; actors overlap according to world Y.
+        ForestMap.trunks(ctx,this.cameraX,this.cameraY,w,h);
         this.skillManager.drawSkillVisuals(ctx, this.cameraX, this.cameraY, this.player);
         WoodlandScene.drawFooting(ctx,this.player,this.cameraX,this.cameraY,this.survivalTime,this.player.moving);
         for(const enemy of this.enemyManager.pool){
@@ -772,12 +770,12 @@ class Game {
 
         // 绘制子弹（顶层）
         this.bulletManager.draw(ctx, this.cameraX, this.cameraY);
+        ForestMap.crowns(ctx,this.cameraX,this.cameraY,w,h,[this.player,...this.enemyManager.getActiveEnemies(),...(this.boss.active?[this.boss]:[])],this.survivalTime);
         WoodlandScene.drawPlayerStatus(ctx,this.player,this.cameraX,this.cameraY,this.survivalTime);
 
         ctx.restore();
 
-        WoodlandScene.foreground(ctx,w,h,this.survivalTime);
-        ctx.save();ctx.font='16px "Microsoft YaHei"';ctx.fillStyle='#e2d2a9';ctx.fillText(WoodlandScene.THEMES[WoodlandScene.phase(this.survivalTime)].name,20,h-18);ctx.restore();
+        ctx.save();ctx.font='16px "Microsoft YaHei"';ctx.fillStyle='#e2d2a9';ctx.fillText(ForestMap.region(this.player.x,this.player.y).name,20,h-18);ctx.restore();
         // 波次公告
         if (this._announcements) {
             for (const a of this._announcements) {
@@ -822,7 +820,7 @@ class Game {
      * 绘制背景网格
      */
     drawGrid(ctx) {
-        WoodlandScene.draw(ctx, this.cameraX, this.cameraY, this.canvas.width, this.canvas.height,this.survivalTime);
+        ForestMap.ground(ctx, this.cameraX, this.cameraY, this.canvas.width, this.canvas.height,this.survivalTime);
     }
 
 }
