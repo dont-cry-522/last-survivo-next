@@ -39,6 +39,7 @@ class Bullet {
         this.active = true;
         this.weaponType='rifle';this.soundKind=null;
         this.exploded=false;
+        this.weaponPath=null;this.branchDone=false;
         this.blastRadius=65;
         this.size=5;
         this.color=Config.COLORS.bullet;
@@ -141,6 +142,9 @@ class Bullet {
         if (!this.active) return;
         if(this.weaponType) {
             ctx.save();ctx.translate(this.x-cameraX,this.y-cameraY);ctx.rotate(Math.atan2(this.vy,this.vx));
+            if(this.weaponPath==='split-child')ctx.scale(.55,.55);
+            if(this.weaponPath==='heavy'){ForestArt.line(ctx,[[-33,0],[5,0]],'#e4c48b',6);ForestArt.oval(ctx,3,0,7,4,'#fff0bb',null);ctx.restore();return;}
+            if(this.weaponPath==='rapid')ForestArt.line(ctx,[[-24,0],[-7,0]],'rgba(215,219,158,.4)',1);
             if(this.weaponType==='fireball') {
                 ForestArt.shape(ctx,[[-24,-4],[-9,-9],[5,-6],[10,0],[4,7],[-10,8],[-29,3],[-17,0]],'#de7840',null);
                 ForestArt.oval(ctx,0,0,9,7,'#ffc666',null);ForestArt.oval(ctx,2,0,5,4,'#fff1b5',null);

@@ -82,7 +82,11 @@ class ForestArt {
         // Gun pivots independently of movement. Muzzle flash follows the same aim.
         c.save(); c.translate(6,-6);
         c.rotate(Math.atan2(Math.sin(angle),Math.abs(Math.cos(angle))));
+        const recoil=p.recoilTimer||0;
+        if(p.weaponType==='fireball')c.rotate(-.3*(p.chargeLevel||0)+Math.sin(Math.min(1,recoil/.18)*Math.PI)*.2);
+        else if(p.weaponType==='shotgun')c.rotate(-Math.sin(Math.min(1,recoil/.22)*Math.PI)*.15);
         c.translate(-Math.max(0,p.recoilTimer||0)*22,0);
+        if(p.chargeLevel>0){c.save();c.globalAlpha=p.chargeLevel*.55;this.oval(c,30,-6,8+p.chargeLevel*7,8+p.chargeLevel*7,'#f5c978',null);c.restore();}
         // Supporting forearm follows the barrel, so both hands stay on the weapon.
         this.line(c,[[-12,-2],[-7,8],[14,4]],'#3d625b',6);
         this.line(c,[[-6,8],[14,4]],skin,4);
@@ -108,6 +112,10 @@ class ForestArt {
         }
         }
         this.oval(c,2,3,4,3.2,skin);
+        if(p.weaponPath==='heavy'){this.line(c,[[4,-8],[31,-8]],'#b6ac81',4);this.oval(c,10,-10,3,3,'#bf7843');}
+        if(p.weaponPath==='rapid')this.shape(c,[[1,5],[10,5],[8,13],[0,12]],'#535d4b');
+        if(p.weaponPath==='focus')this.line(c,[[28,-4],[37,-4]],'#aead88',5);
+        if(p.weaponPath==='wide')this.line(c,[[26,-9],[26,7]],'#aa8760',4);
         this.oval(c,15,2,3.5,2.7,skin);
         this.line(c,[[14,1],[16,1]],'#fff0bc',1);
         if (p.muzzleFlash>0 && p.weaponType!=='fireball') {

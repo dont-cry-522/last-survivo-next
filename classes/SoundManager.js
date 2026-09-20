@@ -114,9 +114,9 @@ class SoundManager {
     // ==================== 玩家音效 ====================
 
     /** 射击音效 */
-    weaponShoot(kind) {
+    weaponShoot(kind,path=null) {
         if(!this.enabled||!this.ctx)return;
-        this._playElement(kind==='fireball'?'fire_cast':kind==='shotgun'?'shotgun':'rifle');
+        this._playElement(['rapid','heavy','wide','focus','ground','split'].includes(path)?path:kind==='fireball'?'fire_cast':kind==='shotgun'?'shotgun':'rifle');
     }
 
     // Resolve a collision's sound after its real on-hit skill procs.
@@ -129,14 +129,26 @@ class SoundManager {
         this.elementBuffers ||= {};
         let buffer=this.elementBuffers[kind];
         if(!buffer){
-            const rate=this.ctx.sampleRate,duration=({fire:.48,ice:.30,lightning:.19,shadow:.22,mark:.24,soul:.38,bastion:.25,mechanical:.15,beam:.4,explosion:.36,rifle:.09,shotgun:.22,fire_cast:.25,gun:.08})[kind]||.2;
+            const rate=this.ctx.sampleRate,duration=({rapid:.075,heavy:.32,wide:.28,focus:.18,ground:.42,split:.30,fire:.48,ice:.30,lightning:.19,shadow:.22,mark:.24,soul:.38,bastion:.25,mechanical:.15,beam:.4,explosion:.36,rifle:.09,shotgun:.22,fire_cast:.25,gun:.08})[kind]||.2;
             buffer=this.ctx.createBuffer(1,Math.ceil(rate*duration),rate);
             const data=buffer.getChannelData(0);let seed=317,low=0,previous=0;
             for(let i=0;i<data.length;i++){
                 seed=(Math.imul(seed,1664525)+1013904223)>>>0;
                 const noise=seed/2147483648-1,t=i/rate;low+=.035*(noise-low);
                 let value;
-                if(kind==='ice'){
+                if(kind==='rapid'){
+                    value=(noise-low)*.65*Math.exp(-t*95)+noise*.2*Math.exp(-Math.abs(t-.025)*550);
+                }else if(kind==='heavy'){
+                    value=Math.sin(2*Math.PI*(92*t-90*t*t))*.52*Math.exp(-t*13)+low*2.2*Math.exp(-t*8)+noise*.22*Math.exp(-t*65);
+                }else if(kind==='wide'){
+                    value=noise*.7*Math.exp(-t*28)+low*2*Math.exp(-t*10)+noise*.15*Math.exp(-Math.abs(t-.13)*90);
+                }else if(kind==='focus'){
+                    value=(noise-low)*.65*Math.exp(-t*65)+Math.sin(2*Math.PI*125*t)*.45*Math.exp(-t*28);
+                }else if(kind==='ground'){
+                    value=(low*3+noise*.27)*Math.sin(Math.PI*t/duration)*Math.exp(-t*4)+noise*.12*Math.exp(-(t%.06)*100);
+                }else if(kind==='split'){
+                    value=noise*.42*Math.sin(Math.PI*t/duration)*(1+.5*Math.sin(t*100))+Math.sin(2*Math.PI*(180*t+800*t*t))*.14*Math.exp(-t*12);
+                }else if(kind==='ice'){
                     // Brittle initial crack followed by scattered, irregular shard ticks.
                     const grain=t% .037,burst=Math.exp(-grain*430)*Math.exp(-t*10);
                     const high=noise-previous;previous=noise;
@@ -193,8 +205,8 @@ class SoundManager {
         else if(kind==='shadow'||kind==='soul'||kind==='mark')this._playNoise(.10,.035,750);
     }
 
-    weaponImpact(kind, crit=false, material=null) {
-        if(this.pendingImpact){this.pendingImpact.weapon=[kind,crit,material];return;}
+    weaponImpact(kind, crit=false, material=null,path=null) {
+        if(this.pendingImpact){this.pendingImpact.weapon=[kind,crit,material,path];return;}
         if(kind==='fireball'){this.skillCue('fire');return;}
         if(!this.enabled || !this.ctx) return;
         kind=['rifle','shotgun','fireball'].includes(kind)?kind:'rifle';
@@ -202,7 +214,7 @@ class SoundManager {
         const spacing=kind==='shotgun'?.09:kind==='fireball'?.12:.045;
         if(now-(this.lastWeaponImpact[kind]??-Infinity)<spacing)return;
         this.lastWeaponImpact[kind]=now;
-        this._playElement(kind==='shotgun'?'shotgun':material==='tank'||material==='elite'?'armor':material?'flesh':'gun');
+        this._playElement(path==='heavy'?'heavy':kind==='shotgun'?'shotgun':material==='tank'||material==='elite'?'armor':material?'flesh':'gun');
         if(crit)this._playNoise(.035,.035,1700);
     }
 

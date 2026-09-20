@@ -115,6 +115,11 @@ body.touch-device { min-height: 100dvh; padding: 0; }
     }
     .touch-device .mobile-tip { display: none; }
 }
+.weapon-path-dialog{width:min(660px,calc(100vw - 24px));max-height:calc(100dvh - 24px);margin:auto;padding:26px;border:1px solid #a7b080;border-radius:15px;background:#21372c;color:#eaddb7;overflow:auto}
+.weapon-path-dialog::backdrop{background:#0a1715e8}.weapon-path-dialog h2{font-size:25px;margin:10px 0}.weapon-path-dialog p{font-size:13px;color:#bdc9a7;margin-bottom:20px}.weapon-path-options{display:grid;grid-template-columns:1fr 1fr;gap:14px}.weapon-path-options button{min-height:145px;padding:20px;text-align:left;background:#36523c;border:1px solid #91a272;border-radius:10px;color:#eaddb7;cursor:pointer}.weapon-path-options strong{display:block;font-size:21px;margin-bottom:12px}.weapon-path-options span{font-size:14px;line-height:1.8}.weapon-path-options button:hover{background:#486545}
+.weapon-path-options canvas{display:block;width:140px;height:82px;margin:0 auto 8px}.weapon-path-options span{display:block}
+@media(max-width:500px){.weapon-path-dialog{padding:18px}.weapon-path-options{grid-template-columns:1fr}.weapon-path-options button{min-height:120px;padding:15px}.weapon-path-dialog h2{font-size:22px}}
+@media(max-height:450px){.weapon-path-dialog{padding:14px}.weapon-path-dialog h2{font-size:20px}.weapon-path-dialog p{margin-bottom:10px}.weapon-path-options button{min-height:115px;padding:12px}}
 
 #forest-map{position:fixed;right:18px;bottom:70px;z-index:18;padding:8px;background:#1b3029ed;border:1px solid #82966a;border-radius:9px;pointer-events:none;color:#e5d7ab;width:178px}
 #forest-map[hidden]{display:none}#forest-map strong{display:block;font-size:13px;margin-bottom:5px}#forest-map canvas{width:100%;display:block}#forest-map small{display:block;font-size:10px;margin-top:4px;color:#b4c0a1}

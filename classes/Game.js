@@ -109,6 +109,7 @@ class Game {
         this.player = new Player(0, 0);
         this.ruins=new RuinEncounter();
         this.opening=new OpeningDirector();this.player.expToNext=15;
+        this.weaponFields=[];
         this.player.audio = this.audio;
         this.player._onShieldHit=()=>this.skillManager.visuals.emit('pickup',this.player.x,this.player.y,{radius:42,color:'#b4d3b5',duration:.28});
         this.player._onDamaged = (amount) => {
@@ -278,6 +279,7 @@ class Game {
     resetGame() {
         // 重置玩家
         this.player.reset(0, 0);
+        this.weaponFields=[];this.weaponPaths?.reset();
         this.ruins=new RuinEncounter();
         this.opening=new OpeningDirector();this.player.expToNext=15;
         this.player.setWeapon(this.selectedWeapon||'rifle');
@@ -363,6 +365,7 @@ class Game {
 
         if (this.mobileControls) this.mobileControls.update();
         this.skillInventory?.update();
+        this.weaponPaths?.update();
         if(this.mapPanel){
             this.mapPanel.hidden=!['playing','paused'].includes(this.state);
             if(!this.mapPanel.hidden){ForestMap.minimap(this.mapContext,this.player);this.mapPanel.querySelector('strong').textContent=ForestMap.region(this.player.x,this.player.y).name;this.mapPanel.querySelector('.ruins-status').textContent=this.ruins.label;}
@@ -426,6 +429,7 @@ class Game {
         const killsBefore = this.player.kills;
 
         // 更新敌人
+        WeaponPaths.updateFields(this,deltaTime);
         this.enemyManager.update(deltaTime, this.player, this.particleManager, this.experienceManager, this.audio, this.survivalTime);
 
         // 更新Boss
@@ -686,12 +690,13 @@ class Game {
      * 触发升级
      */
     applyWeaponImpact(bullet,primary) {
+        if(typeof WeaponPaths!=='undefined')WeaponPaths.impact(this,bullet);
         if((bullet.weaponType==='shotgun'||bullet.weaponType==='fireball'||bullet.isCrit) && (this.survivalTime||0)-(this.lastImpactAt??-1)>.12){
             this.lastImpactAt=this.survivalTime||0;this.impactKick={life:.09,angle:Math.atan2(bullet.vy,bullet.vx),strength:bullet.weaponType==='shotgun'?2.8:2};
         }
         if(bullet.weaponType==='fireball' ? !bullet.exploded : bullet.generation===0) {
             if(bullet.soundKind)this.audio.skillCue(bullet.soundKind);
-            else this.audio.weaponImpact(bullet.weaponType||'rifle',bullet.isCrit,primary.type);
+            else this.audio.weaponImpact(bullet.weaponType||'rifle',bullet.isCrit,primary.type,bullet.weaponPath);
         }
         if(bullet.weaponType==='shotgun') {
             const angle=Math.atan2(bullet.vy,bullet.vx);
@@ -785,6 +790,7 @@ class Game {
 
         // Ground effects sit below feet; actors overlap according to world Y.
         ForestMap.trunks(ctx,this.cameraX,this.cameraY,w,h);
+        WeaponPaths.drawFields(ctx,this);
         this.ruins.draw(ctx,this.cameraX,this.cameraY,this.survivalTime);
         this.skillManager.drawSkillVisuals(ctx, this.cameraX, this.cameraY, this.player);
         WoodlandScene.drawFooting(ctx,this.player,this.cameraX,this.cameraY,this.survivalTime,this.player.moving);

@@ -16,6 +16,7 @@ class Player {
     };
 
     setWeapon(kind) {
+        this.weaponPath=null;this.chargeLevel=0;
         this.blastRadius=65;
         this.weaponType=Player.WEAPONS[kind]?kind:'rifle';
         const weapon=Player.WEAPONS[this.weaponType];
@@ -243,7 +244,7 @@ class Player {
 
         const bulletCount = this.bulletCount;
         const weapon=Player.WEAPONS[this.weaponType||'rifle'];
-        const spreadAngle = this._spreadAngle !== null ? this._spreadAngle : (weapon.spread || (bulletCount > 1 ? 0.3 : 0));
+        const spreadAngle = (this._spreadAngle !== null ? this._spreadAngle : (weapon.spread || (bulletCount > 1 ? 0.3 : 0)))*(this.weaponPath==='wide'?1.65:this.weaponPath==='focus'?.4:1);
 
         // 双持多方向
         const directions = this._dualWieldDirections || 1;
@@ -281,16 +282,18 @@ class Player {
                 if (bullet) {
                     bullet.isCrit = isCrit;
                     bullet.weaponType=this.weaponType||'rifle';
+                    bullet.weaponPath=this.weaponPath;
                     bullet.blastRadius=this.blastRadius||65;
                     bullet.size=this.weaponType==='fireball'?9:this.weaponType==='shotgun'?3:4;
                     bullet.color=this.weaponType==='fireball'?'#f3a354':'#e5c783';
-                    bullet.life=weapon.range/(this.bulletSpeed*60);
+                    if(this.weaponPath==='heavy')bullet.size=7;
+                    bullet.life=this.attackRange/(this.bulletSpeed*60);
                 }
                 this.muzzleFlash = this.weaponType==='fireball'?.12:this.weaponType==='shotgun'?.09:.035;
             }
         }
 
-        if (this.audio) this.audio.weaponShoot(this.weaponType||'rifle');
+        if (this.audio) this.audio.weaponShoot(this.weaponType||'rifle',this.weaponPath);
         if(this.weaponType!=='fireball' && particleManager.spawnCasing) particleManager.spawnCasing(this.x,this.y,this.aimAngle);
     }
 
@@ -349,6 +352,7 @@ class Player {
         }
 
         this.autoAttack(deltaTime, enemies, bulletManager, particleManager);
+        this.chargeLevel=(this.weaponPath==='heavy'||this.weaponType==='fireball')&&this.findNearestEnemy(enemies)?Math.max(0,1-this.attackTimer/.4):0;
     }
 
     draw(ctx, cameraX, cameraY) {
@@ -356,6 +360,7 @@ class Player {
     }
 
     reset(x, y) {
+        this.weaponPath=null;this.chargeLevel=0;
         this.blastRadius=65;
         const cfg = Config.PLAYER;
         this.x = x;

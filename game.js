@@ -18,6 +18,7 @@ window.addEventListener('DOMContentLoaded', () => {
     game.loadout = new Loadout(game);
     game.skillInventory = new SkillInventory(game);
     game.audioSettings = new AudioSettings(game);
+    game.weaponPaths = new WeaponPaths(game);
 
     console.log('%c末日幸存者 Last Survivor', 'color: #00d4ff; font-size: 20px; font-weight: bold;');
     console.log('%c游戏已加载完成，点击开始游戏', 'color: #7bed9f; font-size: 14px;');
