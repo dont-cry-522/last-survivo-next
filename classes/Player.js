@@ -207,7 +207,10 @@ class Player {
             const e = enemies[i];
             if (!e.active) continue;
             const dist = Utils.distanceSq(this.x, this.y, e.x, e.y);
-            if (dist < nearestDist) { nearestDist = dist; nearest = e; }
+            if (dist < nearestDist) {
+                if(typeof ForestMap!=='undefined'&&ForestMap.firstHit(this.x,this.y,e.x,e.y,5)!==null)continue;
+                nearestDist = dist; nearest = e;
+            }
         }
         return nearest;
     }

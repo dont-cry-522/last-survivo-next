@@ -43,13 +43,30 @@ class ForestMap {
         }
     }
     static resolve(actor,x,y){const dx=actor.x-x,dy=actor.y-y;actor.x=x;actor.y=y;this.move(actor,dx,dy);}
+    static firstHit(x,y,endX,endY,r=0,obstacles=this.trees){
+        const dx=endX-x,dy=endY-y,a=dx*dx+dy*dy;let first=null;
+        for(const t of obstacles){
+            const ox=x-t.x,oy=y-t.y,rr=t.r+r,c=ox*ox+oy*oy-rr*rr;
+            if(c<=0)return 0;if(!a)continue;
+            const b=2*(ox*dx+oy*dy),disc=b*b-4*a*c;if(disc<0)continue;
+            const hit=(-b-Math.sqrt(disc))/(2*a);
+            if(hit>=0&&hit<=1&&(first===null||hit<first))first=hit;
+        }return first;
+    }
     static steer(actor,target){
-        let angle=Math.atan2(target.y-actor.y,target.x-actor.x);
+        const angle=Math.atan2(target.y-actor.y,target.x-actor.x);
         const ux=Math.cos(angle),uy=Math.sin(angle),r=actor.size||20;
+        if(this.firstHit(actor.x,actor.y,target.x,target.y,r+4)===null){actor._forestDetour=null;return angle;}
+        if(actor._forestDetour&&Math.hypot(actor.x-actor._forestDetour.x,actor.y-actor._forestDetour.y)>12)
+            return Math.atan2(actor._forestDetour.y-actor.y,actor._forestDetour.x-actor.x);
+        actor._forestDetour=null;
         for(const t of this.trees){
             const dx=t.x-actor.x,dy=t.y-actor.y,ahead=dx*ux+dy*uy,lateral=dx*uy-dy*ux;
-            if(ahead>0&&ahead<r+t.r+75&&Math.abs(lateral)<r+t.r+12){
-                angle+= (lateral>=0?1:-1)*1.05;break;
+            if(ahead>0&&ahead<r+t.r+100&&Math.abs(lateral)<r+t.r+12){
+                const sides=lateral>=0?[1,-1]:[-1,1];
+                for(const side of sides){const gap=r+t.r+35,p={x:t.x-uy*gap*side,y:t.y+ux*gap*side};
+                    if(this.clear(p.x,p.y,r)&&this.firstHit(actor.x,actor.y,p.x,p.y,r+2)===null){actor._forestDetour=p;return Math.atan2(p.y-actor.y,p.x-actor.x);}
+                }
             }
         }
         return angle;
@@ -142,6 +159,7 @@ class ForestMap {
         c.font='11px sans-serif';c.textAlign='center';c.fillStyle='#e4dfb8';
         c.fillText('密林',w/2,14);c.fillText('密林',w/2,h-7);c.fillText('营地',w/2,h/2-6);c.fillText('遗迹',w*.17,h/2-6);c.fillText('湿地',w*.83,h/2-6);
         const x=(player.x+2560)/5120*w,y=(player.y+1440)/2880*h;
+        c.fillStyle='#e1b653';c.fillRect((1060/5120)*w-3,h/2-3,6,6);
         ForestArt.oval(c,x,y,4,4,'#fff2aa','#263d2d',1);
         c.strokeStyle='#b4b888';c.lineWidth=2;c.strokeRect(1,1,w-2,h-2);
     }

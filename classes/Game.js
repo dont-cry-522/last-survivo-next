@@ -107,6 +107,7 @@ class Game {
 
         // 创建玩家
         this.player = new Player(0, 0);
+        this.ruins=new RuinEncounter();
         this.player.audio = this.audio;
         this.player._onShieldHit=()=>this.skillManager.visuals.emit('pickup',this.player.x,this.player.y,{radius:42,color:'#b4d3b5',duration:.28});
         this.player._onDamaged = (amount) => {
@@ -276,6 +277,7 @@ class Game {
     resetGame() {
         // 重置玩家
         this.player.reset(0, 0);
+        this.ruins=new RuinEncounter();
         this.player.setWeapon(this.selectedWeapon||'rifle');
         if(this.loadout) this.loadout.hide();
 
@@ -361,7 +363,7 @@ class Game {
         this.skillInventory?.update();
         if(this.mapPanel){
             this.mapPanel.hidden=!['playing','paused'].includes(this.state);
-            if(!this.mapPanel.hidden){ForestMap.minimap(this.mapContext,this.player);this.mapPanel.querySelector('strong').textContent=ForestMap.region(this.player.x,this.player.y).name;}
+            if(!this.mapPanel.hidden){ForestMap.minimap(this.mapContext,this.player);this.mapPanel.querySelector('strong').textContent=ForestMap.region(this.player.x,this.player.y).name;this.mapPanel.querySelector('.ruins-status').textContent=this.ruins.label;}
         }
         this.audio.music?.update(this.state);
 
@@ -461,6 +463,7 @@ class Game {
             }
             this.triggerUpgrade();
         }
+        this.ruins.update(this);
 
         // 更新粒子
         this.particleManager.update(deltaTime);
@@ -599,6 +602,8 @@ class Game {
         for (let i = 0; i < bullets.length; i++) {
             const bullet = bullets[i];
             if (!bullet.active) continue;
+            const wall=typeof ForestMap==='undefined'?null:ForestMap.firstHit(bullet.previousX,bullet.previousY,bullet.x,bullet.y,bullet.size);
+            if(wall!==null){bullet.x=bullet.previousX+(bullet.x-bullet.previousX)*wall;bullet.y=bullet.previousY+(bullet.y-bullet.previousY)*wall;}
 
             // 检测普通敌人
             for (let j = 0; j < enemies.length; j++) {
@@ -654,6 +659,10 @@ class Game {
                         );
                     }
                 }
+            }
+            if(wall!==null){
+                if(bullet.active)this.enemyManager.addImpact(bullet.x,bullet.y,'armor-hit',Math.atan2(bullet.vy,bullet.vx));
+                bullet.active=false;
             }
         }
     }
@@ -760,6 +769,7 @@ class Game {
 
         // Ground effects sit below feet; actors overlap according to world Y.
         ForestMap.trunks(ctx,this.cameraX,this.cameraY,w,h);
+        this.ruins.draw(ctx,this.cameraX,this.cameraY,this.survivalTime);
         this.skillManager.drawSkillVisuals(ctx, this.cameraX, this.cameraY, this.player);
         WoodlandScene.drawFooting(ctx,this.player,this.cameraX,this.cameraY,this.survivalTime,this.player.moving);
         for(const enemy of this.enemyManager.pool){

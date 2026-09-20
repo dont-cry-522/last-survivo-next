@@ -149,6 +149,7 @@ class MobileControls {
         if(this.terrainTip)this.terrainTip.textContent=ground&&['playing','paused'].includes(state)
             ?`${ground.name}：双方移速 −${Math.round((1-ground.speed)*100)}% · 可冲刺脱离`
             :'自动攻击 · 绕开湿地和碎石，或利用它们牵制怪物';
+        if(this.terrainTip&&this.game.ruins&&Math.hypot(this.game.player.x-this.game.ruins.x,this.game.player.y-this.game.ruins.y)<300)this.terrainTip.textContent=this.game.ruins.label;
         if(this.hud){
             this.hud.hidden=!['playing','paused','upgrading'].includes(state);
             const p=this.game.player;

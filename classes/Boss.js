@@ -69,6 +69,7 @@ class Boss {
      * 初始化Boss
      */
     init(x, y, hpMultiplier = 1) {
+        this._forestDetour=null;
         const cfg = Config.BOSS;
         this.active = true;
         this.x = x;
@@ -235,7 +236,7 @@ class Boss {
             move(this.chargeDirection.x*this.chargeSpeed*deltaTime*60,this.chargeDirection.y*this.chargeSpeed*deltaTime*60);
 
             // 冲撞接触伤害
-            if (Utils.circleCollision(this.x, this.y, this.size, player.x, player.y, player.size)) {
+            if (Utils.circleCollision(this.x, this.y, this.size, player.x, player.y, player.size) && (game?.survivalTime==null || ForestMap.firstHit(this.x,this.y,player.x,player.y)===null)) {
                 player.takeDamage(this.damage * 1.5);
             }
 
@@ -268,7 +269,7 @@ class Boss {
         move(Math.cos(angle)*walkSpeed*deltaTime*60,Math.sin(angle)*walkSpeed*deltaTime*60);
 
         // 接触伤害
-        if (Utils.circleCollision(this.x, this.y, this.size, player.x, player.y, player.size)) {
+        if (Utils.circleCollision(this.x, this.y, this.size, player.x, player.y, player.size) && (game?.survivalTime==null || ForestMap.firstHit(this.x,this.y,player.x,player.y)===null)) {
             player.takeDamage(this.damage * deltaTime * 2);
         }
 

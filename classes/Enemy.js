@@ -53,6 +53,7 @@ class Enemy {
      * 初始化敌人
      */
     init(type, x, y, hpMultiplier = 1, speedMultiplier = 1) {
+        this.ruinGuard=null;this._forestDetour=null;this.terrainAware=false;
         const cfg = EnemyConfig.TYPES[type];
         if (!cfg) return;
 
@@ -135,6 +136,7 @@ class Enemy {
      * 处理追踪、锁定预警和出招时序
      */
     update(deltaTime, player, terrainTime = null) {
+        this.terrainAware=terrainTime!==null;
         this.strikeThisFrame = false;
         this.attackCue = null;
         if (!this.active || this.hp <= 0) return;
@@ -158,7 +160,7 @@ class Enemy {
             return;
         }
         this.angle = Utils.angle(this.x, this.y, player.x, player.y);
-        if (attack && Utils.distanceSq(this.x,this.y,player.x,player.y) <= attack.trigger ** 2) {
+        if (attack && Utils.distanceSq(this.x,this.y,player.x,player.y) <= attack.trigger ** 2 && (!this.terrainAware||ForestMap.firstHit(this.x,this.y,player.x,player.y)===null)) {
             this.combatState = 'windup';
             this.combatTimer = attack.windup;
             this.attackHasHit = false;
@@ -213,6 +215,7 @@ class Enemy {
     }
 
     attackTouches(player) {
+        if(this.terrainAware&&ForestMap.firstHit(this.x,this.y,player.x,player.y)!==null)return false;
         if (!this.strikeThisFrame || this.attackHasHit || this.hp <= 0 || this.frozen || this.paralyzed) return false;
         const attack = EnemyConfig.ATTACKS[this.type];
         if (!attack) return false;
