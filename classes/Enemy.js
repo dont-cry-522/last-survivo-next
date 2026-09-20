@@ -400,13 +400,13 @@ class EnemyManager extends ObjectPool {
             }
         }
 
-        if (audio) {
+        if (audio && Utils.distanceSq(e.x,e.y,player.x,player.y)<650*650) {
             if (e.isExploder && e._triggeredExplode) {
                 audio.exploderExplode();
             } else if (e.type === 'tank' || e.type === 'elite') {
-                audio.enemyDeadBig();
+                audio.enemyDeadBig(e.type);
             } else {
-                audio.enemyDead();
+                audio.enemyDead(e.type);
             }
         }
 

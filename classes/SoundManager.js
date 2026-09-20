@@ -226,26 +226,41 @@ class SoundManager {
 
     /** 冲刺音效 */
     dash() {
-        if (!this.enabled || !this.ctx) return;
-        this._ensureInit();
+        this._playCreature('dash','move');
+    }
 
-        const osc = this.ctx.createOscillator();
-        const gain = this._gain(0.15);
-
-        osc.type = 'sawtooth';
-        const now = this.ctx.currentTime;
-        osc.frequency.setValueAtTime(200, now);
-        osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
-        osc.connect(gain);
-
-        gain.gain.setValueAtTime(0.15 * this.masterVolume, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-
-        osc.start(now);
-        osc.stop(now + 0.2);
-
-        // 加点噪声
-        this._playNoise(0.15, 0.06, 2000);
+    /** Material and breath transients, rather than pitched UI oscillators. */
+    _playCreature(type,phase){
+        if(!this.enabled||!this.ctx)return;this._ensureInit();
+        const key=type+':'+phase,now=this.ctx.currentTime;
+        this.creatureTimes ||= {};this.creatureBuffers ||= {};this.creatureVariants ||= {};
+        if(now-(this.creatureTimes[key]??-Infinity)<(phase==='death'?.14:.1))return;
+        if((this.creatureVoices||0)>=(phase==='death'?6:type==='dash'?12:10))return;
+        this.creatureTimes[key]=now;
+        let buffer=this.creatureBuffers[key];
+        if(!buffer){
+            const duration=type==='dash'?.23:phase==='windup'?.38:phase==='death'?.28:type==='exploder'?.48:type==='tank'?.38:.24;
+            const rate=this.ctx.sampleRate;buffer=this.ctx.createBuffer(1,Math.ceil(duration*rate),rate);
+            const data=buffer.getChannelData(0);let seed=917,low=0,body=0;
+            for(let i=0;i<data.length;i++){
+                seed=(Math.imul(seed,1664525)+1013904223)>>>0;const n=seed/2147483648-1,t=i/rate,u=t/duration;
+                low+=.025*(n-low);body+=.22*(n-body);const air=body-low,thud=Math.sin(2*Math.PI*(75*t-45*t*t))*Math.exp(-t*24);
+                let v=0;
+                if(type==='dash')v=air*2.4*Math.sin(Math.PI*u)**1.6+thud*.32+low*.5*Math.exp(-Math.abs(t-.17)*75);
+                else if(type==='normal')v=(low*2.2+air*.45)*Math.exp(-t*10)+thud*.45+air*.6*Math.exp(-Math.abs(t-.08)*80);
+                else if(type==='fast')v=phase==='windup'?(low*3+air*.45)*(1+.4*Math.sin(t*115))*Math.sin(Math.PI*u):air*2*Math.sin(Math.PI*u)+low*Math.exp(-t*12);
+                else if(type==='tank')v=low*3.6*Math.exp(-t*7)+thud*.8+air*.7*(Math.exp(-Math.abs(t-.07)*100)+Math.exp(-Math.abs(t-.17)*130));
+                else if(type==='elite')v=low*2.5*Math.sin(Math.PI*u)+air*1.2*Math.sin(Math.PI*u)**.7*(.7+.3*Math.sin(t*190))+thud*.5;
+                else if(type==='exploder')v=phase==='windup'?air*(.4+u)*1.7+ n*.4*Math.exp(-(t%.047)*210):low*4*Math.exp(-t*6)+air*.6*Math.exp(-t*11)+thud*.9;
+                if(phase==='death')v*=Math.exp(-t*5);
+                if(phase==='windup'&&type!=='fast'&&type!=='exploder')v=(v*.6+low*Math.sin(Math.PI*u))*Math.sin(Math.PI*u);
+                data[i]=Math.tanh(v)*.8*Math.min(1,t/.004)*Math.min(1,(duration-t)/.018);
+            }this.creatureBuffers[key]=buffer;
+        }
+        const source=this.ctx.createBufferSource(),gain=this._gain(type==='dash'?.55:phase==='windup'?.44:phase==='death'?.3:.55);
+        const variant=this.creatureVariants[key]||0;this.creatureVariants[key]=(variant+1)%3;
+        source.buffer=buffer;source.playbackRate.value=[1,.975,1.025][variant];source.connect(gain);this.creatureVoices=(this.creatureVoices||0)+1;
+        source.onended=()=>{source.disconnect();gain.disconnect();this.creatureVoices=Math.max(0,this.creatureVoices-1);};source.start();
     }
 
     /** 受击音效 */
@@ -271,60 +286,24 @@ class SoundManager {
 
     /** Readable attack cues, rate limited when many creatures attack together. */
     enemyAttackCue(type, phase) {
-        if (!this.enabled || !this.ctx) return;
-        const now = this.ctx.currentTime;
-        if (now - this.lastAttackCue < 0.10) return;
-        this.lastAttackCue = now;
-        if (phase === 'windup') {
-            if(type === 'exploder') {
-                this._playNoise(.35,.055,1800);
-                this._playTone(540,.2,'sine',.045);
-            } else this._playTone(type === 'elite' ? 180 : type === 'tank' ? 130 : type === 'fast' ? 420 : 260, 0.16, 'triangle', 0.065);
-        } else if (type === 'elite') {
-            this._playNoise(.24,.12,1600);
-            this._playTone(210,.12,'triangle',.075);
-        } else if (type === 'tank') {
-            this._playTone(65, 0.30, 'sine', 0.22);
-            this._playTone(115, 0.14, 'triangle', 0.12);
-            this._playNoise(0.20, 0.13, 700);
-        } else {
-            this._playNoise(0.10, 0.065, type === 'fast' ? 2400 : 1400);
-        }
+        this._playCreature(type,phase);
     }
 
     // ==================== 敌人音效 ====================
 
     /** 普通敌人死亡 */
-    enemyDead() {
-        this._playTone(300, 0.15, 'sawtooth', 0.08);
-        this._playNoise(0.1, 0.06, 1500);
+    enemyDead(type='normal') {
+        this._playCreature(type,'death');
     }
 
     /** 精英/坦克死亡 */
-    enemyDeadBig() {
-        this._playTone(200, 0.25, 'sawtooth', 0.12);
-        this._playTone(100, 0.3, 'triangle', 0.1);
-        this._playNoise(0.2, 0.1, 1000);
+    enemyDeadBig(type='tank') {
+        this._playCreature(type,'death');
     }
 
     /** 自爆敌人爆炸 */
     exploderExplode() {
-        this._playNoise(0.3, 0.2, 2000);
-        this._playTone(150, 0.4, 'sawtooth', 0.15);
-        if (this.enabled && this.ctx) {
-            this._ensureInit();
-            const osc = this.ctx.createOscillator();
-            const gain = this._gain(0.12);
-            osc.type = 'sawtooth';
-            const now = this.ctx.currentTime;
-            osc.frequency.setValueAtTime(400, now);
-            osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
-            osc.connect(gain);
-            gain.gain.setValueAtTime(0.12 * this.masterVolume, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-            osc.start(now);
-            osc.stop(now + 0.35);
-        }
+        this._playCreature('exploder','strike');
     }
 
     // ==================== Boss音效 ====================
