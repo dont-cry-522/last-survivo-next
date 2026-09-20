@@ -16,6 +16,8 @@ class SoundManager {
         this.lastAttackCue = -Infinity;
         this.lastWeaponImpact = {};
         this.lastSkillCue=-Infinity;
+        this.music=typeof MusicController!=='undefined'?new MusicController(this):null;
+        try{const saved=localStorage.getItem('woodland-effects-volume');if(saved!==null&&Number.isFinite(Number(saved)))this.masterVolume=Math.max(0,Math.min(1,Number(saved)));}catch{}
     }
 
     /**
@@ -26,6 +28,7 @@ class SoundManager {
         try {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
             this.initialized = true;
+            this.music?.start();
         } catch (e) {
             console.warn('Web Audio API 不可用:', e);
             this.enabled = false;
@@ -154,6 +157,10 @@ class SoundManager {
                     value=(noise*.7*Math.exp(-(t%.045)*170)+Math.sin(t*2*Math.PI*190)*.15)*Math.exp(-t*26);
                 }else if(kind==='beam'){
                     value=(noise*.25+Math.sin(2*Math.PI*(210*t+650*t*t))*.22)*Math.sin(Math.PI*t/duration)*Math.exp(-t*4);
+                }else if(kind==='armor'){
+                    value=(noise*.32+Math.sin(t*2*Math.PI*173)*.3+Math.sin(t*2*Math.PI*391)*.12)*Math.exp(-t*38);
+                }else if(kind==='flesh'){
+                    value=(low*2.3+noise*.22+Math.sin(t*2*Math.PI*94)*.22)*Math.exp(-t*35);
                 }else if(kind==='rifle'||kind==='gun'){
                     value=(noise*.6+low*.7)*Math.exp(-t*65);
                 }else if(kind==='shotgun'||kind==='explosion'){
@@ -186,8 +193,8 @@ class SoundManager {
         else if(kind==='shadow'||kind==='soul'||kind==='mark')this._playNoise(.10,.035,750);
     }
 
-    weaponImpact(kind, crit=false) {
-        if(this.pendingImpact){this.pendingImpact.weapon=[kind,crit];return;}
+    weaponImpact(kind, crit=false, material=null) {
+        if(this.pendingImpact){this.pendingImpact.weapon=[kind,crit,material];return;}
         if(kind==='fireball'){this.skillCue('fire');return;}
         if(!this.enabled || !this.ctx) return;
         kind=['rifle','shotgun','fireball'].includes(kind)?kind:'rifle';
@@ -195,7 +202,7 @@ class SoundManager {
         const spacing=kind==='shotgun'?.09:kind==='fireball'?.12:.045;
         if(now-(this.lastWeaponImpact[kind]??-Infinity)<spacing)return;
         this.lastWeaponImpact[kind]=now;
-        this._playElement(kind==='shotgun'?'shotgun':'gun');
+        this._playElement(kind==='shotgun'?'shotgun':material==='tank'||material==='elite'?'armor':material?'flesh':'gun');
         if(crit)this._playNoise(.035,.035,1700);
     }
 
@@ -498,6 +505,7 @@ class SoundManager {
     /** 设置主音量 0-1 */
     setVolume(volume) {
         this.masterVolume = Math.max(0, Math.min(1, volume));
+        try{localStorage.setItem('woodland-effects-volume',String(this.masterVolume));}catch{}
     }
 
     /** 静音/取消静音 */

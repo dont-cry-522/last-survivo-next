@@ -355,6 +355,7 @@ class Game {
 
         if (this.mobileControls) this.mobileControls.update();
         this.skillInventory?.update();
+        this.audio.music?.update(this.state);
 
         // 更新
         if (this.state === 'playing') {
@@ -663,7 +664,7 @@ class Game {
     applyWeaponImpact(bullet,primary) {
         if(bullet.weaponType==='fireball' ? !bullet.exploded : bullet.generation===0) {
             if(bullet.soundKind)this.audio.skillCue(bullet.soundKind);
-            else this.audio.weaponImpact(bullet.weaponType||'rifle',bullet.isCrit);
+            else this.audio.weaponImpact(bullet.weaponType||'rifle',bullet.isCrit,primary.type);
         }
         if(bullet.weaponType==='shotgun') {
             const angle=Math.atan2(bullet.vy,bullet.vx);
