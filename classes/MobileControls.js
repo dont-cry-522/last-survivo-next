@@ -11,6 +11,7 @@ class MobileControls {
         this.action = document.getElementById('mobile-action');
         this.dash = document.getElementById('mobile-dash');
         this.mute = document.getElementById('mobile-mute');
+        this.terrainTip=document.querySelector('.mobile-tip');
         if (!this.enabled) return;
 
         this.stick.addEventListener('pointerdown', e => {
@@ -144,6 +145,10 @@ class MobileControls {
             if (state === 'upgrading') this.showUpgrades();
         }
         document.body.dataset.gameState=state;
+        const ground=WoodlandScene.surfaceAt(this.game.player.x,this.game.player.y,this.game.survivalTime);
+        if(this.terrainTip)this.terrainTip.textContent=ground&&['playing','paused'].includes(state)
+            ?`${ground.name}：双方移速 −${Math.round((1-ground.speed)*100)}% · 可冲刺脱离`
+            :'自动攻击 · 绕开湿地和碎石，或利用它们牵制怪物';
         if(this.hud){
             this.hud.hidden=!['playing','paused','upgrading'].includes(state);
             const p=this.game.player;

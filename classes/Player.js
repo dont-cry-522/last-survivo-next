@@ -289,7 +289,9 @@ class Player {
         if(this.weaponType!=='fireball' && particleManager.spawnCasing) particleManager.spawnCasing(this.x,this.y,this.aimAngle);
     }
 
-    update(deltaTime, enemies, bulletManager, particleManager) {
+    update(deltaTime, enemies, bulletManager, particleManager, terrainTime = null) {
+        const ground=terrainTime===null?null:WoodlandScene.surfaceAt(this.x,this.y,terrainTime);
+        const terrainSpeed=ground?.speed ?? 1;
         this.animTimer += deltaTime;
         this.recoilTimer = Math.max(0, this.recoilTimer - deltaTime);
         this.hurtTimer = Math.max(0, this.hurtTimer - deltaTime);
@@ -319,8 +321,8 @@ class Player {
             if (this.keys.d || this.touchKeys.d) dx += 1;
             if (dx !== 0 && dy !== 0) { const len = Math.sqrt(dx * dx + dy * dy); dx /= len; dy /= len; }
             if (dx !== 0 || dy !== 0) this.angle = Math.atan2(dy, dx);
-            this.x += dx * this.speed * deltaTime * 60;
-            this.y += dy * this.speed * deltaTime * 60;
+            this.x += dx * this.speed * terrainSpeed * deltaTime * 60;
+            this.y += dy * this.speed * terrainSpeed * deltaTime * 60;
             if (dx !== 0 || dy !== 0) {
                 moved = true;
                 // Gait is advanced below using a blended locomotion weight;
@@ -329,14 +331,14 @@ class Player {
 
         this.moving = moved || this.isDashing;
         this.runBlend += ((this.moving ? 1 : 0) - this.runBlend) * (1-Math.exp(-deltaTime*16));
-        if (!this.isDashing) this.walkCycle += deltaTime * 13 * this.runBlend;
+        if (!this.isDashing) this.walkCycle += deltaTime * 13 * this.runBlend * terrainSpeed;
         const aimTarget = this.findNearestEnemy(enemies);
         if (aimTarget) this.aimAngle = Utils.angle(this.x, this.y, aimTarget.x, aimTarget.y);
         else if (this.moving) this.aimAngle = this.angle;
         this.trailTimer -= deltaTime;
         if (this.moving && this.trailTimer <= 0) {
             this.trailTimer = 0.16;
-            particleManager.spawnTrail(this.x, this.y + this.size * 0.65, this.angle, '#c9bd90');
+            if(!ground)particleManager.spawnTrail(this.x, this.y + this.size * 0.65, this.angle, '#c9bd90');
         }
 
         this.autoAttack(deltaTime, enemies, bulletManager, particleManager);

@@ -134,7 +134,7 @@ class Enemy {
      * 更新移动AI（不调用任何外部系统）
      * 处理追踪、锁定预警和出招时序
      */
-    update(deltaTime, player) {
+    update(deltaTime, player, terrainTime = null) {
         this.strikeThisFrame = false;
         this.attackCue = null;
         if (!this.active || this.hp <= 0) return;
@@ -145,7 +145,8 @@ class Enemy {
         if (Enemy._statusSystem) Enemy._statusSystem.update(this, deltaTime);
         const speedMul = Enemy._statusSystem ? Enemy._statusSystem.getSpeedMultiplier(this) : 1;
         if (speedMul <= 0) return;
-        this.animTimer += deltaTime * speedMul;
+        const terrainSpeed=terrainTime===null?1:(WoodlandScene.surfaceAt(this.x,this.y,terrainTime)?.speed ?? 1);
+        this.animTimer += deltaTime * speedMul * (this.combatState==='approach'?terrainSpeed:1);
         const decay = Math.pow(this.knockbackDecay, deltaTime * 60);
         this.knockbackX *= decay;
         this.knockbackY *= decay;
@@ -167,8 +168,8 @@ class Enemy {
             this.attackCue = 'windup';
             return;
         }
-        this.x += (Math.cos(this.angle) * this.speed * speedMul + this.knockbackX) * deltaTime * 60;
-        this.y += (Math.sin(this.angle) * this.speed * speedMul + this.knockbackY) * deltaTime * 60;
+        this.x += (Math.cos(this.angle) * this.speed * speedMul * terrainSpeed + this.knockbackX) * deltaTime * 60;
+        this.y += (Math.sin(this.angle) * this.speed * speedMul * terrainSpeed + this.knockbackY) * deltaTime * 60;
     }
 
     advanceAttack(dt, attack) {
@@ -312,7 +313,7 @@ class EnemyManager extends ObjectPool {
         return result;
     }
 
-    update(deltaTime, player, particleManager, experienceManager, audio) {
+    update(deltaTime, player, particleManager, experienceManager, audio, terrainTime = null) {
         this.updateDeathPoses(deltaTime);
         for (let i = 0; i < this.pool.length; i++) {
             const e = this.pool[i];
@@ -322,7 +323,7 @@ class EnemyManager extends ObjectPool {
                 this._handleDeath(e, player, particleManager, experienceManager, audio);
                 continue;
             }
-            e.update(deltaTime, player);
+            e.update(deltaTime, player, terrainTime);
 
             if (!e.active) {
                 this._handleDeath(e, player, particleManager, experienceManager, audio);

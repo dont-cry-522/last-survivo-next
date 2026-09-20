@@ -197,6 +197,7 @@ class Boss {
      */
     update(deltaTime, player, particleManager, game) {
         if (!this.active) return;
+        const walkSpeed=this.speed*(game?.survivalTime==null?1:(WoodlandScene.surfaceAt(this.x,this.y,game.survivalTime)?.speed ?? 1));
 
         this.animTimer += deltaTime;
 
@@ -219,8 +220,8 @@ class Boss {
             this.chargeWindupTimer -= deltaTime;
             // 前摇期间缓慢跟随
             const angle = Utils.angle(this.x, this.y, player.x, player.y);
-            this.x += Math.cos(angle) * this.speed * 0.3 * deltaTime * 60;
-            this.y += Math.sin(angle) * this.speed * 0.3 * deltaTime * 60;
+            this.x += Math.cos(angle) * walkSpeed * 0.3 * deltaTime * 60;
+            this.y += Math.sin(angle) * walkSpeed * 0.3 * deltaTime * 60;
 
             if (this.chargeWindupTimer <= 0) {
                 this.executeCharge();
@@ -259,15 +260,15 @@ class Boss {
             }
             // 警告期间正常移动但减速
             const angle = Utils.angle(this.x, this.y, player.x, player.y);
-            this.x += Math.cos(angle) * this.speed * 0.5 * deltaTime * 60;
-            this.y += Math.sin(angle) * this.speed * 0.5 * deltaTime * 60;
+            this.x += Math.cos(angle) * walkSpeed * 0.5 * deltaTime * 60;
+            this.y += Math.sin(angle) * walkSpeed * 0.5 * deltaTime * 60;
             return;
         }
 
         // 普通追踪移动
         const angle = Utils.angle(this.x, this.y, player.x, player.y);
-        this.x += Math.cos(angle) * this.speed * deltaTime * 60;
-        this.y += Math.sin(angle) * this.speed * deltaTime * 60;
+        this.x += Math.cos(angle) * walkSpeed * deltaTime * 60;
+        this.y += Math.sin(angle) * walkSpeed * deltaTime * 60;
 
         // 接触伤害
         if (Utils.circleCollision(this.x, this.y, this.size, player.x, player.y, player.size)) {

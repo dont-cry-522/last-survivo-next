@@ -1,5 +1,23 @@
-/** Cached original scenery. Decorative ground cover has no hidden collision. */
+/** Cached scenery; visible terrain footprints also define movement effects. */
 class WoodlandScene {
+    static GROUND = [
+        {name:'泥地',speed:.75,fill:'#74533b',edge:'#b49365',fleck:'#c49c63'},
+        {name:'浅水',speed:.8,fill:'#386e71',edge:'#9bc9b8',fleck:'#c0e7d3'},
+        {name:'碎石',speed:.85,fill:'#726f5c',edge:'#c7b78a',fleck:'#d9cba3'}
+    ];
+    // Identical footprints in each phase prevent hazards appearing underfoot at transitions.
+    static PATCHES = [
+        {x:420,y:640,rx:145,ry:52},
+        {x:180,y:180,rx:105,ry:70},
+        {x:840,y:880,rx:110,ry:65}
+    ];
+    static surfaceAt(x,y,time) {
+        const tx=((x%1024)+1024)%1024,ty=((y%1024)+1024)%1024;
+        if(!this.PATCHES.some(p=>((tx-p.x)/p.rx)**2+((ty-p.y)/p.ry)**2<=1))return null;
+        const index=this.phase(time),ground=this.GROUND[index];
+        const blend=index===0?1:Math.min(1,(time-index*90)/8);
+        return blend===1?ground:{...ground,speed:this.GROUND[index-1].speed*(1-blend)+ground.speed*blend};
+    }
     static THEMES=[
         {name:'晨光林地',base:'#56764d',patch:'#688450',path:'#a29568',leaf:'#385d40',light:'#dae8a6',stone:'#a4aa87',accent:'#e4ba72'},
         {name:'幽蓝深林',base:'#344f4b',patch:'#42645c',path:'#697c6a',leaf:'#224439',light:'#96d4bb',stone:'#758e87',accent:'#9edbc7'},
@@ -45,8 +63,57 @@ class WoodlandScene {
         }else{
             for(let j=0;j<18;j++){const x=600+Math.cos(j*2.4)*(25+j*2),y=420+Math.sin(j*2.4)*(15+j);ForestArt.line(c,[[x,y+5],[x,y-3]],p.leaf,1);ForestArt.oval(c,x,y-4,3,2,j%2?'#e2c17b':'#d3d9a0',null);}
         }
+        // Draw last so foliage cannot hide the playable boundary. Art and physics share ellipses.
+        this.drawPatches(c,index);
         c.restore();}
         this.tiles[index]=tile;return tile;
+    }
+    static drawPatches(c,index) {
+        const ground=this.GROUND[index];
+        for(const p of this.PATCHES){
+            c.save();c.translate(p.x,p.y);
+            ForestArt.oval(c,0,0,p.rx,p.ry,ground.fill,ground.edge,2);
+            c.save();c.beginPath();c.ellipse(0,0,p.rx-2,p.ry-2,0,0,Math.PI*2);c.clip();
+            for(let i=0;i<24;i++){
+                const a=i*2.4,r=Math.sqrt((i+.5)/24),x=Math.cos(a)*p.rx*r,y=Math.sin(a)*p.ry*r;
+                if(index===2){
+                    ForestArt.shape(c,[[x-5,y],[x-2,y-4],[x+5,y-3],[x+7,y+2],[x,y+4]],i%2?'#a89f83':'#565b51','#454b42',1);
+                }else if(index===1){
+                    c.globalAlpha=.35;ForestArt.line(c,[[x-9,y],[x,y+1],[x+8,y]],ground.fleck,1.4);
+                }else{
+                    c.globalAlpha=.35;ForestArt.oval(c,x,y,13+i%4,3+i%3,i%3?'#4b392c':'#b89665',null);
+                }
+            }
+            c.restore();
+            c.globalAlpha=.5;c.strokeStyle=ground.fleck;c.lineWidth=2;
+            c.beginPath();c.ellipse(0,-3,p.rx*.78,p.ry*.72,0,Math.PI*1.1,Math.PI*1.65);c.stroke();
+            c.restore();
+        }
+    }
+    static drawFooting(c,entity,cx,cy,time,moving) {
+        const ground=this.surfaceAt(entity.x,entity.y,time);
+        const x=entity.x-cx,y=entity.y-cy;
+        if(!ground||!moving||x<-80||y<-80||x>c.canvas.width+80||y>c.canvas.height+80)return;
+        const phase=this.phase(time),cycle=(time*3+entity.x*.003)%1;
+        c.save();c.translate(x,y+entity.size*.5);c.globalAlpha=(1-cycle)*.6;
+        if(phase===1){
+            c.strokeStyle=ground.fleck;c.lineWidth=1.5;c.beginPath();c.ellipse(0,0,10+cycle*19,4+cycle*7,0,0,Math.PI*2);c.stroke();
+        }else{
+            for(let i=0;i<4;i++){
+                const side=i%2?1:-1,dx=side*(8+cycle*(9+i*2)),dy=3-Math.sin(cycle*Math.PI)*9+i*2;
+                ForestArt.oval(c,dx,dy,phase===0?3:2,2,ground.fleck,null);
+            }
+        }
+        c.restore();
+    }
+    static drawPlayerStatus(c,player,cx,cy,time) {
+        const ground=this.surfaceAt(player.x,player.y,time);
+        if(!ground)return;
+        const text=player.isDashing?'冲刺脱离':`${ground.name} · 移速 −${Math.round((1-ground.speed)*100)}%`;
+        c.save();c.font='bold 13px "Microsoft YaHei"';c.textAlign='center';
+        const width=c.measureText(text).width+20,x=player.x-cx,y=player.y-cy-player.size-30;
+        c.fillStyle='rgba(21,34,28,.88)';c.fillRect(x-width/2,y-15,width,23);
+        c.fillStyle='#eee1bc';c.fillText(text,x,y+1);c.restore();
     }
     static draw(c,cx,cy,w,h,time=0){
         const index=this.phase(time),blend=index===0?1:Math.min(1,(time-index*90)/8),p=this.THEMES[index];

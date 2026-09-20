@@ -4,7 +4,7 @@ class Loadout {
         this.game=game;
         this.panel=document.createElement('section');
         this.panel.className='loadout';this.panel.setAttribute('aria-label','出发前选择武器');
-        this.panel.innerHTML=`<div class="loadout-inner"><p class="loadout-eyebrow">林地远征 / 技能特效样稿 05</p><h1>这次，带什么出发？</h1><p class="loadout-intro">三种武器，三种战斗节奏。靠近敌人后自动攻击。</p><p class="loadout-guide"><a href="skills.html">查看 64 个技能特效 ↗</a></p><div class="weapon-choices" role="group" aria-label="武器"></div><button class="loadout-start" type="button">带上连发枪 · 出发</button><p class="loadout-help">电脑：1 / 2 / 3 选择 · Enter 出发 · WASD 移动 · Shift 冲刺<br>手机：点选武器 · 左侧摇杆移动 · 右侧冲刺</p></div>`;
+        this.panel.innerHTML=`<div class="loadout-inner"><p class="loadout-eyebrow">林地远征 / 地形互动 09</p><h1>这次，带什么出发？</h1><p class="loadout-intro">靠近敌人后自动攻击。湿地和碎石会拖慢双方，绕行或冲刺突围。</p><p class="loadout-guide"><a href="skills.html">查看 64 个技能特效 ↗</a></p><div class="weapon-choices" role="group" aria-label="武器"></div><button class="loadout-start" type="button">带上连发枪 · 出发</button><p class="loadout-help">电脑：1 / 2 / 3 选择 · Enter 出发 · WASD 移动 · Shift 冲刺<br>手机：点选武器 · 左侧摇杆移动 · 右侧冲刺</p></div>`;
         const descriptions={rifle:['持续压制','射速快 · 中远距离','适合边移动边持续输出'],shotgun:['近身爆发','五发散射 · 强击退','贴近时伤害更集中'],fireball:['范围灼烧','火球爆炸 · 持续燃烧','适合应对聚集的怪群']};
         for(const [kind,weapon] of Object.entries(Player.WEAPONS)) {
             const button=document.createElement('button');button.type='button';button.dataset.weapon=kind;

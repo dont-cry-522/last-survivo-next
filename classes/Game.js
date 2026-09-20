@@ -402,7 +402,7 @@ class Game {
         const enemies = this.enemyManager.getActiveEnemies();
         if (this.boss.active) enemies.push(this.boss);
 
-        this.player.update(deltaTime, enemies, this.bulletManager, this.particleManager);
+        this.player.update(deltaTime, enemies, this.bulletManager, this.particleManager, this.survivalTime);
 
         // 更新子弹
         this.bulletManager.update(deltaTime, enemies, this.particleManager);
@@ -413,7 +413,7 @@ class Game {
         const killsBefore = this.player.kills;
 
         // 更新敌人
-        this.enemyManager.update(deltaTime, this.player, this.particleManager, this.experienceManager, this.audio);
+        this.enemyManager.update(deltaTime, this.player, this.particleManager, this.experienceManager, this.audio, this.survivalTime);
 
         // 更新Boss
         if (this.boss.active) {
@@ -763,10 +763,16 @@ class Game {
 
         // Ground effects sit below feet; actors overlap according to world Y.
         this.skillManager.drawSkillVisuals(ctx, this.cameraX, this.cameraY, this.player);
+        WoodlandScene.drawFooting(ctx,this.player,this.cameraX,this.cameraY,this.survivalTime,this.player.moving);
+        for(const enemy of this.enemyManager.pool){
+            if(enemy.active)WoodlandScene.drawFooting(ctx,enemy,this.cameraX,this.cameraY,this.survivalTime,enemy.combatState==='approach'&&!enemy.frozen&&!enemy.paralyzed);
+        }
+        if(this.boss.active)WoodlandScene.drawFooting(ctx,this.boss,this.cameraX,this.cameraY,this.survivalTime,!this.boss.spawnWarning);
         this.enemyManager.draw(ctx, this.cameraX, this.cameraY, this.player, this.boss);
 
         // 绘制子弹（顶层）
         this.bulletManager.draw(ctx, this.cameraX, this.cameraY);
+        WoodlandScene.drawPlayerStatus(ctx,this.player,this.cameraX,this.cameraY,this.survivalTime);
 
         ctx.restore();
 
