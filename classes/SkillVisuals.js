@@ -98,7 +98,7 @@ class SkillVisuals {
         const palette={ice:'#70d9ff',fire:'#ff853e',meteor:'#ff6433',nova:'#ff7134',phoenix:'#ffb844',lightning:'#ffe650',beam:'#d9dcb4',shadow:'#b8a3ce',heal:'#b8d5a3',soul:'#d7a0ae',mark:'#cf929a',gun:'#e6cd98',pickup:'#d6c793'};
         const color=e.color||palette[e.kind]||'#dccca1';
         if(e.kind==='lightning'){
-            SkillVisuals.bolt(c,x,y,(e.x2??e.x)-cx,(e.y2??e.y-100)-cy,color,e.born,2.8);
+            SkillVisuals.bolt(c,x,y,(e.x2??e.x)-cx,(e.y2??e.y-100)-cy,color,e.born+Math.floor(progress*5)*.7,2.8);
             const tx=(e.x2??e.x)-cx,ty=(e.y2??e.y)-cy;
             for(let i=0;i<5;i++){const a=i*Math.PI*2/5+progress;ForestArt.line(c,[[tx+Math.cos(a)*5,ty+Math.sin(a)*5],[tx+Math.cos(a)*(12+progress*14),ty+Math.sin(a)*(12+progress*14)]],color,2);}
             if(r>50){c.globalAlpha*=.45;SkillVisuals.ring(c,x,y,r*(.8+progress*.2),color);}
@@ -109,10 +109,21 @@ class SkillVisuals {
             ForestArt.line(c,[[x,0],[x,c.canvas.height]],'#efe9c6',8*(1-progress)+2);
             ForestArt.line(c,[[x-r,0],[x-r,c.canvas.height]],color,1);ForestArt.line(c,[[x+r,0],[x+r,c.canvas.height]],color,1);
         }else if(e.kind==='ice'){
+            // Crystals grow briefly, then detach and tumble away from the impact.
+            const fracture=Math.max(0,(progress-.22)/.78);
+            c.save();c.globalAlpha*=.3*(1-fracture);ForestArt.oval(c,x,y,r*.45,r*.3,'#b5edff',null);c.restore();
             SkillVisuals.ring(c,x,y,r*(.35+progress*.65),color,2*(1-progress)+1);
-            for(let i=0;i<8;i++){const a=i*Math.PI/4,rr=r*(.25+progress*.6);c.save();c.translate(x+Math.cos(a)*rr,y+Math.sin(a)*rr);c.rotate(a+Math.PI/2);SkillVisuals.crystal(c,0,0,(7+Math.min(8,r*.04))*(1-progress*.4),color);c.restore();}
+            for(let i=0;i<8;i++){const a=i*Math.PI/4,rr=r*(.25+progress*.6);c.save();c.translate(x+Math.cos(a)*rr,y+Math.sin(a)*rr);c.rotate(a+Math.PI/2+fracture*(i%2?2:-2));SkillVisuals.crystal(c,0,0,(7+Math.min(8,r*.04))*(1-progress*.4),color);c.restore();}
         }else if(['fire','meteor','nova','phoenix'].includes(e.kind)){
-            SkillVisuals.ring(c,x,y,r*(.35+progress*.65),color,3*(1-progress)+1);
+            // A compact rolling flame body, followed by rising soot and embers.
+            const body=Math.min(46,r*.5),swell=Math.sin(Math.min(1,progress*2)*Math.PI/2);
+            for(let i=0;i<5;i++){
+                const a=i*2.4,fx=x+Math.cos(a)*body*.55*swell,fy=y+Math.sin(a)*body*.3-progress*body*.65;
+                c.save();c.globalAlpha*=progress<.55?.75:.25;
+                ForestArt.oval(c,fx,fy,Math.max(1,body*(.35+swell*.3)*(1-progress*.6)),Math.max(1,body*(.4+swell*.4)*(1-progress*.4)),progress<.55?(i%2?'#ff9c37':'#e85b28'):'#6b6857',null);
+                if(progress<.3)ForestArt.oval(c,fx,fy,body*.22,body*.3,'#ffe5a0',null);c.restore();
+            }
+            c.save();c.globalAlpha*=.4;SkillVisuals.ring(c,x,y,r*(.35+progress*.65),color,3*(1-progress)+1);c.restore();
             for(let i=0;i<10;i++){const a=i*Math.PI/5,rr=r*(.2+progress*.7),fx=x+Math.cos(a)*rr,fy=y+Math.sin(a)*rr;
                 ForestArt.shape(c,[[fx-3,fy],[fx-5,fy-8],[fx,fy-17*(1-progress)],[fx+3,fy-6],[fx+5,fy]],color,null);}
             if(e.kind==='meteor'){ForestArt.line(c,[[x-75*(1-progress),y-130*(1-progress)],[x,y]],'#edbe7c',7*(1-progress)+1);ForestArt.oval(c,x,y,13*(1-progress)+1,9*(1-progress)+1,'#c48659',null);}

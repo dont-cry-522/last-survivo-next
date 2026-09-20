@@ -354,6 +354,7 @@ class Game {
         }
 
         if (this.mobileControls) this.mobileControls.update();
+        this.skillInventory?.update();
 
         // 更新
         if (this.state === 'playing') {

@@ -16,6 +16,7 @@ window.addEventListener('DOMContentLoaded', () => {
     window.game = game;
     game.mobileControls = new MobileControls(game);
     game.loadout = new Loadout(game);
+    game.skillInventory = new SkillInventory(game);
 
     console.log('%c末日幸存者 Last Survivor', 'color: #00d4ff; font-size: 20px; font-weight: bold;');
     console.log('%c游戏已加载完成，点击开始游戏', 'color: #7bed9f; font-size: 14px;');
