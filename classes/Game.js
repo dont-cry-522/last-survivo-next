@@ -589,7 +589,7 @@ class Game {
         }
     }
 
-    _announce(text, color) {
+    _announce(text, color = '#f3dfae') {
         if (!this._announcements) this._announcements = [];
         this._announcements.push({ text, color, life: 3 });
     }
