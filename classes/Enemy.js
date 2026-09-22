@@ -32,7 +32,7 @@ class Enemy {
         this._triggeredExplode = false;
 
         this.hitFlash = 0;
-        this.impactTimer=0;this.impactStrength=0;
+        this.impactTimer=0;this.impactStrength=0;this.supportGlow=0;
         this.hurtAngle = 0;
 
         this.knockbackX = 0;
@@ -80,7 +80,7 @@ class Enemy {
         this.color = cfg.color;
         this.glowColor = cfg.glowColor;
         this.hitFlash = 0;
-        this.impactTimer=0;this.impactStrength=0;
+        this.impactTimer=0;this.impactStrength=0;this.supportGlow=0;
         this.hurtAngle = 0;
         this.knockbackX = 0;
         this.knockbackY = 0;
@@ -141,6 +141,7 @@ class Enemy {
         this.attackCue = null;
         if (!this.active || this.hp <= 0) return;
         this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
+        this.supportGlow=Math.max(0,(this.supportGlow||0)-deltaTime);
         this.impactTimer=Math.max(0,this.impactTimer-deltaTime);
         this.attackPose = Math.max(0, this.attackPose - deltaTime);
         this.contactCooldown = Math.max(0, this.contactCooldown - deltaTime);
@@ -217,6 +218,7 @@ class Enemy {
     }
 
     attackTouches(player) {
+        if(this.type==='spitter'||this.type==='shaman')return false;
         if(this.terrainAware&&ForestMap.firstHit(this.x,this.y,player.x,player.y)!==null)return false;
         if (!this.strikeThisFrame || this.attackHasHit || this.hp <= 0 || this.frozen || this.paralyzed) return false;
         const attack = EnemyConfig.ATTACKS[this.type];

@@ -326,6 +326,7 @@ class Game {
         this.statusSystem = new StatusSystem();
         Enemy._statusSystem = this.statusSystem;
         if(this.selectedMode==='chapter'&&this.selectedMap==='forest')this.expedition=new Expedition(this);
+        this.endlessEvents=this.expedition?null:new EndlessEvents(this);
     }
 
     /**
@@ -377,11 +378,12 @@ class Game {
             if(!this.mapPanel.hidden){ForestMap.minimap(this.mapContext,this.player,this.survivalTime);this.mapPanel.querySelector('strong').textContent=ForestMap.region(this.player.x,this.player.y).name;this.mapPanel.querySelector('.ruins-status').textContent=this.expedition?'林地闯关 · '+Math.min(2,this.expedition.index)+'/2 巢穴':this.ruins.label;}
         }
         let musicIntensity=this.expedition?.fighting||this.boss.active||this.ruins.state==='guarded'||(this.opening.trialStarted&&!this.opening.trialWon)?1.2:OpeningDirector.phase(this.survivalTime).intensity;
+        if(this.endlessEvents)musicIntensity=this.boss.active||this.ruins.state==='guarded'?1.22:this.endlessEvents.intensity;
         const weather=ForestMap.eventAt(this.survivalTime);
         if(weather&&weather.phase!=='rest'&&(weather.kind==='snow'||Math.hypot(this.player.x-weather.x,this.player.y-weather.y)<650))musicIntensity=Math.max(musicIntensity,1.04);
         this.audio.music?.update(this.state,musicIntensity,this.state==='start'?this.selectedMap||'forest':ForestMap.selected);
         const objective=document.getElementById('opening-objective');
-        if(objective){objective.hidden=!['playing','paused'].includes(this.state);objective.textContent=this.expedition?this.expedition.objective:`${OpeningDirector.phase(this.survivalTime).name} · ${this.opening.objective(this)}`;}
+        if(objective){objective.hidden=!['playing','paused'].includes(this.state);objective.textContent=this.expedition?this.expedition.objective:this.endlessEvents?.objective||`${OpeningDirector.phase(this.survivalTime).name} · ${this.opening.objective(this)}`;}
 
         // 更新
         if (this.state === 'playing') {
@@ -440,6 +442,8 @@ class Game {
         ForestMap.updateEnvironment(this);
         WeaponPaths.updateFields(this,deltaTime);
         this.enemyManager.update(deltaTime, this.player, this.particleManager, this.experienceManager, this.audio, this.survivalTime);
+
+        this.endlessEvents?.update(deltaTime);
 
         // 更新Boss
         if (this.boss.active) {
@@ -567,6 +571,7 @@ class Game {
      */
     spawnEnemy() {
         const types = ForestMap.enemyTypes(this.survivalTime);
+        if(this.endlessEvents){if(this.survivalTime>=45&&this.enemyManager.pool.filter(e=>e.active&&e.type==='spitter').length<8)types.push('spitter');if(this.survivalTime>=90&&this.enemyManager.pool.filter(e=>e.active&&e.type==='shaman').length<2)types.push('shaman');}
 
         // 波次公告
         this._checkWaveAnnounce();
@@ -821,6 +826,7 @@ class Game {
         if(this.boss.active)WoodlandScene.drawFooting(ctx,this.boss,this.cameraX,this.cameraY,this.survivalTime,!this.boss.spawnWarning);
         this.enemyManager.draw(ctx, this.cameraX, this.cameraY, this.player, this.boss);
 
+        this.endlessEvents?.draw(ctx,this.cameraX,this.cameraY,this.survivalTime);
         // 绘制子弹（顶层）
         this.bulletManager.draw(ctx, this.cameraX, this.cameraY);
         ForestMap.crowns(ctx,this.cameraX,this.cameraY,w,h,[this.player,...this.enemyManager.getActiveEnemies(),...(this.boss.active?[this.boss]:[])],this.survivalTime);

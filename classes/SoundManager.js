@@ -130,14 +130,16 @@ class SoundManager {
         this.elementBuffers ||= {};
         let buffer=this.elementBuffers[kind];
         if(!buffer){
-            const rate=this.ctx.sampleRate,duration=({rapid:.075,heavy:.32,wide:.28,focus:.18,ground:.42,split:.30,fire:.48,ice:.30,lightning:.19,shadow:.22,mark:.24,soul:.38,bastion:.25,mechanical:.15,beam:.4,explosion:.36,rifle:.09,shotgun:.22,fire_cast:.25,gun:.08})[kind]||.2;
+            const rate=this.ctx.sampleRate,duration=({arrival:.8,rapid:.075,heavy:.32,wide:.28,focus:.18,ground:.42,split:.30,fire:.48,ice:.30,lightning:.19,shadow:.22,mark:.24,soul:.38,bastion:.25,mechanical:.15,beam:.4,explosion:.36,rifle:.09,shotgun:.22,fire_cast:.25,gun:.08})[kind]||.2;
             buffer=this.ctx.createBuffer(1,Math.ceil(rate*duration),rate);
             const data=buffer.getChannelData(0);let seed=317,low=0,previous=0;
             for(let i=0;i<data.length;i++){
                 seed=(Math.imul(seed,1664525)+1013904223)>>>0;
                 const noise=seed/2147483648-1,t=i/rate;low+=.035*(noise-low);
                 let value;
-                if(kind==='woodhit'||kind==='woodbreak'){
+                if(kind==='arrival'){
+                    value=Math.sin(2*Math.PI*(105*t+25*t*t))*.3*Math.exp(-t*4)+low*2*Math.exp(-Math.abs(t-.25)*8);
+                }else if(kind==='woodhit'||kind==='woodbreak'){
                     value=low*3*Math.exp(-t*20)+Math.sin(2*Math.PI*130*t)*.3*Math.exp(-t*24)+noise*.55*Math.exp(-t*70);
                     if(kind==='woodbreak')value+=noise*.3*Math.exp(-Math.abs(t-.07)*65)+noise*.2*Math.exp(-Math.abs(t-.14)*65);
                 }else if(kind==='roll'){
@@ -239,6 +241,7 @@ class SoundManager {
     }
 
     /** 冲刺音效 */
+    encounterAlert(){if(this.enabled&&this.ctx)this._playElement('arrival');}
     treeImpact(broken){if(this.enabled&&this.ctx)this._playElement(broken?'woodbreak':'woodhit');}
     dash(kind) {
         if(kind==='roll'||kind==='blink'){if(this.enabled&&this.ctx)this._playElement(kind);return;}
@@ -262,7 +265,9 @@ class SoundManager {
                 seed=(Math.imul(seed,1664525)+1013904223)>>>0;const n=seed/2147483648-1,t=i/rate,u=t/duration;
                 low+=.025*(n-low);body+=.22*(n-body);const air=body-low,thud=Math.sin(2*Math.PI*(75*t-45*t*t))*Math.exp(-t*24);
                 let v=0;
-                if(type==='dash')v=air*2.4*Math.sin(Math.PI*u)**1.6+thud*.32+low*.5*Math.exp(-Math.abs(t-.17)*75);
+                if(type==='spitter')v=air*1.5*Math.exp(-t*9)+Math.sin(2*Math.PI*(190*t-130*t*t))*.22*Math.exp(-t*13);
+                else if(type==='shaman')v=Math.sin(2*Math.PI*240*t)*.2*Math.exp(-t*8)+air*.8*Math.sin(Math.PI*u);
+                else if(type==='dash')v=air*2.4*Math.sin(Math.PI*u)**1.6+thud*.32+low*.5*Math.exp(-Math.abs(t-.17)*75);
                 else if(type==='normal')v=(low*2.2+air*.45)*Math.exp(-t*10)+thud*.45+air*.6*Math.exp(-Math.abs(t-.08)*80);
                 else if(type==='fast')v=phase==='windup'?(low*3+air*.45)*(1+.4*Math.sin(t*115))*Math.sin(Math.PI*u):air*2*Math.sin(Math.PI*u)+low*Math.exp(-t*12);
                 else if(type==='tank')v=low*3.6*Math.exp(-t*7)+thud*.8+air*.7*(Math.exp(-Math.abs(t-.07)*100)+Math.exp(-Math.abs(t-.17)*130));

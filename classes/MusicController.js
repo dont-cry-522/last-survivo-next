@@ -38,7 +38,7 @@ class MusicController {
         if(next!==this.mode){
             this.mode=next;const weights=next==='danger'?[1,.85,.7]:next==='drive'?[1,.68,.18]:[1,.22,0];
             const onBeat=this.startedAt+Math.ceil(Math.max(0,now-this.startedAt)/this.beatSeconds)*this.beatSeconds;
-            this.layers.forEach((l,i)=>{l.gain.gain.cancelScheduledValues(now);l.gain.gain.setTargetAtTime(weights[i],state==='playing'?onBeat:now,next==='rest'?1.1:.55);});
+            this.layers.forEach((l,i)=>{l.gain.gain.cancelScheduledValues(now);l.gain.gain.setTargetAtTime(weights[i],state==='playing'?onBeat:now,next==='rest'?1.8:next==='danger'?.4:.65);});
         }
         const target=!this.audio.enabled||document.hidden?0:this.volume*(state==='playing'?.65:state==='paused'||state==='upgrading'?.16:.28);
         if(target===this.target)return;this.target=target;this.gain.gain.cancelScheduledValues(now);this.gain.gain.setTargetAtTime(target,now,target===0?.035:.2);

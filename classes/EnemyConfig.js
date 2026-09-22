@@ -10,6 +10,8 @@
 class EnemyConfig {
     // Timings stay readable as difficulty increases. Distances are world pixels.
     static ATTACKS = {
+        spitter:{trigger:460,windup:.95,strike:.06,recover:2.1,distance:0,radius:8},
+        shaman:{trigger:390,windup:1.1,strike:.06,recover:2.8,distance:0,radius:0},
         normal: { trigger:75, windup:0.42, strike:0.20, recover:0.72, distance:86, radius:15 },
         fast: { trigger:260, windup:0.65, strike:0.32, recover:0.90, distance:280, radius:12 },
         tank: { trigger:110, windup:0.90, strike:0.12, recover:1.15, distance:48, radius:70 },
@@ -21,6 +23,8 @@ class EnemyConfig {
     //  所有五种敌人的基础数值 + 视觉颜色
     // ================================================================
     static TYPES = {
+        spitter:{name:'孢子射手',color:'#a786b2',glowColor:'rgba(157,122,185,.3)',hp:48,speed:1.2,damage:13,size:18,exp:12,gold:3},
+        shaman:{name:'苔灯祭司',color:'#9ec790',glowColor:'rgba(135,204,156,.3)',hp:80,speed:1,damage:0,size:21,exp:18,gold:5},
         normal: {
             name: '赤帽菇',
             color: '#6b7b7b',

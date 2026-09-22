@@ -154,6 +154,23 @@ class ForestArt {
         if (p.shield>0) { c.strokeStyle='#a5e2d0'; c.lineWidth=1.5; c.beginPath(); c.ellipse(0,-8,25,34,0,0,Math.PI*2); c.stroke(); }
         c.restore();
     }
+    static supportCreature(c,e,t,windup){
+        const heal=e.type==='shaman',bob=Math.sin(t*5)*2;
+        for(const sign of [-1,1]){this.line(c,[[sign*6,3],[sign*9,12+Math.sin(t*5+sign)*2]],'#626b48',5);this.oval(c,sign*10,14,5,3,'#53623f');}
+        this.shape(c,[[-12,-12],[10,-12],[16,9],[0,14],[-15,9]],heal?'#4d7862':'#76617c');
+        this.oval(c,0,-17+bob,14,12,heal?'#a9bf87':'#ccb5ac');
+        if(heal){
+            this.shape(c,[[-17,-19],[-11,-33],[-5,-25],[3,-38],[8,-25],[18,-31],[15,-16]],'#759365');
+            this.line(c,[[17,13],[19,-29]],'#85764e',4);this.oval(c,20,-27,7,9,'#cde5a1','#4f704f',2);
+            if(windup>0||e.supportGlow>0)this.oval(c,20,-27,11,14,'rgba(168,235,148,.3)',null);
+        }else{
+            this.oval(c,-2,-27+bob,23,12,'#6e4b7b');
+            for(let i=0;i<4;i++)this.oval(c,-16+i*10,-30+bob,3,2,'#c1a3c3',null);
+            this.oval(c,10+windup*5,-12,8+windup*3,6,'#9c799f');this.oval(c,15+windup*5,-12,3,4,'#3d344a',null);
+        }
+        this.oval(c,-5,-18+bob,2,2,heal?'#e9f7bb':'#f1d092',null);
+        if(e.supportGlow>0){c.strokeStyle='#b9e5a1';c.lineWidth=2;c.beginPath();c.arc(0,-3,30,0,Math.PI*2);c.stroke();}
+    }
     static silverWeapon(c,p,skin){
         const cast=Math.sin(Math.min(1,(p.recoilTimer||0)/.09)*Math.PI);
         if(p.weaponType!=='pistol'){c.rotate(-.35*cast);c.translate(-cast*3,-cast*2);}
@@ -255,7 +272,8 @@ class ForestArt {
         }
         if(state==='recover') {c.translate(0,2*(1-recovery));c.rotate(.06*(1-recovery));}
         if(!death && state==='approach') c.translate(0,Math.sin(t*2.5)*.4);
-        if(e.type==='fast') this.crawler(c,t,hurt,attack,motion);
+        if(e.type==='spitter'||e.type==='shaman')this.supportCreature(c,e,t,windup);
+        else if(e.type==='fast') this.crawler(c,t,hurt,attack,motion);
         else if(e.type==='tank') this.brute(c,t,hurt,attack,false,windup,motion);
         else if(e.type==='elite') this.brute(c,t,hurt,attack,true,windup,motion,state,strike,recovery);
         else this.mushroom(c,t,hurt,e.type==='exploder',attack,motion,windup,death);
@@ -266,6 +284,7 @@ class ForestArt {
             this.shape(c,[[-24,12],[-23,1],[-16,12]],'#acd1d5','#719c9e',.7);
             this.shape(c,[[15,12],[20,-2],[25,12]],'#c4dfdc','#719c9e',.7);
         }
+        if(e.supportGlow>0)this.oval(c,0,-5,25,30,'rgba(164,224,148,.13)','#afd599',1.5);
         if(e.burnStacks>0) {
             for(let i=0;i<4;i++){const fx=-12+i*8,tip=17+Math.sin(t*9+i*2)*6;this.shape(c,[[fx-3,10],[fx-4,3],[fx,10-tip],[fx+2,4],[fx+4,10]],'#ff7433',null);}
             this.oval(c,Math.sin(t*4)*12,-15-(t*20)%17,1.3,2,'#ffe18a',null);
@@ -424,7 +443,11 @@ class ForestArt {
         if(!cfg) return;
         const p=Math.max(0,Math.min(1,1-e.combatTimer/cfg.windup));
         c.save();
-        if(e.type==='elite') {
+        if(e.type==='spitter'){
+            c.translate(e.attackStartX-cameraX,e.attackStartY-cameraY);c.rotate(e.attackAngle);c.setLineDash([7,7]);this.line(c,[[0,0],[460,0]],'#d8a2d4',2);c.setLineDash([]);this.oval(c,0,0,12+p*8,12+p*8,'rgba(157,96,172,.25)','#ddb1e2',1);
+        }else if(e.type==='shaman'){
+            this.oval(c,e.x-cameraX,e.y-cameraY,190,190,'rgba(127,189,131,.06)','#98ca95',1);this.oval(c,e.x-cameraX,e.y-cameraY,190*p,190*p,'rgba(161,214,144,.1)',null);
+        }else if(e.type==='elite') {
             c.translate(e.attackStartX-cameraX,e.attackStartY-cameraY);c.rotate(e.attackAngle);
             c.beginPath();c.moveTo(0,0);c.arc(0,0,cfg.radius,-cfg.halfArc,cfg.halfArc);c.closePath();
             c.fillStyle='rgba(193,171,226,.16)';c.fill();c.strokeStyle='#d2c0e6';c.lineWidth=2;c.stroke();
