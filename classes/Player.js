@@ -157,12 +157,12 @@ class Player {
         this.blinkTrace=null;
         if(this.characterId==='silver'){
             const from={x:this.x,y:this.y},distance=this.speed*this.dashSpeedMultiplier*this.dashDuration*60;
-            // Sweep the full body along the ray: no tunnelling through scenery or map borders.
+            // Teleport ignores the route; search backward from full range for a safe landing.
             const steps=Math.max(1,Math.ceil(distance/5));
-            for(let i=1;i<=steps;i++){
+            for(let i=steps;i>=1;i--){
                 const x=from.x+dx*distance*i/steps,y=from.y+dy*distance*i/steps;
-                if(typeof ForestMap!=='undefined'&&!ForestMap.clear(x,y,this.size))break;
-                this.x=x;this.y=y;
+                if(typeof ForestMap!=='undefined'&&!ForestMap.clear(x,y,this.size))continue;
+                this.x=x;this.y=y;break;
             }
             this.blinkTrace={x:from.x,y:from.y,toX:this.x,toY:this.y,life:.28};
         }

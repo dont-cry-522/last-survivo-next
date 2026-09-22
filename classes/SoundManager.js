@@ -137,7 +137,10 @@ class SoundManager {
                 seed=(Math.imul(seed,1664525)+1013904223)>>>0;
                 const noise=seed/2147483648-1,t=i/rate;low+=.035*(noise-low);
                 let value;
-                if(kind==='roll'){
+                if(kind==='woodhit'||kind==='woodbreak'){
+                    value=low*3*Math.exp(-t*20)+Math.sin(2*Math.PI*130*t)*.3*Math.exp(-t*24)+noise*.55*Math.exp(-t*70);
+                    if(kind==='woodbreak')value+=noise*.3*Math.exp(-Math.abs(t-.07)*65)+noise*.2*Math.exp(-Math.abs(t-.14)*65);
+                }else if(kind==='roll'){
                     value=low*2.8*Math.exp(-t*17)+(noise-low)*.3*Math.sin(Math.PI*Math.min(1,t/.2))**2+Math.sin(2*Math.PI*85*t)*.3*Math.exp(-Math.abs(t-.13)*65);
                 }else if(kind==='blink'){
                     value=(noise-low)*.35*Math.exp(-Math.abs(t-.04)*45)+Math.sin(2*Math.PI*(400*t-650*t*t))*.2*Math.exp(-t*18)+low*1.4*Math.exp(-Math.abs(t-.14)*55);
@@ -236,6 +239,7 @@ class SoundManager {
     }
 
     /** 冲刺音效 */
+    treeImpact(broken){if(this.enabled&&this.ctx)this._playElement(broken?'woodbreak':'woodhit');}
     dash(kind) {
         if(kind==='roll'||kind==='blink'){if(this.enabled&&this.ctx)this._playElement(kind);return;}
         this._playCreature('dash','move');

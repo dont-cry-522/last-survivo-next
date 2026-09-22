@@ -110,8 +110,35 @@ class ForestMap {
         if(this.selected!=='ash')for(const [x,y]of [[-400,-550],[460,1050]])for(let part=0;part<3;part++)trees.push({x:x+part*25,y,r:20,crown:0,fallen:true,part});
         return this._trees=trees.sort((a,b)=>a.y-b.y);
     }
+    static blockingTree(actor,target){
+        if(this.selected==='ash'||!['tank','elite'].includes(actor.type))return null;
+        let best=null,near=Infinity;
+        for(const t of this.trees){
+            if(t.destroyed||t.fallen)continue;
+            const d=Math.hypot(t.x-actor.x,t.y-actor.y);
+            if(d>EnemyConfig.ATTACKS[actor.type].trigger||d>=near)continue;
+            if(this.firstHit(actor.x,actor.y,target.x,target.y,actor.size,[t])!==null){best=t;near=d;}
+        }return best;
+    }
+    static strikeTrees(e){
+        if(this.selected==='ash'||!['tank','elite'].includes(e.type))return [];
+        const attack=EnemyConfig.ATTACKS[e.type],hits=[];
+        for(const t of this.trees){
+            if(t.destroyed||t.fallen)continue;
+            let touches;
+            if(e.type==='tank')touches=Math.hypot(t.x-e.attackX,t.y-e.attackY)<=attack.radius+t.r;
+            else{
+                const dx=t.x-e.attackStartX,dy=t.y-e.attackStartY,d=Math.hypot(dx,dy);
+                const relative=Math.atan2(Math.sin(Math.atan2(dy,dx)-e.attackAngle),Math.cos(Math.atan2(dy,dx)-e.attackAngle));
+                const edge=e.attackAngle+Math.sign(relative)*attack.halfArc;
+                const projection=Math.max(0,Math.min(attack.radius,dx*Math.cos(edge)+dy*Math.sin(edge)));
+                touches=Math.abs(relative)<=attack.halfArc?d<=attack.radius+t.r:Math.hypot(dx-Math.cos(edge)*projection,dy-Math.sin(edge)*projection)<=t.r;
+            }
+            if(touches){t.hp=Math.max(0,(t.hp??120)-40);t.destroyed=t.hp===0;hits.push(t);}
+        }return hits;
+    }
     static clear(x,y,r){
-        return Math.abs(x)<=2560-r&&Math.abs(y)<=1440-r&&!this.trees.some(t=>(x-t.x)**2+(y-t.y)**2<(r+t.r)**2);
+        return Math.abs(x)<=2560-r&&Math.abs(y)<=1440-r&&!this.trees.some(t=>!t.destroyed&&(x-t.x)**2+(y-t.y)**2<(r+t.r)**2);
     }
     static move(actor,dx,dy){
         const r=actor.size||20,steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/10));
@@ -126,6 +153,7 @@ class ForestMap {
     static firstHit(x,y,endX,endY,r=0,obstacles=this.trees){
         const dx=endX-x,dy=endY-y,a=dx*dx+dy*dy;let first=null;
         for(const t of obstacles){
+            if(t.destroyed)continue;
             const ox=x-t.x,oy=y-t.y,rr=t.r+r,c=ox*ox+oy*oy-rr*rr;
             if(c<=0)return 0;if(!a)continue;
             const b=2*(ox*dx+oy*dy),disc=b*b-4*a*c;if(disc<0)continue;
@@ -141,6 +169,7 @@ class ForestMap {
             return Math.atan2(actor._forestDetour.y-actor.y,actor._forestDetour.x-actor.x);
         actor._forestDetour=null;
         for(const t of this.trees){
+            if(t.destroyed)continue;
             const dx=t.x-actor.x,dy=t.y-actor.y,ahead=dx*ux+dy*uy,lateral=dx*uy-dy*ux;
             if(ahead>0&&ahead<r+t.r+100&&Math.abs(lateral)<r+t.r+12){
                 const sides=lateral>=0?[1,-1]:[-1,1];
@@ -205,6 +234,7 @@ class ForestMap {
     static trunks(c,cx,cy,w,h){
         for(const t of this.trees){if(t.x<cx-130||t.x>cx+w+130||t.y<cy-130||t.y>cy+h+160)continue;
             const x=t.x-cx,y=t.y-cy;
+            if(t.destroyed){ForestArt.oval(c,x,y,t.r,t.r*.48,'#876a42','#493f30',2);ForestArt.oval(c,x,y-2,t.r*.68,t.r*.27,'#c8ad75','#745b39',1);ForestArt.line(c,[[x-t.r,y+12],[x-t.r-12,y+18]],'#a98c56',4);continue;}
             if(this.selected==='ash'){
                 ForestArt.oval(c,x+14,y+10,t.r+14,18,'rgba(24,19,20,.28)',null);
                 ForestArt.shape(c,[[x-t.r,y],[x-t.r+3,y-55],[x-4,y-78],[x+t.r-2,y-57],[x+t.r,y+3],[x,y+12]],'#55494a','#302f34',3);
@@ -219,11 +249,12 @@ class ForestMap {
             ForestArt.oval(c,x,y,t.r,t.r,'#594633','#a39162',2);
             ForestArt.shape(c,[[x-t.r,y+5],[x-14,y-80],[x+15,y-80],[x+t.r,y+5]],'#76593a','#394431',3);
             ForestArt.line(c,[[x-5,y],[x-3,y-70]],'#b29359',3);
+            if(t.hp<120){ForestArt.line(c,[[x+10,y-60],[x-4,y-42],[x+6,y-25],[x-8,y-5]],'#302b25',t.hp<=40?5:3);}
         }
     }
     static crowns(c,cx,cy,w,h,actors,time){
         for(const t of this.trees){if(t.x<cx-130||t.x>cx+w+130||t.y<cy-40||t.y>cy+h+180)continue;
-            if(t.fallen)continue;
+            if(t.fallen||t.destroyed)continue;
             const x=t.x-cx,y=t.y-cy-85,r=t.crown;
             const covered=actors.some(a=>Math.abs(a.x-t.x)<r+a.size&&Math.abs(a.y-(t.y-85))<r*.7+a.size);
             c.save();c.globalAlpha=covered?.075:1;

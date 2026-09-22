@@ -159,8 +159,10 @@ class Enemy {
             if(terrainTime!==null)ForestMap.resolve(this,startX,startY);
             return;
         }
-        this.angle = Utils.angle(this.x, this.y, player.x, player.y);
-        if (attack && Utils.distanceSq(this.x,this.y,player.x,player.y) <= attack.trigger ** 2 && (!this.terrainAware||ForestMap.firstHit(this.x,this.y,player.x,player.y)===null)) {
+        const tree=this.terrainAware?ForestMap.blockingTree(this,player):null;
+        const aim=tree||player;
+        this.angle = Utils.angle(this.x, this.y, aim.x, aim.y);
+        if (attack && Utils.distanceSq(this.x,this.y,aim.x,aim.y) <= attack.trigger ** 2 && (tree||!this.terrainAware||ForestMap.firstHit(this.x,this.y,player.x,player.y)===null)) {
             this.combatState = 'windup';
             this.combatTimer = attack.windup;
             this.attackHasHit = false;
@@ -344,6 +346,11 @@ class EnemyManager extends ObjectPool {
             }
 
             if (EnemyConfig.ATTACKS[e.type]) {
+                if(terrainTime!==null&&e.attackCue==='strike'){
+                    const trees=ForestMap.strikeTrees(e);
+                    for(const t of trees)particleManager.spawnExplosion(t.x,t.y,t.destroyed?'#bba171':'#886741',t.destroyed?14:5);
+                    if(trees.length&&audio&&Utils.distanceSq(e.x,e.y,player.x,player.y)<650*650)audio.treeImpact?.(trees.some(t=>t.destroyed));
+                }
                 if (e.attackCue && audio && Utils.distanceSq(e.x,e.y,player.x,player.y)<650*650) audio.enemyAttackCue(e.type,e.attackCue);
                 if (e.attackCue === 'strike' && e.type === 'tank') {
                     this.addImpact(e.attackX,e.attackY,'slam',0,EnemyConfig.ATTACKS.tank.radius);
