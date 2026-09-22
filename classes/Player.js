@@ -54,7 +54,7 @@ class Player {
         this.dashCooldownMax = cfg.dashCooldown;
         this.dashDuration = cfg.dashDuration;
         this.dashSpeedMultiplier = cfg.dashSpeedMultiplier;
-        this.isDashing = false;
+        this.isDashing = false;this.blinkTrace=null;
         this.dashTimer = 0;
         this.dashDirection = { x: 0, y: 0 };
 
@@ -128,6 +128,7 @@ class Player {
         if (k === 'shift') this.keys.shift = false;
     }
 
+    get dodgeName(){return this.characterId==='silver'?'瞬移':'翻滚';}
     tryDash() {
         if (this.dashCooldown > 0 || this.isDashing) return;
 
@@ -153,7 +154,19 @@ class Player {
         this.dashCooldown = this.dashCooldownMax;
         this.invincibleTimer = Math.max(this.invincibleTimer, this.dashDuration);
 
-        if (this.audio) this.audio.dash();
+        this.blinkTrace=null;
+        if(this.characterId==='silver'){
+            const from={x:this.x,y:this.y},distance=this.speed*this.dashSpeedMultiplier*this.dashDuration*60;
+            // Sweep the full body along the ray: no tunnelling through scenery or map borders.
+            const steps=Math.max(1,Math.ceil(distance/5));
+            for(let i=1;i<=steps;i++){
+                const x=from.x+dx*distance*i/steps,y=from.y+dy*distance*i/steps;
+                if(typeof ForestMap!=='undefined'&&!ForestMap.clear(x,y,this.size))break;
+                this.x=x;this.y=y;
+            }
+            this.blinkTrace={x:from.x,y:from.y,toX:this.x,toY:this.y,life:.28};
+        }
+        if (this.audio) this.audio.dash(this.characterId==='silver'?'blink':'roll');
         if (this._onDash) this._onDash();
     }
 
@@ -305,6 +318,7 @@ class Player {
         const ground=terrainTime===null?null:WoodlandScene.surfaceAt(this.x,this.y,terrainTime);
         const terrainSpeed=ground?.speed ?? 1;
         this.animTimer += deltaTime;
+        if(this.blinkTrace){this.blinkTrace.life-=deltaTime;if(this.blinkTrace.life<=0)this.blinkTrace=null;}
         this.recoilTimer = Math.max(0, this.recoilTimer - deltaTime);
         this.hurtTimer = Math.max(0, this.hurtTimer - deltaTime);
         if (this.muzzleFlash > 0) this.muzzleFlash -= deltaTime;
@@ -315,11 +329,14 @@ class Player {
         let moved = false;
         if (this.isDashing) {
             this.walkCycle += deltaTime * 22;
+            const dashStep=Math.min(deltaTime,this.dashTimer);
             this.dashTimer -= deltaTime;
             if (this.dashTimer <= 0) this.isDashing = false;
             const dashSpeed = this.speed * this.dashSpeedMultiplier;
-            this.x += this.dashDirection.x * dashSpeed * deltaTime * 60;
-            this.y += this.dashDirection.y * dashSpeed * deltaTime * 60;
+            if(this.characterId!=='silver'){
+                this.x += this.dashDirection.x * dashSpeed * dashStep * 60;
+                this.y += this.dashDirection.y * dashSpeed * dashStep * 60;
+            }
             this.afterimageTimer -= deltaTime;
             if (this.afterimageTimer <= 0) {
                 this.afterimageTimer = 0.03;
@@ -354,7 +371,7 @@ class Player {
             if(!ground)particleManager.spawnTrail(this.x, this.y + this.size * 0.65, this.angle, '#c9bd90');
         }
 
-        this.autoAttack(deltaTime, enemies, bulletManager, particleManager);
+        if(!this.isDashing)this.autoAttack(deltaTime, enemies, bulletManager, particleManager);
         this.chargeLevel=(this.weaponPath==='heavy'||this.weaponType==='fireball')&&this.findNearestEnemy(enemies)?Math.max(0,1-this.attackTimer/.4):0;
     }
 
@@ -394,7 +411,7 @@ class Player {
         this.maxCombo = 0;
         this.shield = 0;
         this.angle = -Math.PI / 2;
-        this.isDashing = false;
+        this.isDashing = false;this.blinkTrace=null;
         this.invincibleTimer = 0;
         this.aimAngle = 0;
         this.recoilTimer = 0;

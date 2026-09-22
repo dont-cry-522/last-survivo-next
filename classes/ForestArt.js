@@ -18,16 +18,37 @@ class ForestArt {
         this.oval(c, 0, size * 0.6, size * 0.86, size * 0.24, `rgba(14,27,19,${alpha})`, null);
     }
     static player(c, p, cameraX = 0, cameraY = 0) {
+        if(p.blinkTrace){
+            const t=p.blinkTrace,fade=Math.max(0,t.life/.28);c.save();c.globalAlpha=fade*.65;
+            for(const [x,y]of [[t.x-cameraX,t.y-cameraY],[t.toX-cameraX,t.toY-cameraY]]){
+                this.oval(c,x,y-8,18+(1-fade)*20,28,'rgba(83,68,117,.25)','#c0b8ef',2);
+                for(let j=0;j<5;j++){const a=j*Math.PI*2/5;this.line(c,[[x+Math.cos(a)*20,y-8+Math.sin(a)*27],[x+Math.cos(a)*28,y-8+Math.sin(a)*38]],'#cfc7f6',1.5);}
+            }c.restore();
+        }
         c.save(); c.translate(p.x-cameraX,p.y-cameraY);
-        if (p.isDashing && p.dashDirection) {
+        if (p.isDashing && p.dashDirection && p.characterId!=='silver') {
             const a=Math.atan2(p.dashDirection.y,p.dashDirection.x);
             c.save();c.rotate(a);
-            for(let i=0;i<3;i++) this.line(c,[[-18-i*5,-10+i*10],[-50-i*7,-10+i*10]],'rgba(224,215,162,.55)',2-i*.4);
+            for(let i=0;i<3;i++) this.oval(c,-16-i*8,7+i*2,5+i*2,3+i,'rgba(183,166,120,.28)',null);
             c.restore();
         }
         const scale = p.size / 20;
         c.scale(scale,scale);
         this.shadow(c,20);
+        if(p.isDashing){
+            const progress=Number.isFinite(p.dashTimer)&&p.dashDuration>0?Math.max(0,Math.min(1,1-p.dashTimer/p.dashDuration)):((p.animTimer||0)%.2)/.2;
+            if(p.characterId==='silver')c.globalAlpha=.25+.75*progress;
+            else{
+                // Tuck the knees and holster the weapon while rolling, rather than spin a standing sprite.
+                c.translate(0,-3);c.rotate(progress*Math.PI*2*(p.dashDirection?.x<0?-1:1));
+                this.oval(c,0,-5,15,15,'#4e8074');this.oval(c,-11,-5,7,11,'#82794c');
+                this.line(c,[[5,4],[12,7],[7,15],[-3,12]],'#545b45',7);this.oval(c,-4,12,6,3.5,'#493a2d');
+                this.oval(c,7,-14,8,8,'#efc38e');this.shape(c,[[0,-17],[2,-24],[10,-25],[16,-20],[14,-17]],'#8a6843');
+                this.line(c,[[6,-16],[14,-15]],'#423d32',3);this.oval(c,11,-16,3,2.5,'#8ed1c8');
+                this.line(c,[[6,-7],[13,-3],[11,5]],'#98b49a',5);this.line(c,[[-12,0],[-10,8]],'#bcb285',2);
+                c.restore();return;
+            }
+        }
         const intensity = p.runBlend === undefined ? (p.moving || p.isDashing ? 1 : 0) : p.runBlend;
         const cycle = p.walkCycle || 0;
         const stride = Math.sin(cycle) * (p.isDashing ? 10 : 7) * intensity;

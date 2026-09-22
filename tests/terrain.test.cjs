@@ -67,3 +67,7 @@ test('boss pursuit slows on mud but its charge remains intact',()=>{
         result={walk,speed:b.speed,charge:b.x-x,chargeSpeed:b.chargeSpeed};`);
     near(r.walk,r.speed*.75);near(r.charge,r.chargeSpeed);
 });
+
+test('silver blink moves immediately once and shares dash immunity and cooldown',()=>{const r=run(`hero.x=0;hero.y=0;hero.characterId='silver';hero.dashCooldown=0;const distance=hero.speed*hero.dashSpeedMultiplier*hero.dashDuration*60;hero.tryDash();const first=hero.x;hero.tryDash();step(0,.1);result={first,distance,after:hero.x,protected:hero.invincibleTimer>0,trace:!!hero.blinkTrace};`);near(r.first,r.distance);near(r.after,r.first);assert(r.protected);assert(r.trace);});
+test('blink stops before scenery and stays inside the map',()=>{const r=run(`ForestMap._trees=[{x:70,y:0,r:20}];hero.x=0;hero.y=0;hero.characterId='silver';hero.dashCooldown=0;hero.tryDash();const wall=hero.x;ForestMap._trees=[];hero.x=2530;hero.isDashing=false;hero.dashCooldown=0;hero.tryDash();result={wall,edge:hero.x,size:hero.size};`);assert(r.wall<=30);assert(r.wall>0);assert(r.edge<=2560-r.size);});
+test('rolling does not overshoot when a frame is longer than remaining dodge time',()=>{const r=run(`hero.x=0;hero.y=0;hero.dashCooldown=0;hero.tryDash();const distance=hero.speed*hero.dashSpeedMultiplier*hero.dashDuration*60;step(0,.35);result={x:hero.x,distance,active:hero.isDashing};`);near(r.x,r.distance);assert.equal(r.active,false);});

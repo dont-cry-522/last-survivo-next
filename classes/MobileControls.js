@@ -161,7 +161,7 @@ class MobileControls {
         }
         this.dash.disabled = state !== 'playing';
         const remaining = this.game.player.dashCooldown;
-        this.dash.textContent = remaining > 0 && state === 'playing' ? `${remaining.toFixed(1)}秒` : '冲刺';
+        this.dash.textContent = remaining > 0 && state === 'playing' ? `${remaining.toFixed(1)}秒` : this.game.player.dodgeName;
         const muted = this.game.audio.isMuted();
         this.mute.textContent = muted ? '开启声音' : '静音';
         this.mute.setAttribute('aria-pressed', String(Boolean(muted)));

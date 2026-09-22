@@ -265,12 +265,12 @@ class UIManager {
         // 操作列表
         const controls = document.body.classList.contains('touch-device') ? [
             { key: '左侧摇杆', desc: '八方向移动' },
-            { key: '冲刺按钮', desc: '冲刺（无敌帧，2秒冷却）' },
+            { key: '闪避按钮', desc: '翻滚 / 瞬移（短暂无敌）' },
             { key: '顶部按钮', desc: '暂停 / 继续、重开、静音' },
             { key: '升级卡片', desc: '点击选择技能或刷新选项' },
         ] : [
             { key: 'W A S D', desc: '八方向移动' },
-            { key: 'Shift', desc: '冲刺（无敌帧，2秒冷却）' },
+            { key: 'Shift', desc: '翻滚 / 瞬移（短暂无敌）' },
             { key: 'ESC', desc: '暂停 / 继续游戏' },
             { key: 'R', desc: '重新开始游戏' },
             { key: 'M', desc: '静音 / 取消静音' },
