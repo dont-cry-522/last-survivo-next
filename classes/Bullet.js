@@ -145,7 +145,11 @@ class Bullet {
             if(this.weaponPath==='split-child')ctx.scale(.55,.55);
             if(this.weaponPath==='heavy'){ForestArt.line(ctx,[[-33,0],[5,0]],'#e4c48b',6);ForestArt.oval(ctx,3,0,7,4,'#fff0bb',null);ctx.restore();return;}
             if(this.weaponPath==='rapid')ForestArt.line(ctx,[[-24,0],[-7,0]],'rgba(215,219,158,.4)',1);
-            if(this.weaponType==='fireball') {
+            if(this.weaponType==='shuriken'){
+                ctx.rotate(this.life*22);for(let i=0;i<4;i++){ctx.rotate(Math.PI/2);ForestArt.shape(ctx,[[0,-2],[10,-4],[4,2],[0,3]],'#cee4dd','#526a72',1);}ForestArt.oval(ctx,0,0,2,2,'#747f92',null);
+            }else if(this.weaponType==='dark'){
+                ForestArt.line(ctx,[[-28,0],[-9,0]],'#70659088',8);ForestArt.oval(ctx,0,0,10,8,'#403653','#bcaae2',1.5);ForestArt.oval(ctx,3,-1,4,5,'#dbd2ff',null);
+            }else if(this.weaponType==='fireball') {
                 ForestArt.shape(ctx,[[-24,-4],[-9,-9],[5,-6],[10,0],[4,7],[-10,8],[-29,3],[-17,0]],'#de7840',null);
                 ForestArt.oval(ctx,0,0,9,7,'#ffc666',null);ForestArt.oval(ctx,2,0,5,4,'#fff1b5',null);
             } else {

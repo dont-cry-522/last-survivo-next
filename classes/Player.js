@@ -10,6 +10,9 @@
 
 class Player {
     static WEAPONS = {
+        pistol:{name:'暮影手枪',rate:2,damage:1.7,count:1,speed:13,range:560,spread:0},
+        shuriken:{name:'月刃飞镖',rate:1.5,damage:.85,count:3,speed:8,range:410,spread:.18},
+        dark:{name:'暗月法器',rate:.9,damage:2.1,count:1,speed:6,range:440,spread:0},
         rifle: {name:'连发枪',rate:3,damage:1,count:1,speed:10,range:520,spread:0},
         shotgun: {name:'散弹枪',rate:.85,damage:.7,count:5,speed:9,range:240,spread:.12},
         fireball: {name:'火球法杖',rate:.85,damage:2.3,count:1,speed:5.5,range:420,spread:0},
@@ -278,14 +281,14 @@ class Player {
                 const voidBonus = (window.game?.skillManager?.runtimeState?._voidStacks || 0) * (window.game?.skillManager?.getSkill('void_walker')?.getCurrentEffect()?.params?.perStack || 0);
                 const critDmg = this.critDamage * (1 + frenzyBonus + soulBonus);
                 const damage = (isCrit ? baseDmg * critDmg : baseDmg) * (1 + voidBonus);
-                const bullet = bulletManager.fire(this.x, this.y, angle, damage, this.bulletSpeed, this.pierce, this.weaponType==='shotgun'?null:target);
+                const bullet = bulletManager.fire(this.x, this.y, angle, damage, this.bulletSpeed, this.pierce+(this.weaponType==='shuriken'?1:0), ['shotgun','pistol','shuriken'].includes(this.weaponType)?null:target);
                 if (bullet) {
                     bullet.isCrit = isCrit;
                     bullet.weaponType=this.weaponType||'rifle';
                     bullet.weaponPath=this.weaponPath;
                     bullet.blastRadius=this.blastRadius||65;
-                    bullet.size=this.weaponType==='fireball'?9:this.weaponType==='shotgun'?3:4;
-                    bullet.color=this.weaponType==='fireball'?'#f3a354':'#e5c783';
+                    bullet.size=['fireball','dark'].includes(this.weaponType)?9:this.weaponType==='shuriken'?7:this.weaponType==='shotgun'?3:4;
+                    bullet.color=this.weaponType==='dark'?'#a599d7':this.weaponType==='shuriken'?'#bcd9d5':this.weaponType==='fireball'?'#f3a354':'#e5c783';
                     if(this.weaponPath==='heavy')bullet.size=7;
                     bullet.life=this.attackRange/(this.bulletSpeed*60);
                 }
@@ -294,7 +297,7 @@ class Player {
         }
 
         if (this.audio) this.audio.weaponShoot(this.weaponType||'rifle',this.weaponPath);
-        if(this.weaponType!=='fireball' && particleManager.spawnCasing) particleManager.spawnCasing(this.x,this.y,this.aimAngle);
+        if(['rifle','shotgun','pistol'].includes(this.weaponType) && particleManager.spawnCasing) particleManager.spawnCasing(this.x,this.y,this.aimAngle);
     }
 
     update(deltaTime, enemies, bulletManager, particleManager, terrainTime = null) {

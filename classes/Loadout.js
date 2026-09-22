@@ -3,9 +3,9 @@ class Loadout {
     constructor(game) {
         this.game=game;
         this.panel=document.createElement('section');
-        this.panel.className='loadout';this.panel.setAttribute('aria-label','出发前选择武器');
-        this.panel.innerHTML=`<div class="loadout-inner"><p class="loadout-eyebrow">林地远征 / 林地闯关 25</p><h1>这次，去哪里远征？</h1><p class="loadout-intro">先选地图，再选武器。环境影响你，也影响追来的怪物。2 级强化武器，3 级选择分支。</p><p class="loadout-guide"><a href="skills.html">查看 64 个技能特效 ↗</a></p><div class="weapon-choices" role="group" aria-label="武器"></div><button class="loadout-start" type="button">带上连发枪 · 出发</button><p class="loadout-help">电脑：1 / 2 / 3 选择 · Enter 出发 · WASD 移动 · Shift 冲刺<br>手机：点选地图与武器 · 左侧摇杆移动 · 右侧冲刺</p></div>`;
-        const descriptions={rifle:['持续压制','射速快 · 中远距离','适合边移动边持续输出'],shotgun:['近身爆发','五发散射 · 强击退','贴近时伤害更集中'],fireball:['范围灼烧','火球爆炸 · 持续燃烧','适合应对聚集的怪群']};
+        this.panel.className='loadout';this.panel.setAttribute('aria-label','出发前选择角色、地图与武器');
+        this.panel.innerHTML=`<div class="loadout-inner"><p class="loadout-eyebrow">林地远征 / 霜影同行 27</p><h1>这次，去哪里远征？</h1><p class="loadout-intro">选好角色、地图和武器。环境影响你，也影响追来的怪物。2 级强化武器，3 级选择分支。</p><p class="loadout-guide"><a href="skills.html">查看 64 个技能特效 ↗</a></p><div class="weapon-choices" role="group" aria-label="武器"></div><button class="loadout-start" type="button">带上连发枪 · 出发</button><p class="loadout-help">电脑：1 / 2 / 3 选择 · Enter 出发 · WASD 移动 · Shift 冲刺<br>手机：点选角色、地图与武器 · 左侧摇杆移动 · 右侧冲刺</p></div>`;
+        const descriptions={pistol:['精准点射','直线高速 · 单发重击','预判走位，把握射击路线'],shuriken:['穿透投掷','三枚扇形 · 穿透一敌','旋转月刃，覆盖追击路线'],dark:['暗能爆裂','追踪暗球 · 范围伤害','聚集敌人，用暗月爆裂清场'],rifle:['持续压制','射速快 · 中远距离','适合边移动边持续输出'],shotgun:['近身爆发','五发散射 · 强击退','贴近时伤害更集中'],fireball:['范围灼烧','火球爆炸 · 持续燃烧','适合应对聚集的怪群']};
         for(const [kind,weapon] of Object.entries(Player.WEAPONS)) {
             const button=document.createElement('button');button.type='button';button.dataset.weapon=kind;
             const copy=descriptions[kind];
@@ -27,21 +27,46 @@ class Loadout {
         modes.innerHTML='<button data-mode="chapter" type="button">林地闯关 · 有终点</button><button data-mode="endless" type="button">无尽生存 · 三张地图</button>';
         maps.before(modes);game.selectedMode='chapter';
         for(const b of modes.children)b.onclick=()=>{game.selectedMode=b.dataset.mode;this.selectMap(b.dataset.mode==='chapter'?'forest':game.selectedMap);};
+        const characters=document.createElement('div');characters.className='character-choices';characters.setAttribute('role','group');characters.setAttribute('aria-label','角色');
+        for(const [id,name,copy]of [['scout','林地游侠','原主角 · 轻装探险'],['silver','霜影','白发面具 · 逐风游猎']]){
+            const b=document.createElement('button');b.type='button';b.dataset.character=id;
+            b.innerHTML=`<canvas width="160" height="180" aria-hidden="true"></canvas><span><strong>${name}</strong><small>${copy}</small></span>`;
+            b.onclick=()=>this.selectCharacter(id);characters.append(b);
+        }
+        modes.before(characters);
+        let saved='scout';try{saved=localStorage.getItem('forest-character')||'scout';}catch{}
+        this.selectCharacter(saved);
         this.selectMap('forest');
         this.panel.querySelector('.loadout-start').addEventListener('click',()=>game.startGame());
-        this.menu=document.createElement('button');this.menu.type='button';this.menu.className='loadout-menu';this.menu.textContent='换地图 / 武器';
+        this.menu=document.createElement('button');this.menu.type='button';this.menu.className='loadout-menu';this.menu.textContent='角色 / 地图 / 武器';
         this.menu.addEventListener('click',()=>{
             game.state='start';game.skillUI.close();for(const key of Object.keys(game.player.keys))game.player.keys[key]=false;game.player.touchKeys={};
             this.panel.hidden=false;this.select(game.selectedWeapon||'rifle');
             this.panel.querySelector('[aria-pressed="true"]').focus();
         });document.body.append(this.menu);
-        this.select('rifle');
+        this.select(this.game.selectedCharacter==='silver'?'pistol':'rifle');
     }
     select(kind) {
-        if(!Player.WEAPONS[kind])return;
+        if(!this.availableWeapons.includes(kind))return;
         this.game.selectedWeapon=kind;
         for(const button of this.panel.querySelectorAll('[data-weapon]'))button.setAttribute('aria-pressed',String(button.dataset.weapon===kind));
+        this.paintCharacters();
         this.panel.querySelector('.loadout-start').textContent=`带上${Player.WEAPONS[kind].name} · 出发`;
+    }
+    get availableWeapons(){return this.game.selectedCharacter==='silver'?['pistol','shuriken','dark']:['rifle','shotgun','fireball'];}
+    selectCharacter(id){
+        this.game.selectedCharacter=id==='silver'?'silver':'scout';
+        for(const b of this.panel.querySelectorAll('[data-character]'))b.setAttribute('aria-pressed',String(b.dataset.character===this.game.selectedCharacter));
+        try{localStorage.setItem('forest-character',this.game.selectedCharacter);}catch{}
+        for(const b of this.panel.querySelectorAll('[data-weapon]'))b.hidden=!this.availableWeapons.includes(b.dataset.weapon);
+        this.select(this.availableWeapons.includes(this.game.selectedWeapon)?this.game.selectedWeapon:this.availableWeapons[0]);
+    }
+    paintCharacters(){
+        for(const b of this.panel.querySelectorAll('[data-character], [data-weapon]')){
+            const canvas=b.querySelector('canvas'),c=canvas.getContext('2d');c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,canvas.width,canvas.height);
+            const portrait=!!b.dataset.character;c.translate(canvas.width*.43,portrait?128:108);c.scale(portrait?2.5:2.4,portrait?2.5:2.4);
+            ForestArt.player(c,{x:0,y:0,size:20,hp:100,animTimer:0,walkCycle:0,aimAngle:-.12,characterId:b.dataset.character||this.game.selectedCharacter,weaponType:b.dataset.weapon||(b.dataset.character==='scout'?'rifle':b.dataset.character==='silver'?'pistol':this.game.selectedWeapon)||'rifle'});
+        }
     }
     selectMap(id){
         if(!ForestMap.MAPS[id])return;this.game.selectedMap=id;

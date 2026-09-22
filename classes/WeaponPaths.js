@@ -1,6 +1,12 @@
 /** Weapon branches share combat data, with a small keyboard/touch choice dialog. */
 class WeaponPaths {
     static PATHS={
+        duelist:{weapon:'pistol',name:'决斗点射',desc:'单发伤害 +45%，射速 −15%。'},
+        quickdraw:{weapon:'pistol',name:'疾速拔枪',desc:'射速 +45%，单发伤害 −15%。'},
+        crescent:{weapon:'shuriken',name:'穿月刃',desc:'穿透 +2，单枚伤害 +15%。'},
+        fan:{weapon:'shuriken',name:'五刃齐发',desc:'额外飞镖 +2，单枚伤害 −20%。'},
+        eclipse:{weapon:'dark',name:'月蚀爆裂',desc:'爆裂半径扩大到 105，直击伤害 +15%。'},
+        midnight:{weapon:'dark',name:'暗夜连咒',desc:'射速 +50%，伤害 −20%。'} ,
         rapid:{weapon:'rifle',name:'疾风扫射',desc:'射速 +65%，单发伤害 −28%。密集弹线，持续压制。'},
         heavy:{weapon:'rifle',name:'蓄力重弹',desc:'射速 −50%，单发伤害 +160%，额外穿透 +1。蓄力后打出重弹。'},
         wide:{weapon:'shotgun',name:'扩散弹幕',desc:'额外弹丸 +2，散射角 +65%，单颗伤害 −18%。适合清理近处怪群。'},
@@ -11,6 +17,12 @@ class WeaponPaths {
     static choose(p,id){
         const d=this.PATHS[id];if(!d||d.weapon!==p.weaponType||p.weaponPath)return false;
         p.weaponPath=id;
+        if(id==='duelist'){p.bulletDamage*=1.45;p.attackSpeed*=.85;}
+        if(id==='quickdraw'){p.attackSpeed*=1.45;p.bulletDamage*=.85;}
+        if(id==='crescent'){p.pierce+=2;p.bulletDamage*=1.15;}
+        if(id==='fan'){p.bulletCount+=2;p.bulletDamage*=.8;}
+        if(id==='eclipse')p.bulletDamage*=1.15;
+        if(id==='midnight'){p.attackSpeed*=1.5;p.bulletDamage*=.8;}
         if(id==='rapid'){p.attackSpeed*=1.65;p.bulletDamage*=.72;}
         if(id==='heavy'){p.attackSpeed*=.5;p.bulletDamage*=2.6;p.pierce++;}
         if(id==='wide'){p.bulletCount+=2;p.bulletDamage*=.82;}
@@ -32,7 +44,7 @@ class WeaponPaths {
         this.dialog.innerHTML='<small>武器进阶 · 本局选择一次</small><h2 id="weapon-path-title">这把武器，走哪条路线？</h2><p>选择期间战斗暂停。后续技能强化继续生效。</p><div class="weapon-path-options"></div>';
         for(const [id,d]of Object.entries(WeaponPaths.PATHS))if(d.weapon===g.player.weaponType){
             const b=document.createElement('button');b.type='button';b.dataset.path=id;b.innerHTML=`<strong>${d.name}</strong><canvas width="180" height="105" aria-hidden="true"></canvas><span>${d.desc}</span>`;
-            const c=b.querySelector('canvas').getContext('2d');c.scale(1.8,1.8);ForestArt.player(c,{x:43,y:37,size:20,hp:100,animTimer:0,walkCycle:0,aimAngle:0,weaponType:d.weapon,weaponPath:id,chargeLevel:id==='heavy'?.7:0});
+            const c=b.querySelector('canvas').getContext('2d');c.scale(1.8,1.8);ForestArt.player(c,{x:43,y:37,size:20,hp:100,animTimer:0,walkCycle:0,aimAngle:0,characterId:g.player.characterId,weaponType:d.weapon,weaponPath:id,chargeLevel:id==='heavy'?.7:0});
             b.addEventListener('click',()=>{if(WeaponPaths.choose(g.player,id)){this.dialog.close();g.state='playing';g._announce('进阶：'+d.name,'#ecd299');}});this.dialog.querySelector('div').append(b);
         }
         this.dialog.showModal();this.dialog.querySelector('button').focus();

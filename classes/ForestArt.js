@@ -38,21 +38,24 @@ class ForestArt {
         const angle = Number.isFinite(p.aimAngle) ? p.aimAngle : 0;
         const face = Math.cos(angle) < 0 ? -1 : 1;
         c.scale(face,1);
-        const skin = hurt ? '#fff3d3' : '#efc38e';
+        const silver=p.characterId==='silver';
+        const skin = hurt ? '#fff3d3' : silver?'#ead3c1':'#efc38e';
         const travel=Math.cos(p.angle === undefined ? angle : p.angle)*face;
         // Each foot lifts on its return stroke; the planted foot supports the hips.
         for (const side of [-1,1]) {
             const swing=stride*side*(travel<-.2?-1:1);
             const lift=Math.max(0,Math.cos(cycle+(side<0?Math.PI:0)))*5*intensity;
             const hip=side*5, foot=side*6+swing;
-            this.line(c,[[hip,3],[hip+swing*.4+2,10-lift*.5],[foot,17-lift]],side<0?'#454c3d':'#66684a',6.5);
-            this.oval(c,foot+1,17-lift,5.7,3.4,side<0?'#3b342c':'#57432e');
+            this.line(c,[[hip,3],[hip+swing*.4+2,10-lift*.5],[foot,17-lift]],silver?(side<0?'#252d34':'#404b54'):(side<0?'#454c3d':'#66684a'),silver?5.5:6.5);
+            this.oval(c,foot+1,17-lift,5.7,3.4,silver?'#242d34':side<0?'#3b342c':'#57432e');
             this.line(c,[[foot-3,19-lift],[foot+5,19-lift]],'#bc9b64',1.4);
             this.line(c,[[foot,15-lift],[foot+3,15-lift]],'#c6ad77',1);
         }
         c.translate((hurt?-2:0)-Math.max(0,p.recoilTimer||0)*(p.weaponType==='shotgun'?10:4),bob);
         c.rotate((p.isDashing?.25:.055)*travel*intensity);
         if (p.isDashing) c.translate(travel*3,2);
+        if(silver)this.silverOutfit(c,p,skin,hurt,cycle,intensity);
+        else {
         // Backpack, rolled blanket and scarf have their own follow-through.
         this.oval(c,-10,-7,8,12,'#756f44');
         this.line(c,[[-15,-14],[-16,-3]],'#b4b078',3);
@@ -79,6 +82,7 @@ class ForestArt {
         this.line(c,[[6,-29],[8,-29]],'#eaffdb',1.2);
         this.line(c,[[3,-18],[7,-18]],'#9a674c',1.3);
         this.shape(c,[[-8,-15],[9,-16],[8,-11],[-6,-10]],'#da7747');
+        }
         // Gun pivots independently of movement. Muzzle flash follows the same aim.
         c.save(); c.translate(6,-6);
         c.rotate(Math.atan2(Math.sin(angle),Math.abs(Math.cos(angle))));
@@ -87,8 +91,10 @@ class ForestArt {
         else if(p.weaponType==='shotgun')c.rotate(-Math.sin(Math.min(1,recoil/.22)*Math.PI)*.15);
         c.translate(-Math.max(0,p.recoilTimer||0)*22,0);
         if(p.chargeLevel>0){c.save();c.globalAlpha=p.chargeLevel*.55;this.oval(c,30,-6,8+p.chargeLevel*7,8+p.chargeLevel*7,'#f5c978',null);c.restore();}
+        if(['pistol','shuriken','dark'].includes(p.weaponType))this.silverWeapon(c,p,skin);
+        else {
         // Supporting forearm follows the barrel, so both hands stay on the weapon.
-        this.line(c,[[-12,-2],[-7,8],[14,4]],'#3d625b',6);
+        this.line(c,[[-12,-2],[-7,8],[14,4]],silver?'#35434a':'#3d625b',6);
         this.line(c,[[-6,8],[14,4]],skin,4);
         if(p.weaponType==='fireball') {
             this.line(c,[[-7,5],[28,-3]],'#6f5038',6);
@@ -122,9 +128,54 @@ class ForestArt {
             this.shape(c,[[28,-2],[37,-7],[34,-2],[42,0],[34,2],[36,6],[28,1]],'#ffca63','#e4933d',1);
             this.oval(c,31,-1,5,2,'#fff6ca',null);
         }
+        }
         c.restore();
         if (p.shield>0) { c.strokeStyle='#a5e2d0'; c.lineWidth=1.5; c.beginPath(); c.ellipse(0,-8,25,34,0,0,Math.PI*2); c.stroke(); }
         c.restore();
+    }
+    static silverWeapon(c,p,skin){
+        const cast=Math.sin(Math.min(1,(p.recoilTimer||0)/.09)*Math.PI);
+        if(p.weaponType!=='pistol'){c.rotate(-.35*cast);c.translate(-cast*3,-cast*2);}
+        this.line(c,[[-9,-2],[-2,4],[11,1]],'#35434a',6);this.oval(c,10,1,3.5,3,skin);
+        if(p.weaponType==='pistol'){
+            this.shape(c,[[8,-4],[13,-4],[14,7],[9,8],[7,3]],'#34343a');
+            this.shape(c,[[8,-9],[27,-9],[29,-4],[10,-3]],'#65777a');
+            this.line(c,[[11,-9],[26,-9]],'#cedbd1',1.8);this.line(c,[[24,-8],[24,-4]],'#363c45',3);
+            if(p.muzzleFlash>0)this.shape(c,[[28,-7],[40,-12],[36,-6],[44,-3],[34,-2],[28,-4]],'#ffe2a2',null);
+        }else if(p.weaponType==='shuriken'){
+            c.save();c.translate(16,-2);c.rotate(-cast*2);
+            for(let j=0;j<4;j++){c.rotate(Math.PI/2);this.shape(c,[[0,-2],[11,-4],[4,2],[0,3]],'#cadbd6','#485d67',1);}
+            this.oval(c,0,0,2,2,'#42495c',null);c.restore();
+        }else{
+            this.shape(c,[[12,3],[14,-13],[25,-17],[32,-9],[26,2]],'#433b58','#bdafcf',1.5);
+            this.oval(c,22,-7,5,6,'#b5a3e2',null);this.oval(c,23,-8,2,3,'#eee4ff',null);
+            if(p.muzzleFlash>0||p.recoilTimer>0){c.strokeStyle='#c1a8ef';c.lineWidth=1.6;c.beginPath();c.ellipse(23,-7,17+cast*4,13,cast,0,Math.PI*2);c.stroke();}
+        }
+    }
+    static silverOutfit(c,p,skin,hurt,cycle,intensity){
+        const sway=Math.sin(cycle-.8)*intensity*4+Math.sin((p.animTimer||0)*2)*1.5;
+        // White tied hair and split coat tails follow the body's motion.
+        this.shape(c,[[-6,-32],[-17,-31],[-22-sway,-21],[-18-sway,-9],[-11-sway,-16],[-12,-27]],'#c6d5d3');
+        this.line(c,[[-16,-29],[-18-sway,-20],[-16-sway,-14]],'#f1f1df',2);
+        this.shape(c,[[-10,-9],[-18-sway,15],[-6,10],[0,-3]],'#283940');
+        this.shape(c,[[2,-8],[11,1],[15-sway,14],[3,10]],'#354a50');
+        this.line(c,[[-15-sway,12],[-7,8]],'#9ab7b3',1.3);
+        this.shape(c,[[-8,-15],[6,-15],[10,-5],[6,5],[-6,5],[-10,-5]],hurt?'#eaf0db':'#303d46');
+        this.shape(c,[[-8,-14],[-3,-13],[0,-3],[-5,2],[-9,-5]],'#607b7d');
+        this.shape(c,[[1,-14],[6,-15],[9,-5],[4,-3]],'#465c65');
+        this.line(c,[[-6,4],[7,4]],'#8e8063',3);this.oval(c,2,4,2,2,'#d0d9bf',null);
+        this.shape(c,[[5,2],[11,3],[10,10],[5,9]],'#333438');
+        this.line(c,[[-7,-11],[6,2]],'#a0b5aa',1.8);
+        this.oval(c,0,-24,10,11,skin);this.oval(c,10,-22,2.5,3,skin);
+        this.shape(c,[[-11,-24],[-12,-33],[-7,-40],[3,-42],[11,-35],[12,-27],[7,-31],[3,-30],[-1,-34],[-6,-25],[-7,-18]],'#dbe5df');
+        this.shape(c,[[-8,-35],[-2,-40],[7,-36],[2,-34],[-3,-29]],'#faf8e9',null);
+        this.line(c,[[0,-37],[-3,-30]],'#a8bfc0',1);
+        this.line(c,[[3,-27],[8,-28]],'#343e47',1.4);this.oval(c,6,-26,1.4,1.8,'#82c5bf',null);
+        this.shape(c,[[-7,-23],[1,-21],[10,-23],[9,-16],[2,-13],[-5,-16]],'#232e36');
+        this.line(c,[[-3,-19],[6,-18]],'#6c8389',1);
+        this.shape(c,[[-6,-15],[8,-15],[6,-10],[-6,-11]],'#4b7172');
+        this.shape(c,[[-7,-14],[-24-(p.isDashing?12:0),-9+sway],[-19,-5+sway],[-4,-10]],'#6e9793');
+        this.oval(c,11,-20,1.2,1.8,'#d2c691',null);
     }
     static enemy(c,e,cameraX=0,cameraY=0,death=0) {
         c.save(); c.translate(e.x-cameraX,e.y-cameraY);
@@ -395,6 +446,9 @@ class ForestArt {
                 c.restore();
             }
             if(heavy){c.globalAlpha*=.28;ForestArt.oval(c,10+p*18,0,6+p*20,5+p*14,'#c5ac80',null);}
+        } else if(m.kind==='dark-burst'){
+            const r=m.radius*(.2+p*.8);this.oval(c,0,0,r,r,'rgba(88,61,126,.22)','#c0a9e4',2);
+            c.rotate(p*2);for(let j=0;j<6;j++){const a=j*Math.PI/3;this.line(c,[[Math.cos(a)*r*.6,Math.sin(a)*r*.6],[Math.cos(a+.2)*r,Math.sin(a+.2)*r]],'#d7c5f0',2);}
         } else if(m.kind==='sweep') {
             c.rotate(m.angle||0);
             const halfArc=EnemyConfig.ATTACKS.elite.halfArc;

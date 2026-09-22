@@ -192,7 +192,7 @@ class Game {
 
         // 开始界面
         if (this.state === 'start') {
-            if(['1','2','3'].includes(key)) this.loadout?.select(['rifle','shotgun','fireball'][Number(key)-1]);
+            if(['1','2','3'].includes(key)) this.loadout?.select(this.loadout.availableWeapons[Number(key)-1]);
             if (key === 'enter' || key === ' ') {
                 this.startGame();
             }
@@ -283,6 +283,7 @@ class Game {
         this.mapEventHit=-1;this.mapEventNotice=-1;
         // 重置玩家
         this.player.reset(0, 0);
+        this.player.characterId=this.selectedCharacter==='silver'?'silver':'scout';
         this.weaponFields=[];this.weaponPaths?.reset();
         this.ruins=new RuinEncounter();
         this.opening=new OpeningDirector();this.player.expToNext=15;
@@ -709,6 +710,16 @@ class Game {
         if(bullet.weaponType==='shotgun') {
             const angle=Math.atan2(bullet.vy,bullet.vx);
             if(primary!==this.boss) {primary.knockbackX+=Math.cos(angle)*3;primary.knockbackY+=Math.sin(angle)*3;}
+        }
+        if(bullet.weaponType==='dark'&&!bullet.exploded){
+            bullet.exploded=true;const radius=bullet.weaponPath==='eclipse'?105:75;
+            this.particleManager.spawnExplosion(bullet.x,bullet.y,'#ac98df',16);
+            this.enemyManager.addImpact(bullet.x,bullet.y,'dark-burst',0,radius);
+            for(const e of this.enemyManager.pool)if(e!==primary&&e.active&&e.hp>0&&Utils.circleCollision(bullet.x,bullet.y,radius,e.x,e.y,e.size)){
+                e.takeDamage(bullet.damage*.65,Utils.angle(bullet.x,bullet.y,e.x,e.y));this.uiManager.addDamageNumber(e.x,e.y-e.size,bullet.damage*.65,false);
+            }
+            if(this.boss.active&&this.boss!==primary&&Utils.circleCollision(bullet.x,bullet.y,radius,this.boss.x,this.boss.y,this.boss.size))this.boss.takeDamage(bullet.damage*.65);
+            return;
         }
         if(bullet.weaponType!=='fireball'||bullet.exploded) return;
         bullet.exploded=true;

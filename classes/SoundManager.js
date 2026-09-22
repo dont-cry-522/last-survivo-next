@@ -116,6 +116,7 @@ class SoundManager {
     /** 射击音效 */
     weaponShoot(kind,path=null) {
         if(!this.enabled||!this.ctx)return;
+        if(['pistol','shuriken','dark'].includes(kind)){this._playElement(kind);return;}
         this._playElement(['rapid','heavy','wide','focus','ground','split'].includes(path)?path:kind==='fireball'?'fire_cast':kind==='shotgun'?'shotgun':'rifle');
     }
 
@@ -136,7 +137,13 @@ class SoundManager {
                 seed=(Math.imul(seed,1664525)+1013904223)>>>0;
                 const noise=seed/2147483648-1,t=i/rate;low+=.035*(noise-low);
                 let value;
-                if(kind==='rapid'){
+                if(kind==='pistol'){
+                    value=(noise-low)*.8*Math.exp(-t*80)+Math.sin(t*2*Math.PI*150)*.35*Math.exp(-t*35);
+                }else if(kind==='shuriken'){
+                    value=(noise-low)*Math.sin(Math.PI*Math.min(1,t/.2))*.6*Math.exp(-t*9)+Math.sin(t*2*Math.PI*1900)*.12*Math.exp(-t*65);
+                }else if(kind==='dark'){
+                    value=Math.sin(2*Math.PI*(160*t-220*t*t))*.45*Math.exp(-t*14)+low*2*Math.exp(-t*10)+noise*.15*Math.exp(-t*35);
+                }else if(kind==='rapid'){
                     value=(noise-low)*.65*Math.exp(-t*95)+noise*.2*Math.exp(-Math.abs(t-.025)*550);
                 }else if(kind==='heavy'){
                     value=Math.sin(2*Math.PI*(92*t-90*t*t))*.52*Math.exp(-t*13)+low*2.2*Math.exp(-t*8)+noise*.22*Math.exp(-t*65);
@@ -214,7 +221,7 @@ class SoundManager {
         const spacing=kind==='shotgun'?.09:kind==='fireball'?.12:.045;
         if(now-(this.lastWeaponImpact[kind]??-Infinity)<spacing)return;
         this.lastWeaponImpact[kind]=now;
-        this._playElement(path==='heavy'?'heavy':kind==='shotgun'?'shotgun':material==='tank'||material==='elite'?'armor':material?'flesh':'gun');
+        this._playElement(kind==='dark'?'shadow':kind==='shuriken'?'shuriken':path==='heavy'?'heavy':kind==='shotgun'?'shotgun':material==='tank'||material==='elite'?'armor':material?'flesh':'gun');
         if(crit)this._playNoise(.035,.035,1700);
     }
 
