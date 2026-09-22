@@ -282,10 +282,11 @@ class Game {
         ForestMap.select(this.selectedMap||'forest');
         this.mapEventHit=-1;this.mapEventNotice=-1;
         // 重置玩家
-        this.player.reset(0, 0);
+        const layout=this.selectedMode==='endless'?ForestMap.randomize(Math.floor(Math.random()*4294967296)):null;
+        this.player.reset(layout?.spawn.x||0,layout?.spawn.y||0);
         this.player.characterId=this.selectedCharacter==='silver'?'silver':'scout';
         this.weaponFields=[];this.weaponPaths?.reset();
-        this.ruins=new RuinEncounter();
+        this.ruins=new RuinEncounter();if(layout){this.ruins.x=layout.ruin.x;this.ruins.y=layout.ruin.y;}
         this.opening=new OpeningDirector();this.player.expToNext=15;
         this.player.setWeapon(this.selectedWeapon||'rifle');
         if(this.loadout) this.loadout.hide();
@@ -312,8 +313,8 @@ class Game {
         this.wave = 1;
 
         // 重置相机
-        this.cameraX = 0;
-        this.cameraY = 0;
+        this.cameraX = this.player.x-this.canvas.width/2;
+        this.cameraY = this.player.y-this.canvas.height/2;
         this.screenShake = 0;
         this.impactKick=null;this.lastImpactAt=-1;
 

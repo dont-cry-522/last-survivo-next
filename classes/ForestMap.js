@@ -66,7 +66,7 @@ class ForestMap {
     }
     static select(id){
         this._forest ||= {regions:this.regions,patches:this.patches};
-        this.selected=this.MAPS[id]?id:'forest';this._trees=null;
+        this.selected=this.MAPS[id]?id:'forest';this._trees=null;this.layout=null;this.vents=[{x:420,y:280},{x:1250,y:330},{x:800,y:1000}];
         if(this.selected==='forest'){this.regions=this._forest.regions;this.patches=this._forest.patches;return;}
         const snow=this.selected==='snow';
         this.regions=[{name:snow?'避风营地':'岩间营地',color:snow?'#bbc8b9':'#9a7755',x:0,y:0},
@@ -76,6 +76,14 @@ class ForestMap {
         this.patches=[{x:420,y:280,rx:170,ry:75,kind:snow?3:5},{x:-340,y:-700,rx:230,ry:150,kind:snow?3:5},
             {x:1250,y:330,rx:340,ry:180,kind:snow?4:5},{x:1850,y:-350,rx:300,ry:200,kind:snow?4:2},
             {x:-1500,y:340,rx:260,ry:150,kind:snow?3:2},{x:800,y:1000,rx:260,ry:120,kind:snow?3:5}];
+    }
+    static randomize(seed){
+        this.layout=ForestLayout.generate(seed,this.selected);const l=this.layout;
+        this._trees=l.trees;this.patches=l.patches;
+        this.regions=this.regions.map((r,i)=>({...r,...[l.spawn,l.nodes[2],l.nodes[3],l.ruin][i]}));
+        if(this.selected==='forest')this.regions[0].name='出发营地';
+        this.vents=l.patches.slice(0,3).map(p=>({x:p.x,y:p.y}));
+        return l;
     }
     static width=5120;
     static height=2880;
@@ -94,7 +102,7 @@ class ForestMap {
         {x:-1400,y:300,rx:270,ry:150,kind:2},
         {x:-1950,y:-380,rx:230,ry:110,kind:2}
     ];
-    static region(x,y){return Math.abs(x)<600&&Math.abs(y)<400?this.regions[0]:x>650?this.regions[2]:x<-650?this.regions[3]:this.regions[1];}
+    static region(x,y){if(this.layout)return this.regions.reduce((a,b)=>Math.hypot(x-a.x,y-a.y)<Math.hypot(x-b.x,y-b.y)?a:b);return Math.abs(x)<600&&Math.abs(y)<400?this.regions[0]:x>650?this.regions[2]:x<-650?this.regions[3]:this.regions[1];}
     static get trees(){
         if(this._trees)return this._trees;
         const trees=[];
@@ -206,9 +214,12 @@ class ForestMap {
             if(n>.7&&this.selected==='forest'){c.save();c.translate(px,py);for(let i=0;i<5;i++){c.rotate(1.25);ForestArt.oval(c,0,-6,3,9,'#527543','#2f5035',.6);}c.restore();}
         }c.globalAlpha=1;
         c.strokeStyle='#a59c6c';c.lineWidth=130;c.globalAlpha=.4;
+        if(this.layout){for(const road of this.layout.roads)ForestArt.line(c,road.map(p=>[p.x,p.y]),this.theme.path,130);}
+        else {
         ForestArt.line(c,[[-2560,0],[-1500,15],[-600,0],[0,0],[800,-10],[1600,0],[2560,0]],this.theme.path,130);
-        ForestArt.line(c,[[0,-1440],[20,-650],[0,0],[-15,800],[0,1440]],this.theme.path,120);c.globalAlpha=1;
-        ForestArt.oval(c,0,0,290,190,this.theme.camp,null);
+        ForestArt.line(c,[[0,-1440],[20,-650],[0,0],[-15,800],[0,1440]],this.theme.path,120);}
+        c.globalAlpha=1;
+        ForestArt.oval(c,this.layout?.spawn.x||0,this.layout?.spawn.y||0,290,190,this.theme.camp,null);
         for(const p of this.patches){
             if(p.x+p.rx<cx||p.x-p.rx>cx+w||p.y+p.ry<cy||p.y-p.ry>cy+h)continue;
             WoodlandScene.drawPatches(c,p.kind,[p]);
@@ -218,14 +229,17 @@ class ForestMap {
             }
         }
         // Camp landmarks remain passable; only the clearly drawn tree bases collide.
+        c.save();if(this.layout)c.translate(this.layout.spawn.x,this.layout.spawn.y);
         ForestArt.shape(c,[[-240,-65],[-170,-165],[-100,-65]],'#c4ac6f','#4d5439',3);
         ForestArt.shape(c,[[-205,-66],[-170,-132],[-148,-66]],'#495741',null);
         ForestArt.line(c,[[130,-90],[180,-100]],'#674c32',17);
         for(let i=0;i<9;i++){const a=i*Math.PI*2/9;ForestArt.oval(c,Math.cos(a)*35,70+Math.sin(a)*20,8,5,'#b0ae88','#53634c');}
         ForestArt.shape(c,[[-14,72],[1,38+Math.sin(time*6)*3],[8,57],[17,44],[17,74]],'#e7a654',null);
         ForestArt.shape(c,[[-5,72],[3,55],[10,73]],'#f7d680',null);
+        c.restore();c.save();if(this.layout)c.translate(this.layout.ruin.x+1500,this.layout.ruin.y);
         for(let j=0;j<18;j++){const x=-1650+(j%6)*57,y=-180+Math.floor(j/6)*42;ForestArt.shape(c,[[x,y],[x+48,y-2],[x+51,y+30],[x-3,y+32]],'#a09a78','#576347',2);}
         for(const x of [-1710,-1300]){ForestArt.shape(c,[[x,-260],[x+55,-265],[x+47,-170],[x-8,-165]],'#96987a','#46543d',3);ForestArt.line(c,[[x+10,-240],[x+30,-218],[x+13,-193]],'#59664e',3);}
+        c.restore();
         // Boundary rock belt sits outside the walkable rectangle, not over hidden floor.
         for(let x=-2640;x<=2640;x+=90)for(const y of [-1475,1475])ForestArt.oval(c,x,y,60,48,'#465446','#263c30',3);
         for(let y=-1440;y<=1440;y+=90)for(const x of [-2595,2595])ForestArt.oval(c,x,y,50,60,'#465446','#263c30',3);
@@ -278,12 +292,20 @@ class ForestMap {
     static minimap(c,player,time=0){
         const w=c.canvas.width,h=c.canvas.height;
         c.clearRect(0,0,w,h);c.fillStyle=this.theme.base;c.fillRect(0,0,w,h);
+        if(this.layout){
+            const px=x=>(x+2560)/5120*w,py=y=>(y+1440)/2880*h;
+            for(const t of this.trees)if(!t.destroyed){c.fillStyle='#315447';c.fillRect(px(t.x),py(t.y),2,2);}
+            for(const road of this.layout.roads)ForestArt.line(c,road.map(p=>[px(p.x),py(p.y)]),'#bdb285',2);
+            c.font='10px sans-serif';c.textAlign='center';c.fillStyle='#f1dfac';
+            for(const [n,label]of [[this.layout.spawn,'营地'],[this.layout.ruin,'遗迹']]){c.fillRect(px(n.x)-2,py(n.y)-2,4,4);c.fillText(label,px(n.x),py(n.y)-6);}
+        }else{
         c.fillStyle=this.regions[2].color;c.fillRect(w*.63,0,w*.37,h);c.fillStyle=this.regions[3].color;c.fillRect(0,0,w*.37,h);
         c.strokeStyle='#a39e70';c.lineWidth=3;ForestArt.line(c,[[0,h/2],[w,h/2]],'#a39e70',3);ForestArt.line(c,[[w/2,0],[w/2,h]],'#a39e70',3);
         c.font='11px sans-serif';c.textAlign='center';c.fillStyle='#e4dfb8';
         c.fillText(this.regions[1].name.slice(0,2),w/2,14);c.fillText(this.regions[1].name.slice(0,2),w/2,h-7);c.fillText('营地',w/2,h/2-6);c.fillText('遗迹',w*.17,h/2-6);c.fillText(this.regions[2].name.slice(0,2),w*.83,h/2-6);
-        const x=(player.x+2560)/5120*w,y=(player.y+1440)/2880*h;
         c.fillStyle='#e1b653';c.fillRect((1060/5120)*w-3,h/2-3,6,6);
+        }
+        const x=(player.x+2560)/5120*w,y=(player.y+1440)/2880*h;
         if(this.selected==='ash'){
             const e=this.eventAt(time);
             for(const [i,v]of this.vents.entries()){

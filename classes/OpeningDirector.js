@@ -20,7 +20,7 @@ class OpeningDirector {
         if(game.player.hp<=0)return;
         this.train(game);
         const time=game.survivalTime;
-        if(this.trained&&!this.ruinsHint&&time>=30){this.ruinsHint=true;game._announce('沿主路向西：挑战遗迹守卫','#d9cd9a');}
+        if(this.trained&&!this.ruinsHint&&time>=30){this.ruinsHint=true;game._announce('沿小地图路线：挑战遗迹守卫','#d9cd9a');}
         if(game.ruins.state==='claimed'&&this.claimTime===null)this.claimTime=time;
         if(this.claimTime!==null&&!this.trialStarted&&time-this.claimTime>=20&&!game.boss.active){
             const pos=ForestMap.spawn(game.player,50,game.canvas.width,game.canvas.height);
@@ -39,7 +39,7 @@ class OpeningDirector {
         if(this.claimTime!==null&&!this.trialStarted)return game.boss.active?'精英追击等待首领战结束':`准备迎战精英 · ${Math.max(0,Math.ceil(20-(game.survivalTime-this.claimTime)))} 秒`;
         if(this.trialStarted&&!this.trialWon)return '目标：击败追击精英';
         if(this.trialWon)return '精英挑战完成 · 继续探索';
-        if(game.survivalTime<30)return this.trainingName+' · 向西探索遗迹';
-        return '目标：向西挑战遗迹宝箱';
+        if(game.survivalTime<30)return this.trainingName+' · 按小地图探索遗迹';
+        return '目标：按小地图寻找遗迹宝箱';
     }
 }
