@@ -53,6 +53,7 @@ class Enemy {
      * 初始化敌人
      */
     init(type, x, y, hpMultiplier = 1, speedMultiplier = 1) {
+        this.fieldGuard=null;
         this.chapterGuard=null;this.ruinGuard=null;this.openingTrial=null;this._forestDetour=null;this.terrainAware=false;
         const cfg = EnemyConfig.TYPES[type];
         if (!cfg) return;
@@ -113,7 +114,7 @@ class Enemy {
             this.impactTimer=.18;this.impactStrength=Math.min(1.6,.45+amount/Math.max(1,this.maxHp)*4);
         }
 
-        const knockbackForce = amount * EnemyConfig.KNOCKBACK_FORCE_COEFFICIENT;
+        const knockbackForce = Math.min(6,amount * EnemyConfig.KNOCKBACK_FORCE_COEFFICIENT) * (['tank','elite'].includes(this.type)?.3:1);
         this.knockbackX += Math.cos(bulletAngle) * knockbackForce;
         this.knockbackY += Math.sin(bulletAngle) * knockbackForce;
 

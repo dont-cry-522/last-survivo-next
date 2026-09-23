@@ -97,6 +97,21 @@ class SkillVisuals {
         c.save();c.globalAlpha=Math.min(1,e.life/e.duration*1.5);
         const palette={ice:'#70d9ff',fire:'#ff853e',meteor:'#ff6433',nova:'#ff7134',phoenix:'#ffb844',lightning:'#ffe650',beam:'#d9dcb4',shadow:'#b8a3ce',heal:'#b8d5a3',soul:'#d7a0ae',mark:'#cf929a',gun:'#e6cd98',pickup:'#d6c793'};
         const color=e.color||palette[e.kind]||'#dccca1';
+        // Bounded impact accents: opaque cores, transparent shock fronts and debris.
+        if(['ice','fire','meteor','nova','phoenix','lightning','shadow'].includes(e.kind)){
+            c.save();const scale=Math.min(1,r/75),burst=Math.sin(Math.min(1,progress*3)*Math.PI/2);
+            c.globalAlpha*=.22*(1-progress);ForestArt.oval(c,x,y,Math.max(4,r*burst),Math.max(3,r*burst*.6),color,null);
+            c.globalAlpha=Math.min(.85,e.life/e.duration);
+            for(let i=0;i<(r>65?10:5);i++){
+                const a=i*2.399+e.angle,rr=(10+r*.7)*progress,px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr*.65-progress*(1-progress)*45;
+                if(e.kind==='ice')SkillVisuals.crystal(c,px,py,(3+scale*4)*(1-progress*.6),'#c5f5ff');
+                else if(e.kind==='lightning')ForestArt.line(c,[[px,py],[px+Math.cos(a)*9,py+Math.sin(a)*9]],'#fff5bd',1.5);
+                else ForestArt.oval(c,px,py,1.5+scale,2+scale*2,e.kind==='shadow'?'#e0bafa':'#ffd383',null);
+            }
+            if(r>65){c.globalAlpha*=.55;SkillVisuals.ring(c,x,y,r*(.25+progress*.75),color,4*(1-progress)+1);}
+            c.restore();
+        }
+
         if(e.kind==='lightning'){
             SkillVisuals.bolt(c,x,y,(e.x2??e.x)-cx,(e.y2??e.y-100)-cy,color,e.born+Math.floor(progress*5)*.7,2.8);
             const tx=(e.x2??e.x)-cx,ty=(e.y2??e.y)-cy;
@@ -137,6 +152,7 @@ class SkillVisuals {
             for(let i=0;i<3;i++){const a=e.angle+(i-1)*.45;ForestArt.line(c,[[x,y],[x+Math.cos(a)*r*(.4+progress),y+Math.sin(a)*r*(.4+progress)]],color,1.6);}
         }else if(e.kind==='shadow'||e.kind==='mark'){
             c.translate(x,y);c.rotate(e.angle+progress*.4);c.beginPath();c.arc(0,0,r*(.4+progress*.6),-.9,1.6);c.strokeStyle=color;c.lineWidth=4*(1-progress)+1;c.stroke();
+            if(r>35){c.rotate(-progress*1.1);SkillVisuals.rune(c,0,0,r*.65,color,5);}
             ForestArt.line(c,[[-r*.4,-r*.4],[r*.4,r*.4]],color,2);if(e.kind==='mark')ForestArt.line(c,[[-r*.4,r*.4],[r*.4,-r*.4]],color,2);
         }else{SkillVisuals.rune(c,x,y,r*(.5+progress*.5),color);}
         c.restore();

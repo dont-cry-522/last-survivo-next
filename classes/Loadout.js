@@ -4,7 +4,7 @@ class Loadout {
         this.game=game;
         this.panel=document.createElement('section');
         this.panel.className='loadout';this.panel.setAttribute('aria-label','出发前选择角色、地图与武器');
-        this.panel.innerHTML=`<div class="loadout-inner"><p class="loadout-eyebrow">林地远征 / 战斗成长 32</p><h1>这次，去哪里远征？</h1><p class="loadout-intro">选好角色、地图和武器。无尽模式每局重绘地形，从不同营地出发。环境影响你，也影响怪物。2 级强化武器，3 级选择分支。</p><p class="loadout-guide"><a href="skills.html">查看 64 个技能特效 ↗</a></p><div class="weapon-choices" role="group" aria-label="武器"></div><button class="loadout-start" type="button">带上连发枪 · 出发</button><p class="loadout-help">电脑：1 / 2 / 3 选择 · Enter 出发 · WASD 移动 · Shift 翻滚 / 瞬移<br>手机：点选角色、地图与武器 · 左侧摇杆移动 · 右侧翻滚 / 瞬移</p></div>`;
+        this.panel.innerHTML=`<div class="loadout-inner"><p class="loadout-eyebrow">林地远征 / 探索突围 33</p><h1>这次，去哪里远征？</h1><p class="loadout-intro">选好角色、地图和武器。无尽模式每局重绘地形，从不同营地出发。环境影响你，也影响怪物。2 级强化武器，3 级选择分支。</p><p class="loadout-guide"><a href="skills.html">查看 64 个技能特效 ↗</a></p><div class="weapon-choices" role="group" aria-label="武器"></div><button class="loadout-start" type="button">带上连发枪 · 出发</button><p class="loadout-help">电脑：1 / 2 / 3 选择 · Enter 出发 · WASD 移动 · Shift 翻滚 / 瞬移<br>手机：点选角色、地图与武器 · 左侧摇杆移动 · 右侧翻滚 / 瞬移</p></div>`;
         const descriptions={pistol:['精准点射','直线高速 · 单发重击','预判走位，把握射击路线'],shuriken:['穿透投掷','三枚扇形 · 穿透一敌','旋转月刃，覆盖追击路线'],dark:['暗能爆裂','追踪暗球 · 范围伤害','聚集敌人，用暗月爆裂清场'],rifle:['持续压制','射速快 · 中远距离','适合边移动边持续输出'],shotgun:['近身爆发','五发散射 · 强击退','贴近时伤害更集中'],fireball:['范围灼烧','火球爆炸 · 持续燃烧','适合应对聚集的怪群']};
         for(const [kind,weapon] of Object.entries(Player.WEAPONS)) {
             const button=document.createElement('button');button.type='button';button.dataset.weapon=kind;

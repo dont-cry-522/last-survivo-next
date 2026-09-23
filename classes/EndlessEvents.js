@@ -1,8 +1,8 @@
 /** Optional timed encounters for endless runs. All clocks use simulation time. */
 class EndlessEvents {
-    constructor(game){this.game=game;this.shots=[];this.event=null;this.nextAt=55;this.dangerUntil=0;this.lastAlert=-99;}
+    constructor(game){this.game=game;this.shots=[];this.event=null;this.nextAt=55;this.dangerUntil=0;this.lastAlert=-99;this.field=typeof FieldEncounters!=='undefined'?new FieldEncounters(game):null;}
     get intensity(){const g=this.game;return this.event?.phase==='warning'||g.survivalTime<this.dangerUntil?1.22:this.event?1.04:.88;}
-    get objective(){const e=this.event;if(!e)return '';const left=Math.max(0,Math.ceil(e.ends-this.game.survivalTime));return e.phase==='warning'?`补给信号 · ${Math.max(0,Math.ceil(e.starts-this.game.survivalTime))} 秒后守卫来袭`:`限时补给 · 剩余 ${left} 秒 · ${e.contested?'先清理附近守卫':`靠近驻守 ${Math.floor(e.progress)}/5 秒`}`;}
+    get objective(){const e=this.event;if(!e){const site=this.game.survivalTime>60?this.field?.sites.filter(s=>s.state!=='claimed').sort((a,b)=>Math.hypot(a.x-this.game.player.x,a.y-this.game.player.y)-Math.hypot(b.x-this.game.player.x,b.y-this.game.player.y))[0]:null;return site?'探索：'+site.name+' · 按小地图寻找奖励':'';}const left=Math.max(0,Math.ceil(e.ends-this.game.survivalTime));return e.phase==='warning'?`补给信号 · ${Math.max(0,Math.ceil(e.starts-this.game.survivalTime))} 秒后守卫来袭`:`限时补给 · 剩余 ${left} 秒 · ${e.contested?'先清理附近守卫':`靠近驻守 ${Math.floor(e.progress)}/5 秒`}`;}
     begin(){
         const g=this.game;
         for(let i=0;i<24;i++){
@@ -15,6 +15,7 @@ class EndlessEvents {
     cast(e){
         const g=this.game;
         if(e.type==='spitter'&&this.shots.length<80){
+            this.field?.lob(e);
             this.shots.push({x:e.x,y:e.y,vx:Math.cos(e.attackAngle)*220,vy:Math.sin(e.attackAngle)*220,life:3,damage:e.damage});
         }
         if(e.type==='shaman'){
@@ -24,6 +25,7 @@ class EndlessEvents {
     }
     update(dt){
         const g=this.game;if(g.state!=='playing'||g.player.hp<=0)return;
+        this.field?.update(dt);
         let pressure=0,danger=false,support=false;
         for(const e of g.enemyManager.pool){
             if(!e.active||e.hp<=0)continue;
@@ -60,6 +62,7 @@ class EndlessEvents {
         if(e.progress>=5){this.event=null;this.nextAt=g.survivalTime+70+Math.random()*25;g.player.hp=Math.min(g.player.maxHp,g.player.hp+g.player.maxHp*.25);g._announce('补给到手 · 恢复 25% 生命，选择额外技能');g.triggerUpgrade();}
     }
     draw(c,cx,cy,time){
+        this.field?.draw(c,cx,cy,time);
         c.save();
         for(const s of this.shots){const x=s.x-cx,y=s.y-cy;if(x< -30||y< -30||x>c.canvas.width+30||y>c.canvas.height+30)continue;ForestArt.oval(c,x,y,8,8,'#815599','#e4b2e3',2);ForestArt.oval(c,x-2,y-2,2,2,'#fff0d1',null);}
         const e=this.event;

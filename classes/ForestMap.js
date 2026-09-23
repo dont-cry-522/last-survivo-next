@@ -297,7 +297,8 @@ class ForestMap {
             for(const t of this.trees)if(!t.destroyed){c.fillStyle='#315447';c.fillRect(px(t.x),py(t.y),2,2);}
             for(const road of this.layout.roads)ForestArt.line(c,road.map(p=>[px(p.x),py(p.y)]),'#bdb285',2);
             c.font='10px sans-serif';c.textAlign='center';c.fillStyle='#f1dfac';
-            for(const [n,label]of [[this.layout.spawn,'营地'],[this.layout.ruin,'遗迹']]){c.fillRect(px(n.x)-2,py(n.y)-2,4,4);c.fillText(label,px(n.x),py(n.y)-6);}
+            for(const s of window.game?.endlessEvents?.field?.sites||[]){c.fillStyle=s.state==='claimed'?'#708776':'#8de4dd';c.fillRect(px(s.x)-3,py(s.y)-3,6,6);c.fillText(s.reward==='skill'?'祭坛':'补给',px(s.x),py(s.y)+12);}
+            c.fillStyle='#f1dfac';for(const [n,label]of [[this.layout.spawn,'营地'],[this.layout.ruin,'遗迹']]){c.fillRect(px(n.x)-2,py(n.y)-2,4,4);c.fillText(label,px(n.x),py(n.y)-6);}
         }else{
         c.fillStyle=this.regions[2].color;c.fillRect(w*.63,0,w*.37,h);c.fillStyle=this.regions[3].color;c.fillRect(0,0,w*.37,h);
         c.strokeStyle='#a39e70';c.lineWidth=3;ForestArt.line(c,[[0,h/2],[w,h/2]],'#a39e70',3);ForestArt.line(c,[[w/2,0],[w/2,h]],'#a39e70',3);
