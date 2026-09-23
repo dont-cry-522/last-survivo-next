@@ -137,6 +137,7 @@ class Game {
     bindEvents() {
         // 键盘
         window.addEventListener('keydown', (e) => {
+            if(e.key==='Escape')e.preventDefault();
             this.onKeyDown(e.key.toLowerCase());
             // 阻止方向键滚动页面
             if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) {
@@ -280,6 +281,7 @@ class Game {
      * 重置游戏
      */
     resetGame() {
+        if(this.loadout){this.loadout.returnState=null;this.loadout.pauseDialog?.close();if(this.loadout.back)this.loadout.back.hidden=true;}
         this.pendingUpgrades=0;this.hitFeedback=null;this.heartbeatTimer=0;
         this.expedition?.dispose();this.expedition=null;
         ForestMap.select(this.selectedMap||'forest');
@@ -345,6 +347,8 @@ class Game {
      * 切换暂停
      */
     togglePause() {
+        if(this.loadout?.returnState){this.loadout.resumeRun();return;}
+        if(this.loadout&&this.state==='playing'){this.loadout.pauseRun();return;}
         if (this.state === 'playing') {
             this.state = 'paused';
             this.audio.pause();
