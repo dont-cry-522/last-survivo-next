@@ -75,7 +75,7 @@ class Enemy {
         this.speed = cfg.speed * speedMultiplier;
         this.damage = cfg.damage;
         this.size = cfg.size;
-        this.exp = cfg.exp;
+        this.exp = Math.round(cfg.exp * (1 + Math.max(0,hpMultiplier-1)*.35));
         this.gold = cfg.gold;
         this.color = cfg.color;
         this.glowColor = cfg.glowColor;
@@ -363,12 +363,12 @@ class EnemyManager extends ObjectPool {
                 }
                 if (e.attackTouches(player)) {
                     e.attackHasHit = true;
-                    player.takeDamage(e.damage);
+                    player.takeDamage(e.damage,{x:e.x,y:e.y,kind:e.type==='exploder'?'爆炸':'近战'});
                 }
                 continue;
             }
             if (!e.isExploder && !e.frozen && !e.paralyzed && e.contactCooldown <= 0 && Utils.circleCollision(e.x, e.y, e.size, player.x, player.y, player.size)) {
-                player.takeDamage(e.damage);
+                player.takeDamage(e.damage,{x:e.x,y:e.y,kind:e.type==='exploder'?'爆炸':'近战'});
                 e.attackPose = 0.24;
                 e.contactCooldown = EnemyConfig.CONTACT_DAMAGE_COOLDOWN;
             }
@@ -405,7 +405,7 @@ class EnemyManager extends ObjectPool {
             particleManager.spawnExplosion(e.x, e.y, EnemyConfig.EXPLODE_PARTICLE_COLOR, EnemyConfig.EXPLODE_PARTICLE_COUNT);
             const dist = Utils.distance(e.x, e.y, player.x, player.y);
             if (dist < e.explodeRadius + player.size) {
-                player.takeDamage(e.damage);
+                player.takeDamage(e.damage,{x:e.x,y:e.y,kind:e.type==='exploder'?'爆炸':'近战'});
             }
         }
 

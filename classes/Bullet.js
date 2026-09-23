@@ -38,7 +38,7 @@ class Bullet {
     init(x, y, angle, damage, speed, pierce, target = null, generation = 0) {
         this.active = true;
         this.weaponType='rifle';this.soundKind=null;
-        this.exploded=false;
+        this.exploded=false;this._frostBoosted=false;
         this.weaponPath=null;this.branchDone=false;
         this.blastRadius=65;
         this.size=5;

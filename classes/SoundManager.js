@@ -285,9 +285,10 @@ class SoundManager {
     }
 
     /** 受击音效 */
+    heartbeat(){this._playTone(65,.16,'sine',.16);this._playTone(92,.1,'sine',.08);}
     playerHit() {
-        this._playTone(150, 0.3, 'sawtooth', 0.2);
-        this._playTone(100, 0.25, 'square', 0.15);
+        this._playTone(115, .18, 'sine', .24);
+        this._playNoise(.09,.14,650);
     }
 
     // ==================== 子弹音效 ====================

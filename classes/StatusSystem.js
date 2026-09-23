@@ -41,6 +41,11 @@ class StatusSystem {
         const s = this._data.get(enemy);
         if (!s) return;
 
+        s.controlRecovery=Math.max(0,(s.controlRecovery||0)-deltaTime);
+        if(s.frozen||s.paralyzed){
+            s.controlTime=(s.controlTime||0)+deltaTime;
+            if(s.controlTime>=2.5){s.frozen=false;s.paralyzed=false;s.frozenTimer=0;s.paralyzeTimer=0;s.controlTime=0;s.controlRecovery=1.5;}
+        }else s.controlTime=0;
         if (s.burnStacks > 0) {
             s.burnTimer -= deltaTime;
             if (s.burnTimer <= 0) { s.burnStacks = 0; s.burnTimer = 0; }
@@ -92,7 +97,7 @@ class StatusSystem {
     setSlowAmount(enemy, v) { this._ensure(enemy).slowAmount = v; }
 
     frozen(enemy) { return this._data.get(enemy)?.frozen || false; }
-    setFrozen(enemy, v) { this._ensure(enemy).frozen = v; }
+    setFrozen(enemy, v) { const s=this._ensure(enemy);if(!v||!s.controlRecovery)s.frozen=v; }
 
     frozenTimer(enemy) { return this._data.get(enemy)?.frozenTimer || 0; }
     setFrozenTimer(enemy, v) { this._ensure(enemy).frozenTimer = v; }
@@ -102,7 +107,7 @@ class StatusSystem {
         if (slow > 0) {
             s.slowAmount = Math.max(s.slowAmount, slow);
         }
-        if (freezeDuration > 0) {
+        if (freezeDuration > 0 && !s.controlRecovery) {
             s.frozen = true;
             s.frozenTimer = Math.max(s.frozenTimer, freezeDuration);
         }
@@ -113,13 +118,14 @@ class StatusSystem {
     // ================================================================
 
     paralyzed(enemy) { return this._data.get(enemy)?.paralyzed || false; }
-    setParalyzed(enemy, v) { this._ensure(enemy).paralyzed = v; }
+    setParalyzed(enemy, v) { const s=this._ensure(enemy);if(!v||!s.controlRecovery)s.paralyzed=v; }
 
     paralyzeTimer(enemy) { return this._data.get(enemy)?.paralyzeTimer || 0; }
     setParalyzeTimer(enemy, v) { this._ensure(enemy).paralyzeTimer = v; }
 
     applyShock(enemy, duration) {
         const s = this._ensure(enemy);
+        if(s.controlRecovery)return;
         s.paralyzed = true;
         s.paralyzeTimer = Math.max(s.paralyzeTimer, duration);
     }
@@ -132,7 +138,7 @@ class StatusSystem {
         const s = this._data.get(enemy);
         if (!s) return 1;
         if (s.frozen || s.paralyzed) return 0;
-        return 1 - s.slowAmount;
+        return 1 - Math.min(.6,s.slowAmount);
     }
 
     // ================================================================

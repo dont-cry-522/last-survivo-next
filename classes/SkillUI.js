@@ -134,7 +134,7 @@ class SkillUI {
     static describeChoice(choice) {
         const current=choice.instance?.getCurrentEffect();
         const next=choice.evolution || choice.config.tiers[0];
-        return {before:current?.desc||'尚未获得',after:next?.desc||choice.config.description,
+        return {before:current?.desc||'尚未获得',after:(['periodic','aura','summon'].includes(choice.config.effectType)?'独立技能 · ':'')+(next?.desc||choice.config.description),
             label:current?`第 ${choice.instance.currentTier} 阶 → 第 ${choice.evolution?.tier||choice.instance.currentTier+1} 阶`:'新技能 · 第 1 阶'};
     }
 

@@ -51,7 +51,11 @@ class SkillManager {
         const weightedPool = this._buildWeightedPool(ownedIds, ownedCategories);
 
         // 抽取不重复的选项
-        const selected = new Set();
+        const preferred=weightedPool.filter(({def})=>ownedIds.has(def.id));
+        const affinity=this.weaponType==='fireball'?'inferno':this.weaponType==='dark'?'shadow':'bullet_storm';
+        const first=this._weightedRandom(preferred.length?preferred:weightedPool.filter(({def})=>def.category===affinity));
+        if(first){const existing=this._findOwned(first.id);choices.push({config:first,instance:existing,isEvolution:!!existing,evolution:existing?.getNextEvolution()||null});}
+        const selected = new Set(choices.map(c=>c.config.id));
         let attempts = 0;
         while (choices.length < count && attempts < 100) {
             attempts++;
@@ -80,6 +84,9 @@ class SkillManager {
         const pool = [];
 
         for (const def of SkillConfig.POOL) {
+            const elementalHit=['on_hit','on_crit','elemental','projectile_modifier'];
+            if(['fireball','dark'].includes(this.weaponType)&&['frost','storm'].includes(def.category)&&elementalHit.includes(def.effectType))continue;
+            if(this.weaponType==='dark'&&def.category==='inferno'&&elementalHit.includes(def.effectType))continue;
             let weight = SkillRarity.getWeight(def.rarity);
 
             // 已有流派 → 权重翻倍（鼓励深度发展）

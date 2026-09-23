@@ -13,6 +13,9 @@ class MobileControls {
         this.mute = document.getElementById('mobile-mute');
         this.terrainTip=document.querySelector('.mobile-tip');
         if (!this.enabled) return;
+        this.danger=document.createElement('div');this.danger.hidden=true;
+        this.danger.style.cssText='position:fixed;left:50%;transform:translateX(-50%);z-index:25;pointer-events:none;border:1px solid #f19785;border-radius:8px;padding:7px 12px;color:#fff3df;background:#692831;font:bold 14px sans-serif;max-width:85vw;text-align:center';
+        document.body.append(this.danger);
 
         this.stick.addEventListener('pointerdown', e => {
             if (this.pointerId !== null || game.state !== 'playing') return;
@@ -144,6 +147,13 @@ class MobileControls {
             this.upgrades.hidden = state !== 'upgrading';
             if (state === 'upgrading') this.showUpgrades();
         }
+        const feedback=this.game.hitFeedback,low=this.game.player.hp>0&&this.game.player.hp/this.game.player.maxHp<=.3;
+        this.danger.hidden=state!=='playing'||(!low&&!(feedback?.life>0));
+        if(!this.danger.hidden){
+            const rect=this.game.canvas.getBoundingClientRect();this.danger.style.top=`${innerWidth>innerHeight?rect.top+8:Math.min(rect.bottom+8,innerHeight-155)}px`;
+            const direction=feedback?.angle==null?'':Math.abs(feedback.angle)<Math.PI/4?'右侧':Math.abs(feedback.angle)>Math.PI*.75?'左侧':feedback.angle>0?'下方':'上方';
+            this.danger.textContent=feedback?.life>0?`${direction}${feedback.kind} −${Math.ceil(feedback.amount)}${low?' · 生命危险！':''}`:'生命危险 · 闪避并寻找补给';
+        }
         document.body.dataset.gameState=state;
         const ground=WoodlandScene.surfaceAt(this.game.player.x,this.game.player.y,this.game.survivalTime);
         if(this.terrainTip)this.terrainTip.textContent=ground&&['playing','paused'].includes(state)
@@ -155,8 +165,9 @@ class MobileControls {
             const p=this.game.player;
             this.hud.querySelector('b').textContent=`等级 ${p.level} · 第 ${this.game.wave} 波`;
             this.hud.querySelector('.mobile-hud-line span').textContent=`${Utils.formatTime(this.game.survivalTime)} · 击败 ${p.kills}`;
+            this.hud.querySelector('.mobile-hp i').style.background=p.hp/p.maxHp<=.3?'#ef454f':'#ae785c';
             this.hud.querySelector('.mobile-hp i').style.width=`${Math.max(0,Math.min(100,p.hp/p.maxHp*100))}%`;
-            this.hud.querySelector('.mobile-hp span').textContent=`生命 ${Math.ceil(p.hp)} / ${p.maxHp}${p.shield>0?' · 护盾 '+Math.ceil(p.shield):''}`;
+            this.hud.querySelector('.mobile-hp span').textContent=`${p.hp/p.maxHp<=.3?'危险！ ':''}生命 ${Math.ceil(p.hp)} / ${p.maxHp}${p.shield>0?' · 护盾 '+Math.ceil(p.shield):''}`;
             this.hud.querySelector('.mobile-xp i').style.width=`${Math.max(0,Math.min(100,this.game.uiManager.expSmooth*100))}%`;
         }
         this.dash.disabled = state !== 'playing';

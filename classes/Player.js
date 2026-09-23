@@ -170,7 +170,7 @@ class Player {
         if (this._onDash) this._onDash();
     }
 
-    takeDamage(amount) {
+    takeDamage(amount, source = null) {
         if (this.hp <= 0 || amount <= 0 || this.invincibleTimer > 0 || this.isDashing) return false;
         this.invincibleTimer = this.invincibleDuration;
         if (this.shield > 0) {
@@ -181,7 +181,8 @@ class Player {
         }
         this.hp -= amount;
         this.combo = 0;
-        this.hurtTimer = 0.18;
+        this.hurtTimer = 0.32;
+        if(amount>0)this._onHitFeedback?.(amount,source);
         if (this.audio) this.audio.playerHit();
         if (this._onDamaged && amount > 0) this._onDamaged(amount);
         if (this.hp <= 0) { this.hp = 0; return true; }
@@ -196,8 +197,8 @@ class Player {
             this.level++;
             this.expToNext = Config.getExpForLevel(this.level);
             this.maxHp += Config.PLAYER.levelHpBonus;
-            this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.2);
-            this.bulletDamage += Config.PLAYER.levelDamageBonus;
+            this.hp = Math.min(this.maxHp, this.hp + 5);
+            this.bulletDamage += 1 / ((Player.WEAPONS[this.weaponType]?.rate || 3) * (Player.WEAPONS[this.weaponType]?.count || 1));
             leveledUp = true;
         }
         return leveledUp;

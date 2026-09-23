@@ -38,7 +38,7 @@ class EndlessEvents {
             const x=s.x,y=s.y;s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;
             if(ForestMap.firstHit(x,y,s.x,s.y,7)!==null){s.life=0;continue;}
             const dx=s.x-x,dy=s.y-y,l=dx*dx+dy*dy,t=l?Math.max(0,Math.min(1,((g.player.x-x)*dx+(g.player.y-y)*dy)/l)):0;
-            if(Math.hypot(g.player.x-x-dx*t,g.player.y-y-dy*t)<g.player.size+7){g.player.takeDamage(s.damage);s.life=0;}
+            if(Math.hypot(g.player.x-x-dx*t,g.player.y-y-dy*t)<g.player.size+7){g.player.takeDamage(s.damage,{x:s.x,y:s.y,kind:'孢子弹'});s.life=0;}
         }
         this.shots=this.shots.filter(s=>s.life>0);
         if(!this.event){if(g.survivalTime>=this.nextAt&&!g.boss.active&&g.ruins.state!=='guarded'){this.begin();this.nextAt=g.survivalTime+10;}return;}

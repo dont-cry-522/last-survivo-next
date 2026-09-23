@@ -16,7 +16,7 @@ class FrostSkills {
             tiers: [
                 { desc: '命中减速 30%，持续 2 秒，额外 10% 伤害', params: { slow: 0.3, duration: 2, dmgBonus: 0.1 } },
                 { desc: '减速 50%，持续 3 秒，+20% 伤害', params: { slow: 0.5, duration: 3, dmgBonus: 0.2 } },
-                { desc: '减速 70%，首次命中冻结 0.5 秒，+30% 伤害', params: { slow: 0.7, duration: 3, freeze: 0.5, dmgBonus: 0.3 } },
+                { desc: '减速 60%，首次命中冻结 0.5 秒，+30% 伤害', params: { slow: 0.6, duration: 3, freeze: 0.5, dmgBonus: 0.3 } },
             ],
             apply: function(player, sm, params, prevParams) {
                 sm.registerHandler(SkillEffectType.ON_HIT, 'frost_rounds', function(ctx) {
@@ -25,7 +25,7 @@ class FrostSkills {
                     const p = inst.getCurrentEffect().params;
                     ctx.enemy.slowAmount = Math.max(ctx.enemy.slowAmount || 0, p.slow);
                     sm.visuals.emit('ice',ctx.enemy.x,ctx.enemy.y,{radius:18});
-                    ctx.bullet.damage *= (1 + p.dmgBonus);
+                    if(!ctx.bullet._frostBoosted){ctx.bullet.damage *= (1 + p.dmgBonus);ctx.bullet._frostBoosted=true;}
                     if (p.freeze && !ctx.enemy.slowAmount) {
                         ctx.enemy.frozen = true;
                         ctx.enemy.frozenTimer = p.freeze;

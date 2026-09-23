@@ -34,7 +34,7 @@ class ForestMap {
         if(e.kind!=='ash'||e.phase!=='active'||g.mapEventHit===e.cycle)return;
         g.mapEventHit=e.cycle;
         const inside=a=>Math.hypot(a.x-e.x,a.y-e.y)<=e.r+(a.size||0);
-        if(inside(g.player))g.player.takeDamage(18);
+        if(inside(g.player))g.player.takeDamage(18,{x:e.x,y:e.y,kind:'地热'});
         for(const enemy of g.enemyManager.pool)if(enemy.active&&enemy.hp>0&&inside(enemy))enemy.takeDamage(36,0,false);
         if(g.boss.active&&inside(g.boss))g.boss.takeDamage(36);
         if(nearby)g.audio.skillCue('explosion');

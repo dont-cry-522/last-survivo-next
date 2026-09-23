@@ -30,7 +30,7 @@ class Config {
         dashCooldown: 2.0,     // 冲刺冷却（秒）
         dashDuration: 0.2,     // 冲刺持续时间
         dashSpeedMultiplier: 3.5, // 冲刺速度倍率
-        magnetRange: 80,       // 经验磁铁初始范围
+        magnetRange: 140,       // 经验磁铁初始范围
         expMultiplier: 1.0,    // 经验获取倍率
         levelHpBonus: 5,       // 每次升级增加最大生命值
         levelDamageBonus: 1,   // 每次升级增加子弹伤害
@@ -113,7 +113,7 @@ class Config {
     // ========== 经验等级曲线 ==========
     static getExpForLevel(level) {
         // 指数增长：每级需要更多经验
-        return Math.floor(20 * Math.pow(1.15, level - 1));
+        return Math.floor(20 + 5 * (level - 1) + 0.65 * (level - 1) ** 2);
     }
 
     // ========== 颜色主题（科技风） ==========

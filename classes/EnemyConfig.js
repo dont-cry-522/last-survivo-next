@@ -58,7 +58,7 @@ class EnemyConfig {
             speed: 0.8,
             damage: 20,
             size: 25,
-            exp: 15,
+            exp: 24,
             gold: 5,
         },
         exploder: {

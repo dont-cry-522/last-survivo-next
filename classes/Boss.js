@@ -187,7 +187,7 @@ class Boss {
         // 范围伤害
         const dist = Utils.distance(this.aoeX, this.aoeY, player.x, player.y);
         if (dist < this.aoeRadius + player.size) {
-            player.takeDamage(this.aoeDamage);
+            player.takeDamage(this.aoeDamage,{x:this.x,y:this.y,kind:'首领'});
         }
 
         // TODO: playSound('aoe')
@@ -237,7 +237,7 @@ class Boss {
 
             // 冲撞接触伤害
             if (Utils.circleCollision(this.x, this.y, this.size, player.x, player.y, player.size) && (game?.survivalTime==null || ForestMap.firstHit(this.x,this.y,player.x,player.y)===null)) {
-                player.takeDamage(this.damage * 1.5);
+                player.takeDamage(this.damage * 1.5,{x:this.x,y:this.y,kind:'首领'});
             }
 
             // 冲刺残影
@@ -270,7 +270,7 @@ class Boss {
 
         // 接触伤害
         if (Utils.circleCollision(this.x, this.y, this.size, player.x, player.y, player.size) && (game?.survivalTime==null || ForestMap.firstHit(this.x,this.y,player.x,player.y)===null)) {
-            player.takeDamage(this.damage * deltaTime * 2);
+            player.takeDamage(this.damage * deltaTime * 2,{x:this.x,y:this.y,kind:'首领'});
         }
 
         // 技能冷却

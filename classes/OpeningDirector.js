@@ -4,8 +4,8 @@ class OpeningDirector {
     static phase(time){
         if(time>=300)return {name:'深入险境',interval:1,count:1,intensity:1};
         if(time<25)return {name:'初探',interval:2,count:1,intensity:.8};
-        const rest=(time-25)%45<15;
-        return rest?{name:'喘息',interval:6,count:1,intensity:.65}:{name:'围攻',interval:1.7,count:2,intensity:1.12};
+        const rest=(time-25)%45<10;
+        return rest?{name:'喘息',interval:4,count:1,intensity:.65}:{name:'围攻',interval:1.7,count:2,intensity:1.12};
     }
     train(game){
         if(this.trained||game.player.level<2)return;

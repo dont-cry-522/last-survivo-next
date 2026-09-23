@@ -111,6 +111,10 @@ class Game {
         this.opening=new OpeningDirector();this.player.expToNext=15;
         this.weaponFields=[];
         this.player.audio = this.audio;
+        this.player._onHitFeedback=(amount,source)=>{
+            this.hitFeedback={life:.65,amount,angle:source?Math.atan2(source.y-this.player.y,source.x-this.player.x):null,kind:source?.kind||'近战'};
+            this.screenShake=Math.max(this.screenShake,Math.min(7,2+amount/8));
+        };
         this.player._onShieldHit=()=>this.skillManager.visuals.emit('pickup',this.player.x,this.player.y,{radius:42,color:'#b4d3b5',duration:.28});
         this.player._onDamaged = (amount) => {
             this.skillManager.trigger(SkillEffectType.ON_DAMAGED, { amount, player: this.player, game: this, enemies: this.enemyManager.getActiveEnemies() });
@@ -184,8 +188,7 @@ class Game {
             const selected = this.skillUI.handleKey(key);
             if (selected) {
                 this.skillManager.acquire(selected, { survivalTime: this.survivalTime, player: this.player });
-                this.skillUI.close();
-                this.state = 'playing';
+                this.finishUpgrade();
             }
             return;
         }
@@ -244,8 +247,7 @@ class Game {
             );
             if (selected) {
                 this.skillManager.acquire(selected, { survivalTime: this.survivalTime, player: this.player });
-                this.skillUI.close();
-                this.state = 'playing';
+                this.finishUpgrade();
             }
             return;
         }
@@ -278,6 +280,7 @@ class Game {
      * 重置游戏
      */
     resetGame() {
+        this.pendingUpgrades=0;this.hitFeedback=null;this.heartbeatTimer=0;
         this.expedition?.dispose();this.expedition=null;
         ForestMap.select(this.selectedMap||'forest');
         this.mapEventHit=-1;this.mapEventNotice=-1;
@@ -468,6 +471,7 @@ class Game {
         }
 
         // 更新经验球
+        const previousLevel=this.player.level;
         const leveledUp = this.experienceManager.update(deltaTime, this.player, this.particleManager);
 
         // 技能周期效果
@@ -485,11 +489,14 @@ class Game {
                 this.player.level++;
                 this.player.expToNext = Config.getExpForLevel(this.player.level);
             }
-            this.triggerUpgrade();
+            this.triggerUpgrade(Math.max(1,this.player.level-previousLevel));
         }
         if(this.expedition){this.opening.train(this);this.expedition.update();}
         else {this.ruins.update(this);this.opening.update(this);}
 
+        if(this.hitFeedback)this.hitFeedback.life=Math.max(0,this.hitFeedback.life-deltaTime);
+        this.heartbeatTimer=Math.max(0,(this.heartbeatTimer||0)-deltaTime);
+        if(this.player.hp>0&&this.player.hp/this.player.maxHp<=.3&&this.heartbeatTimer===0){this.audio.heartbeat?.();this.heartbeatTimer=1.5;}
         // 更新粒子
         this.particleManager.update(deltaTime);
 
@@ -519,12 +526,12 @@ class Game {
         // 生成间隔逐渐缩短
         this.spawnInterval = Math.max(
             Config.DIFFICULTY.spawnIntervalMin,
-            Config.DIFFICULTY.spawnIntervalStart - this.survivalTime * Config.DIFFICULTY.spawnRateIncrease
+            this.survivalTime<300 ? 1.7 : Math.max(.65,1.25-(this.survivalTime-300)*.002)
         );
 
         // 敌人属性逐渐增强
         this.hpMultiplier = 1 + Math.min(300,this.survivalTime)*.004+Math.max(0,this.survivalTime-300)*Config.DIFFICULTY.enemyHpMultiplier;
-        this.speedMultiplier = 1 + Math.min(300,this.survivalTime)*.0015+Math.max(0,this.survivalTime-300)*Config.DIFFICULTY.enemySpeedMultiplier;
+        this.speedMultiplier = Math.min(1.8,1 + Math.min(300,this.survivalTime)*.0015+Math.max(0,this.survivalTime-300)*.001);
 
         if(this.expedition){this.hpMultiplier=Math.min(2.5,this.hpMultiplier);this.speedMultiplier=Math.min(1.4,this.speedMultiplier);}
         // 波次（每30秒一波）
@@ -743,7 +750,36 @@ class Game {
         if(this.boss.active && this.boss!==primary && Utils.circleCollision(bullet.x,bullet.y,radius,this.boss.x,this.boss.y,this.boss.size))this.boss.takeDamage(bullet.damage*.6);
     }
 
-    triggerUpgrade() {
+    finishUpgrade(){
+        this.skillUI.close();this.state='playing';
+        if(this.pendingUpgrades>0)this.openUpgrade();
+        if(this.state==='upgrading'&&this.mobileControls?.enabled)this.mobileControls.showUpgrades();
+    }
+    drawDanger(c,w,h){
+        if(!['playing','paused','upgrading'].includes(this.state))return;
+        const p=this.player,low=p.hp>0&&p.hp/p.maxHp<=.3,f=this.hitFeedback;
+        c.save();
+        if(low||f?.life>0){
+            const alpha=low ? .16+.035*Math.sin(this.survivalTime*4) : .12*f.life/.65;
+            const grad=c.createRadialGradient(w/2,h/2,h*.22,w/2,h/2,Math.max(w,h)*.6);
+            grad.addColorStop(0,'rgba(140,12,20,0)');grad.addColorStop(1,`rgba(190,22,30,${alpha})`);c.fillStyle=grad;c.fillRect(0,0,w,h);
+        }
+        const x=p.x-this.cameraX,y=p.y-this.cameraY;
+        if(f?.life>0){
+            c.globalAlpha=Math.min(1,f.life*3);c.strokeStyle='#ff7971';c.lineWidth=5;
+            c.beginPath();if(f.angle!==null)c.arc(x,y,48,f.angle-.55,f.angle+.55);else c.arc(x,y,38,0,Math.PI*2);c.stroke();
+            c.fillStyle='#fff1d6';c.textAlign='center';c.font='bold 23px Arial';c.fillText(`−${Math.ceil(f.amount)} · ${f.kind}`,x,y-58-(.65-f.life)*20);
+        }
+        if(low){c.globalAlpha=1;c.fillStyle='#581c25';c.fillRect(w/2-145,h-88,290,40);c.fillStyle='#fff0de';c.textAlign='center';c.font='bold 22px Arial';c.fillText('生命危险 · 闪避并寻找补给',w/2,h-60);}
+        c.restore();
+    }
+    triggerUpgrade(count=1){
+        this.pendingUpgrades=(this.pendingUpgrades||0)+count;
+        if(this.state!=='upgrading')this.openUpgrade();
+    }
+    openUpgrade() {
+        if(!(this.pendingUpgrades>0))return;
+        this.pendingUpgrades--;this.skillManager.weaponType=this.player.weaponType;
         this.state = 'upgrading';
         this.player.keys.w = this.player.keys.a = this.player.keys.s = this.player.keys.d = this.player.keys.shift = false;
         const choices = this.skillManager.generateChoices(4);
@@ -837,6 +873,7 @@ class Game {
         ctx.restore();
 
         ctx.save();ctx.font='16px "Microsoft YaHei"';ctx.fillStyle='#e2d2a9';ctx.fillText(ForestMap.region(this.player.x,this.player.y).name,20,h-18);ctx.restore();
+        this.drawDanger(ctx,w,h);
         // 波次公告
         if (this._announcements) {
             for (const [index,a] of this._announcements.slice(-2).entries()) {
