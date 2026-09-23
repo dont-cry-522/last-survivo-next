@@ -4,7 +4,7 @@ class Loadout {
         this.game=game;
         this.panel=document.createElement('section');
         this.panel.className='loadout';this.panel.setAttribute('aria-label','出发前选择角色、地图与武器');
-        this.panel.innerHTML=`<div class="loadout-inner"><p class="loadout-eyebrow">林地远征 / 暂停菜单 34</p><h1>这次，去哪里远征？</h1><p class="loadout-intro">选好角色、地图和武器。无尽模式每局重绘地形，从不同营地出发。环境影响你，也影响怪物。2 级强化武器，3 级选择分支。</p><p class="loadout-guide"><a href="skills.html">查看 64 个技能特效 ↗</a></p><div class="weapon-choices" role="group" aria-label="武器"></div><button class="loadout-start" type="button">带上连发枪 · 出发</button><p class="loadout-help">电脑：1 / 2 / 3 选择 · Enter 出发 · WASD 移动 · Shift 翻滚 / 瞬移<br>手机：点选角色、地图与武器 · 左侧摇杆移动 · 右侧翻滚 / 瞬移</p></div>`;
+        this.panel.innerHTML=`<div class="loadout-inner"><p class="loadout-eyebrow">林地远征 / 冒险打磨 35</p><h1>这次，去哪里远征？</h1><p class="loadout-intro">选好角色、地图和武器。无尽模式每局重绘地形，从不同营地出发。环境影响你，也影响怪物。2 级强化武器，3 级选择分支。</p><p class="loadout-guide"><a href="skills.html">查看 64 个技能特效 ↗</a></p><div class="weapon-choices" role="group" aria-label="武器"></div><button class="loadout-start" type="button">带上连发枪 · 出发</button><p class="loadout-help">电脑：1 / 2 / 3 选择 · Enter 出发 · WASD 移动 · Shift 翻滚 / 瞬移<br>手机：点选角色、地图与武器 · 左侧摇杆移动 · 右侧翻滚 / 瞬移</p></div>`;
         const descriptions={pistol:['精准点射','直线高速 · 单发重击','预判走位，把握射击路线'],shuriken:['穿透投掷','三枚扇形 · 穿透一敌','旋转月刃，覆盖追击路线'],dark:['暗能爆裂','追踪暗球 · 范围伤害','聚集敌人，用暗月爆裂清场'],rifle:['持续压制','射速快 · 中远距离','适合边移动边持续输出'],shotgun:['近身爆发','五发散射 · 强击退','贴近时伤害更集中'],fireball:['范围灼烧','火球爆炸 · 持续燃烧','适合应对聚集的怪群']};
         for(const [kind,weapon] of Object.entries(Player.WEAPONS)) {
             const button=document.createElement('button');button.type='button';button.dataset.weapon=kind;
@@ -42,6 +42,13 @@ class Loadout {
         this.pauseDialog=document.createElement('dialog');this.pauseDialog.className='run-pause';this.pauseDialog.innerHTML='<h2>游戏已暂停</h2><p>当前对局已保留</p><button class="pause-resume" type="button">继续当前对局</button><button class="pause-new" type="button">设置下一局</button>';document.body.append(this.pauseDialog);
         this.pauseDialog.querySelector('.pause-resume').onclick=()=>this.resumeRun();this.pauseDialog.querySelector('.pause-new').onclick=()=>this.openSetup();
         this.pauseDialog.addEventListener('cancel',e=>{e.preventDefault();this.resumeRun();});
+        if(game.mobileControls?.enabled){
+            const settings=document.createElement('div');settings.className='control-settings';
+            settings.innerHTML='<label>摇杆大小<input data-control-setting="size" type="range" min="88" max="144" step="4"></label><label>按键透明度<input data-control-setting="opacity" type="range" min="0.35" max="1" step="0.05"></label>';
+            for(const input of settings.querySelectorAll('input')){const key=input.dataset.controlSetting;input.value=game.mobileControls.preferences?.[key]??(key==='size'?108:.78);input.oninput=()=>game.mobileControls.setPreference(key,input.value);}
+            this.pauseDialog.append(settings);
+        }
+
         this.menu=document.createElement('button');this.menu.type='button';this.menu.className='loadout-menu';this.menu.textContent='暂停 / 菜单';
         this.menu.addEventListener('click',()=>this.pauseRun());document.body.append(this.menu);
         this.select(this.game.selectedCharacter==='silver'?'pistol':'rifle');

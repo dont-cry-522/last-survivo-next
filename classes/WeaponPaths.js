@@ -1,8 +1,8 @@
 /** Weapon branches share combat data, with a small keyboard/touch choice dialog. */
 class WeaponPaths {
     static PATHS={
-        duelist:{weapon:'pistol',name:'决斗点射',desc:'单发伤害 +45%，射速 −15%。'},
-        quickdraw:{weapon:'pistol',name:'疾速拔枪',desc:'射速 +45%，单发伤害 −15%。'},
+        duelist:{weapon:'pistol',name:'决斗点射',desc:'单发伤害 +45%，射速 −15%，额外穿透 2 个目标。'},
+        quickdraw:{weapon:'pistol',name:'疾速拔枪',desc:'射速 +45%，单发伤害 −15%；移动射击额外加速 25%。'},
         crescent:{weapon:'shuriken',name:'穿月刃',desc:'穿透 +2，单枚伤害 +15%。'},
         fan:{weapon:'shuriken',name:'五刃齐发',desc:'额外飞镖 +2，单枚伤害 −20%。'},
         eclipse:{weapon:'dark',name:'月蚀爆裂',desc:'爆裂半径扩大到 105，直击伤害 +15%。'},
@@ -11,13 +11,13 @@ class WeaponPaths {
         heavy:{weapon:'rifle',name:'蓄力重弹',desc:'射速 −50%，单发伤害 +160%，额外穿透 +1。蓄力后打出重弹。'},
         wide:{weapon:'shotgun',name:'扩散弹幕',desc:'额外弹丸 +2，散射角 +65%，单颗伤害 −18%。适合清理近处怪群。'},
         focus:{weapon:'shotgun',name:'集中爆破',desc:'散射角 −60%，伤害 +50%，射速 −20%。集中攻击单个目标。'},
-        ground:{weapon:'fireball',name:'灼热火径',desc:'直击伤害 −20%，命中留下持续 3 秒的火区。用火焰封住追击路线。'},
-        split:{weapon:'fireball',name:'分裂焰星',desc:'直击伤害 −15%，命中散出 4 枚小火球。小火球不再分裂。'}
+        ground:{weapon:'fireball',name:'灼热火径',desc:'直击伤害 −20%，命中铺出三段持续 3 秒的火径，封住追击路线。'},
+        split:{weapon:'fireball',name:'陨火爆裂',desc:'射速 −40%，直击伤害 +60%，爆炸半径 145，散出 4 枚小火球。慢速重爆。'}
     };
     static choose(p,id){
         const d=this.PATHS[id];if(!d||d.weapon!==p.weaponType||p.weaponPath)return false;
         p.weaponPath=id;
-        if(id==='duelist'){p.bulletDamage*=1.45;p.attackSpeed*=.85;}
+        if(id==='duelist'){p.bulletDamage*=1.45;p.attackSpeed*=.85;p.pierce+=2;}
         if(id==='quickdraw'){p.attackSpeed*=1.45;p.bulletDamage*=.85;}
         if(id==='crescent'){p.pierce+=2;p.bulletDamage*=1.15;}
         if(id==='fan'){p.bulletCount+=2;p.bulletDamage*=.8;}
@@ -28,7 +28,7 @@ class WeaponPaths {
         if(id==='wide'){p.bulletCount+=2;p.bulletDamage*=.82;}
         if(id==='focus'){p.bulletDamage*=1.5;p.attackSpeed*=.8;}
         if(id==='ground')p.bulletDamage*=.8;
-        if(id==='split')p.bulletDamage*=.85;
+        if(id==='split'){p.bulletDamage*=1.6;p.attackSpeed*=.6;p.blastRadius=145;}
         p.attackTimer=id==='heavy'?.4:0;return true;
     }
     constructor(game){
@@ -52,8 +52,9 @@ class WeaponPaths {
     static impact(g,b){
         if(b.branchDone)return;b.branchDone=true;
         if(b.weaponPath==='ground'){
-            g.weaponFields.push({x:b.x,y:b.y,r:60,life:3,tick:0,damage:b.damage*.18});
-            if(g.weaponFields.length>12)g.weaponFields.shift();
+            const a=Math.atan2(b.vy||0,b.vx||1);
+            for(const offset of [-70,0,70])g.weaponFields.push({x:b.x+Math.cos(a)*offset,y:b.y+Math.sin(a)*offset,r:48,life:3,tick:0,damage:b.damage*.18});
+            while(g.weaponFields.length>12)g.weaponFields.shift();
         }
         if(b.weaponPath==='split')for(const offset of [-1.1,-.4,.4,1.1]){
             const a=Math.atan2(b.vy,b.vx)+offset,c=g.bulletManager.fire(b.x,b.y,a,b.damage*.28,6,0,null,1);

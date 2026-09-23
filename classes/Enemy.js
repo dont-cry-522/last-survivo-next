@@ -53,7 +53,7 @@ class Enemy {
      * 初始化敌人
      */
     init(type, x, y, hpMultiplier = 1, speedMultiplier = 1) {
-        this.fieldGuard=null;
+        this.fieldGuard=null;this.supportTarget=null;
         this.chapterGuard=null;this.ruinGuard=null;this.openingTrial=null;this._forestDetour=null;this.terrainAware=false;
         const cfg = EnemyConfig.TYPES[type];
         if (!cfg) return;
@@ -136,6 +136,14 @@ class Enemy {
      * 更新移动AI（不调用任何外部系统）
      * 处理追踪、锁定预警和出招时序
      */
+    static supportPosition(e,p,allies){
+        if(!['spitter','shaman'].includes(e.type))return p;
+        let cover=null,best=Infinity;
+        for(const a of allies){if(!a.active||a.hp<=0||!['tank','elite'].includes(a.type))continue;const d=Math.hypot(a.x-e.x,a.y-e.y);if(d<420&&d<best){cover=a;best=d;}}
+        if(!cover)return p;
+        const angle=Math.atan2(cover.y-p.y,cover.x-p.x),offset=e.type==='shaman'?130:95;
+        return {x:cover.x+Math.cos(angle)*offset+(e.type==='spitter'?-Math.sin(angle)*100:0),y:cover.y+Math.sin(angle)*offset+(e.type==='spitter'?Math.cos(angle)*100:0)};
+    }
     update(deltaTime, player, terrainTime = null) {
         this.terrainAware=terrainTime!==null;
         this.strikeThisFrame = false;
@@ -164,7 +172,7 @@ class Enemy {
         const tree=this.terrainAware?ForestMap.blockingTree(this,player):null;
         const aim=tree||player;
         this.angle = Utils.angle(this.x, this.y, aim.x, aim.y);
-        if (attack && Utils.distanceSq(this.x,this.y,aim.x,aim.y) <= attack.trigger ** 2 && (tree||!this.terrainAware||ForestMap.firstHit(this.x,this.y,player.x,player.y)===null)) {
+        if (attack && (!this.supportTarget||this.supportTarget===player||Math.hypot(this.supportTarget.x-this.x,this.supportTarget.y-this.y)<90||Math.hypot(player.x-this.x,player.y-this.y)<160) && Utils.distanceSq(this.x,this.y,aim.x,aim.y) <= attack.trigger ** 2 && (tree||!this.terrainAware||ForestMap.firstHit(this.x,this.y,player.x,player.y)===null)) {
             this.combatState = 'windup';
             this.combatTimer = attack.windup;
             this.attackHasHit = false;
@@ -176,7 +184,9 @@ class Enemy {
             this.attackCue = 'windup';
             return;
         }
-        if(terrainTime!==null)this.angle=ForestMap.steer(this,player);
+        const tactical=this.supportTarget||player;
+        if(tactical!==player&&Math.hypot(tactical.x-this.x,tactical.y-this.y)<28)return;
+        if(terrainTime!==null)this.angle=ForestMap.steer(this,tactical);else this.angle=Utils.angle(this.x,this.y,tactical.x,tactical.y);
         const startX=this.x,startY=this.y;
         this.x += (Math.cos(this.angle) * this.speed * speedMul * terrainSpeed + this.knockbackX) * deltaTime * 60;
         this.y += (Math.sin(this.angle) * this.speed * speedMul * terrainSpeed + this.knockbackY) * deltaTime * 60;
@@ -336,6 +346,7 @@ class EnemyManager extends ObjectPool {
                 this._handleDeath(e, player, particleManager, experienceManager, audio);
                 continue;
             }
+            e.supportTarget=terrainTime!==null?Enemy.supportPosition(e,player,this.pool):null;
             e.update(deltaTime, player, terrainTime);
 
             if (!e.active) {

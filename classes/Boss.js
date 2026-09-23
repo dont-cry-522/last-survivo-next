@@ -69,7 +69,7 @@ class Boss {
      * 初始化Boss
      */
     init(x, y, hpMultiplier = 1) {
-        this._forestDetour=null;
+        this._forestDetour=null;this.phase=1;this.recoveryTimer=0;this.aoeTargets=[];
         const cfg = Config.BOSS;
         this.active = true;
         this.x = x;
@@ -102,7 +102,7 @@ class Boss {
      * 受到伤害
      */
     takeDamage(amount) {
-        this.hp -= amount;
+        this.hp -= amount * (this.recoveryTimer>0?1.25:1);
         this.hitFlash = 0.1;
 
         if (this.hp <= 0) {
@@ -168,6 +168,9 @@ class Boss {
         this.aoeWarningTimer = this.aoeWarningDuration;
         this.aoeX = player.x;
         this.aoeY = player.y;
+        const a=Math.atan2(player.y-this.y,player.x-this.x);
+        this.aoeRadius=this.hp/this.maxHp<=.5?95:Config.BOSS.aoeRadius;
+        this.aoeTargets=(this.hp/this.maxHp<=.5?[-160,0,160]:[0]).map(d=>({x:player.x-Math.sin(a)*d,y:player.y+Math.cos(a)*d}));
     }
 
     /**
@@ -176,7 +179,8 @@ class Boss {
     executeAoe(particleManager, player, game) {
         this.isAoeWarning = false;
 
-        particleManager.spawnExplosion(this.aoeX, this.aoeY, '#ff6b6b', 40);
+        this.recoveryTimer=1.5;this.aoeTimer=this.aoeCooldown;
+        for(const mark of this.aoeTargets)particleManager.spawnExplosion(mark.x,mark.y,'#ff6b6b',20);
 
         if (game) {
             game.screenShake = Math.max(game.screenShake, 10);
@@ -186,7 +190,7 @@ class Boss {
 
         // 范围伤害
         const dist = Utils.distance(this.aoeX, this.aoeY, player.x, player.y);
-        if (dist < this.aoeRadius + player.size) {
+        if ((this.aoeTargets.length?this.aoeTargets:[{x:this.aoeX,y:this.aoeY}]).some(m=>Math.hypot(m.x-player.x,m.y-player.y)<this.aoeRadius+player.size)) {
             player.takeDamage(this.aoeDamage,{x:this.x,y:this.y,kind:'首领'});
         }
 
@@ -217,6 +221,8 @@ class Boss {
             this.hitFlash -= deltaTime;
         }
 
+        if(this.phase===1&&this.hp/this.maxHp<=.5){this.phase=2;this.chargeCooldown=4;this.aoeCooldown=6;game?._announce?.('首领狂暴 · 三重裂地，留意反击窗口！','#f4b37d');}
+        if(this.recoveryTimer>0){this.recoveryTimer=Math.max(0,this.recoveryTimer-deltaTime);return;}
         // 冲撞前摇
         if (this.isWindup) {
             this.chargeWindupTimer -= deltaTime;
@@ -246,7 +252,7 @@ class Boss {
             }
 
             if (this.chargeCurrentDuration <= 0) {
-                this.isCharging = false;
+                this.isCharging = false;this.recoveryTimer=1.5;
                 this.chargeTimer = this.chargeCooldown;
             }
             return;
@@ -428,22 +434,25 @@ class Boss {
 
         ctx.restore();
 
+        if(this.recoveryTimer>0){ctx.save();ctx.fillStyle='#fff1a8';ctx.textAlign='center';ctx.font='bold 22px sans-serif';ctx.fillText('破绽！伤害 +25%',sx,sy-s-25);ctx.restore();}
         // AOE 警告圈
         if (this.isAoeWarning) {
-            const aoeSx = this.aoeX - cameraX;
-            const aoeSy = this.aoeY - cameraY;
+            for(const mark of this.aoeTargets){
+            const aoeSx = mark.x - cameraX;
+            const aoeSy = mark.y - cameraY;
             const wp = 1 - this.aoeWarningTimer / this.aoeWarningDuration;
             ctx.save();
             ctx.strokeStyle = `rgba(255,100,80,${0.4 + wp * 0.5})`;
             ctx.lineWidth = 2 + wp * 4;
             ctx.setLineDash([12, 8]);
             ctx.beginPath();
-            ctx.arc(aoeSx, aoeSy, this.aoeRadius * (0.4 + wp * 0.6), 0, Math.PI * 2);
+            ctx.arc(aoeSx, aoeSy, this.aoeRadius, 0, Math.PI * 2);
             ctx.stroke();
             ctx.fillStyle = `rgba(255,80,60,${0.08 + wp * 0.2})`;
             ctx.fill();
             ctx.setLineDash([]);
             ctx.restore();
+            }
         }
     }
 

@@ -247,7 +247,7 @@ class Player {
             if (this._blinkCrit.timer <= 0) this._blinkCrit = null;
         }
         const bonusAS = (this._overheatStacks || 0) * (this._overheat ? this._overheat.perStack : 0);
-        const currentAS = this.attackSpeed * (1 + bonusAS);
+        const currentAS = this.attackSpeed * (1 + bonusAS) * (this.weaponPath==='quickdraw'&&this.moving?1.25:1);
 
         if (this.attackTimer > 0) return;
 

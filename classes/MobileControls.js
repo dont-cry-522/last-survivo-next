@@ -13,6 +13,7 @@ class MobileControls {
         this.mute = document.getElementById('mobile-mute');
         this.terrainTip=document.querySelector('.mobile-tip');
         if (!this.enabled) return;
+        try{const prefs=JSON.parse(localStorage.getItem('forest-controls')||'{}');this.setPreference('size',prefs.size??108);this.setPreference('opacity',prefs.opacity??.78);}catch{}
         this.danger=document.createElement('div');this.danger.hidden=true;
         this.danger.style.cssText='position:fixed;left:50%;transform:translateX(-50%);z-index:25;pointer-events:none;border:1px solid #f19785;border-radius:8px;padding:7px 12px;color:#fff3df;background:#692831;font:bold 14px sans-serif;max-width:85vw;text-align:center';
         document.body.append(this.danger);
@@ -74,6 +75,12 @@ class MobileControls {
         this.update();
     }
 
+    setPreference(key,value){
+        this.preferences ||= {size:108,opacity:.78};
+        this.preferences[key]=key==='size'?Math.max(88,Math.min(144,Number(value)||108)):Math.max(.35,Math.min(1,Number(value)||.78));
+        document.documentElement.style.setProperty(key==='size'?'--stick-size':'--control-opacity',this.preferences[key]+(key==='size'?'px':''));
+        try{localStorage.setItem('forest-controls',JSON.stringify(this.preferences));}catch{}
+    }
     showUpgrades() {
         const game = this.game;
         this.upgrades.replaceChildren();
@@ -123,7 +130,8 @@ class MobileControls {
         let x = e.clientX - rect.left - rect.width / 2;
         let y = e.clientY - rect.top - rect.height / 2;
         const distance = Math.hypot(x, y);
-        if (distance > 32) { x *= 32 / distance; y *= 32 / distance; }
+        const radius=rect.width*.3;
+        if (distance > radius) { x *= radius / distance; y *= radius / distance; }
         this.knob.style.transform = `translate(${x}px, ${y}px)`;
         this.game.player.touchKeys = { w: y < -10, s: y > 10, a: x < -10, d: x > 10 };
     }
@@ -150,7 +158,7 @@ class MobileControls {
         const feedback=this.game.hitFeedback,low=this.game.player.hp>0&&this.game.player.hp/this.game.player.maxHp<=.3;
         this.danger.hidden=state!=='playing'||(!low&&!(feedback?.life>0));
         if(!this.danger.hidden){
-            const rect=this.game.canvas.getBoundingClientRect();this.danger.style.top=`${innerWidth>innerHeight?rect.top+8:Math.min(rect.bottom+8,innerHeight-155)}px`;
+            const rect=this.game.canvas.getBoundingClientRect();this.danger.style.top=`${innerWidth>innerHeight?rect.top+58:Math.min(rect.bottom+8,innerHeight-155)}px`;
             const direction=feedback?.angle==null?'':Math.abs(feedback.angle)<Math.PI/4?'右侧':Math.abs(feedback.angle)>Math.PI*.75?'左侧':feedback.angle>0?'下方':'上方';
             this.danger.textContent=feedback?.life>0?`${direction}${feedback.kind} −${Math.ceil(feedback.amount)}${low?' · 生命危险！':''}`:'生命危险 · 闪避并寻找补给';
         }

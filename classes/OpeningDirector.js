@@ -11,7 +11,7 @@ class OpeningDirector {
         if(this.trained||game.player.level<2)return;
         const p=game.player;this.trained=true;
         if(p.weaponType==='shotgun')p.bulletCount+=2;
-        else if(p.weaponType==='fireball')p.blastRadius=95;
+        else if(p.weaponType==='fireball')p.blastRadius=Math.max(p.blastRadius||0,95);
         else p.pierce+=1;
         this.trainingName=p.weaponType==='shotgun'?'散弹 +2 弹丸':p.weaponType==='fireball'?'火球爆炸范围扩大':'连发枪 +1 穿透';
         game._announce('武器强化：'+this.trainingName,'#e9cf86');

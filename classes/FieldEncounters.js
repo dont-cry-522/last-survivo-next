@@ -1,6 +1,7 @@
 /** Endless-only pincer groups and optional exploration sites, driven by game time. */
 class FieldEncounters {
     constructor(g){this.g=g;this.nextWave=32;this.wave=null;this.zones=[];this.sites=(ForestMap.layout?.nodes.slice(2)||[]).map((p,i)=>({...p,name:i?'远古祭坛':'猎人补给站',state:'sealed',guards:[],token:{},reward:i?'skill':'supply'}));}
+    static describeSite(s){return s.reward==='skill'?'技能奖励 · 高风险':'治疗30% / 护盾25 · 中风险';}
     planWave(){
         const g=this.g,p=g.player,points=[],start=Math.random()*Math.PI*2,count=Math.min(12,6+Math.floor(g.survivalTime/70));
         // Keep an angular escape lane; all entry points have clear routes and visible warnings.
@@ -26,7 +27,7 @@ class FieldEncounters {
             const distance=Math.hypot(g.player.x-s.x,g.player.y-s.y);
             if(s.state==='sealed'&&distance<230){s.state='warning';s.at=g.survivalTime+2;g._announce(s.name+' · 守卫即将苏醒','#ecd08b');}
             if(s.state==='warning'&&g.survivalTime>=s.at){
-                const spawned=[];for(const [i,type]of ['tank','spitter','fast','fast'].entries()){
+                const spawned=[];for(const [i,type]of (s.reward==='skill'?['elite','spitter','fast','fast']:['tank','spitter','fast','fast']).entries()){
                     const a=i*Math.PI/2,x=s.x+Math.cos(a)*180,y=s.y+Math.sin(a)*180;
                     if(g.enemyManager.getActiveCount()>=90||!ForestMap.clear(x,y,35)||Math.hypot(x-g.player.x,y-g.player.y)<100)continue;
                     const e=g.enemyManager.spawn(type,x,y,g.hpMultiplier,g.speedMultiplier);if(e){e.fieldGuard=s.token;e.combatState='recover';e.combatTimer=.7;spawned.push(e);}
@@ -49,7 +50,7 @@ class FieldEncounters {
             c.globalAlpha=s.state==='claimed'?.45:1;ForestArt.oval(c,x,y+10,45,22,'#334435','#c7b47d',2);
             if(s.reward==='skill'){ForestArt.shape(c,[[x-20,y+8],[x-15,y-38],[x+15,y-38],[x+20,y+8]],'#817f69','#d6cca0',3);SkillVisuals.rune(c,x,y-20,12,'#9ed6cf');}
             else{ForestArt.shape(c,[[x-27,y-20],[x+27,y-20],[x+27,y+9],[x-27,y+9]],'#9e7950','#e0c897',3);ForestArt.line(c,[[x-9,y-6],[x+9,y-6]],'#d4e8b2',5);ForestArt.line(c,[[x,y-15],[x,y+3]],'#d4e8b2',5);}
-            c.fillStyle='#fff0c6';c.textAlign='center';c.font='bold 15px sans-serif';c.fillText(s.name+' · '+({sealed:'靠近挑战',warning:'守卫苏醒',guarded:'击败守卫',ready:'领取奖励',claimed:'已领取'}[s.state]),x,y+40);
+            c.fillStyle='#fff0c6';c.textAlign='center';c.font='bold 15px sans-serif';c.fillText(s.name+' · '+({sealed:'靠近挑战',warning:'守卫苏醒',guarded:'击败守卫',ready:'领取奖励',claimed:'已领取'}[s.state]),x,y+40);if(s.state!=='claimed'){c.font='13px sans-serif';c.fillStyle='#c7e4ba';c.fillText(FieldEncounters.describeSite(s),x,y+60);}
         }c.restore();
     }
 }

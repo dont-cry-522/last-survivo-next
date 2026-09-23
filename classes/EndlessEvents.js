@@ -2,7 +2,7 @@
 class EndlessEvents {
     constructor(game){this.game=game;this.shots=[];this.event=null;this.nextAt=55;this.dangerUntil=0;this.lastAlert=-99;this.field=typeof FieldEncounters!=='undefined'?new FieldEncounters(game):null;}
     get intensity(){const g=this.game;return this.event?.phase==='warning'||g.survivalTime<this.dangerUntil?1.22:this.event?1.04:.88;}
-    get objective(){const e=this.event;if(!e){const site=this.game.survivalTime>60?this.field?.sites.filter(s=>s.state!=='claimed').sort((a,b)=>Math.hypot(a.x-this.game.player.x,a.y-this.game.player.y)-Math.hypot(b.x-this.game.player.x,b.y-this.game.player.y))[0]:null;return site?'探索：'+site.name+' · 按小地图寻找奖励':'';}const left=Math.max(0,Math.ceil(e.ends-this.game.survivalTime));return e.phase==='warning'?`补给信号 · ${Math.max(0,Math.ceil(e.starts-this.game.survivalTime))} 秒后守卫来袭`:`限时补给 · 剩余 ${left} 秒 · ${e.contested?'先清理附近守卫':`靠近驻守 ${Math.floor(e.progress)}/5 秒`}`;}
+    get objective(){const e=this.event;if(!e){const site=this.game.survivalTime>60?this.field?.sites.filter(s=>s.state!=='claimed').sort((a,b)=>Math.hypot(a.x-this.game.player.x,a.y-this.game.player.y)-Math.hypot(b.x-this.game.player.x,b.y-this.game.player.y))[0]:null;return site?'探索：'+site.name+' · '+FieldEncounters.describeSite(site):'';}const left=Math.max(0,Math.ceil(e.ends-this.game.survivalTime));return e.phase==='warning'?`补给信号 · ${Math.max(0,Math.ceil(e.starts-this.game.survivalTime))} 秒后守卫来袭`:`限时补给 · 剩余 ${left} 秒 · ${e.contested?'先清理附近守卫':`靠近驻守 ${Math.floor(e.progress)}/5 秒`}`;}
     begin(){
         const g=this.game;
         for(let i=0;i<24;i++){
